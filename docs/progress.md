@@ -65,7 +65,7 @@
 | 1.4 States: EIA gas (D-022) + tax (D-025) | ✅ | `c539fc3` |
 | 1.5 Brands + tiles: 273 brands, 182,567 stores, 847 tiles (D-021) | ✅ | `2ebdc0d` |
 | 1.6 Cards: 22 cards, 21 credits (D-024) | ✅ | `83f24d7` |
-| 1.7 Profiles (12 chains, D-026) + `categories.js` | 🔶 8 of 12 committed (chipotle, dominos, wingstop, buffalo_wild_wings, the_cheesecake_factory, dunkin, little_caesars, subway). Blocked: taco_bell (ISS-013), pizza_hut (ISS-021), papa_johns (ISS-024), five_guys (ISS-017); waiting on the user's call. Then: restore the parked tests, generate profiles.js + categories.js, add the script tags | `d3690ec`, `e1bc046`, `ec5e627`, `0a4262b` |
+| 1.7 Profiles + `categories.js`: **9 profiled** (buffalo_wild_wings, chipotle, dominos, dunkin, little_caesars, papa_johns, subway, the_cheesecake_factory, wingstop); taco_bell, pizza_hut, five_guys unprofiled (D-028) | ✅ generated and loaded; review should-fixes: generator `56cc487`, evidence tests running | `bab5ce1` |
 | 1.8 Pages workflow with the tile build | ✅ | `69b429b` |
 | 1.9 Close: full suite, reflector, user sets the Phase 2 `/goal` | ⬜ | |
 
