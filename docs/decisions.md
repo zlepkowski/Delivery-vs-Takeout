@@ -145,7 +145,7 @@ Changes from the handoff's list: **Wonder** (not in All The Places) and **McDona
   - `amexGoldDirect`: true only for five_guys, buffalo_wild_wings and the_cheesecake_factory.
   - `notes`.
 - **Output `PROFILES[id]`** = `{ menu: [[name, price, isDealItem]], deal: {label, price, minItems, scope} | null, markup: {dd?, ue?, gh?}, markupEst, directDelivery, directFee?, amexGoldDirect, platforms: [...] }` (§6 shape, keyed by brand id).
-- **`categories.json` → `CATEGORY_DEFAULTS[category]`** = `{ markup: {dd, ue, gh}, est, reason, sources }` for the 10 D-021 categories. Estimates are allowed here (data-research skill) when flagged.
+- **`categories.json`** holds `{ markup: {dd, ue, gh}, est, reason, sources }` per D-021 category. The generated **`CATEGORY_DEFAULTS[category]`** is just `{ markup: {dd, ue, gh}, est }`: reasons and sources stay in the JSON in the repo, and the sources are also listed in the file header. Estimates are allowed here (data-research skill) when flagged.
 - **Browser research rules:** Playwright through the proxy. **No getting around bot protection**: no user-agent spoofing, stealth plugins or CAPTCHA solving. A chain that blocks automated access is reported BLOCKED, for option 2 (prices from the user) or option 3 (unprofiled). Don't create accounts or place orders. Use a public address (e.g. a city hall) to see a store's prices and delivery fee. Don't scrape the delivery apps' menus; platform presence is shown by the chain's own site or a citable statement.
 - **Network:** during this research the environment is temporarily **unrestricted** (approved by the user 2026-11-12). Afterwards it goes back to the 16-host list in ISS-001.
 
