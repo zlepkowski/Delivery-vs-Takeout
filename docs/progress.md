@@ -1,6 +1,6 @@
 # Progress
 
-**Current phase:** 2 (Engine, §4), **in progress** in the same session as Phase 1, at the user's request. Phase 3 starts in a fresh session
+**Current phase:** 2 (Engine, §4) is **done**. Next is **Phase 3 (Geography + stores near you)**, to start in a **fresh session** (the user's plan), with the user's `/goal`
 **Last updated:** 2026-11-12
 **Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/sharp-heisenberg-tbo63x` (base: `main`)
 
@@ -8,12 +8,11 @@
 
 1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **ISS-006** is closed: `.claude/settings.json` sets auto-compact at 60%.
-4. **Phase 2 starts with the orchestrator, not a worker** (CLAUDE.md): write the Python oracle in `tests/oracle/` and the hand-worked receipts in `tests/fixtures/receipts/` *before* the builder touches the engine. Read BUILD.md §4 (engine, the §4.2 order) and §9 (traps) for it.
-5. **Phase 2 open questions to settle first:** **ISS-031**, how direct-channel service fees are modeled (Wingstop $2.00, Subway 12%, Little Caesars up to $4); §4.2 has none for direct orders today. Also decide how the engine prices **unprofiled** brands (D-006: category markup est, typed subtotal, no direct delivery), since 3 of the 12 D-026 chains are unprofiled (D-028).
-6. **Later-phase notes from Phase 1:** ISS-030 (platform evidence dates, Phase 3), D-028's question of whether `amexGoldDirect` becomes brand-level (Phase 3), and no profiled chain has a confirmed direct-only deal (all 9 `deal: null`). That is the biggest gap in the product's premise, so research it again before Phase 5's insights.
-7. **Network:** the personal environment **Delivery-vs-Takeout** is back to **limited**, with the 16 hosts in ISS-001. Phase 2 needs no network. A fresh session should start on that environment.
-8. **User actions pending:** ISS-005 (set GitHub's default branch to `main` and Pages Source to GitHub Actions). Merge to `main` only by a PR the user asks for.
+3. **Phase 3 (Geography + stores near you, D-005):** `src/js/geo.js` with ZIP unpacking, `zipByCode`, `nearestZip`, `zipSpacing`, `estimateMiles` (BUILD.md §8, the fallback) and the store-tile lookup `storesNear` (D-021: load **every** 1° cell the search circle touches; cell = floor of the ×1000 ints; radius 5 → 10 → 25 → 50 mi until about 15 results). Done when: 59011 vs 10118 estimates differ ≥10×, `storesNear` passes fixture tests (`tests/fixtures/stores/`), and an uncached ZIP takes <10 ms. Pure functions, so the same pattern applies: hand-worked expected values before the builder, then builder → tester → reviewer.
+4. **Engine facts Phase 3 needs:** `POD.engine.restFor(brandId, POD.data)` builds `S.rest` (null for an unknown brand or a missing category default); `calc` reads `S.miles`/`S.minutes`, which Phase 3's store pick sets (straight line × 2 × 1.25, D-005). The contract is `docs/engine-contract.md` (D-029).
+5. **Open questions carried forward:** ISS-030 (platform evidence dates; Phase 3 decides whether to surface them), D-028 (whether `amexGoldDirect` becomes brand-level for unprofiled Five Guys), ISS-031 (direct service fee data per chain), and no profiled chain has a confirmed direct-only deal (all 9 `deal: null`). Research that before Phase 5's insights.
+6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 16 hosts in ISS-001. Phase 3 needs none (the tiles are built by `tools/build-stores.py`; fixtures are committed).
+7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
 
@@ -27,7 +26,7 @@
 |---|---|---|---|---|
 | 0 | Scaffold | Opus | ✅ done | `npm test` green; the empty page loads from file:// with 0 console errors; agents and skills in place |
 | 1 | Data rebuild | researcher + Opus (cards) | ✅ done (`32dae9b`) | Schema tests pass. ZIPs = 42,354 / 18,908. Every credit has a tier, source URL and date. Store tiles build; fixtures committed |
-| 2 | Engine (§4) | Opus (oracle) → builder | 🟡 in progress | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
+| 2 | Engine (§4) | Opus (oracle) → builder | ✅ done | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
 | 3 | Geography + stores near you | builder | ⬜ | 59011 vs 10118 estimates differ ≥10×; `storesNear` passes fixture tests; an uncached ZIP takes <10 ms |
 | 4 | State, derivations, wallet (§5) | builder | ⬜ | Cascade tests pass; `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
 | 5 | UI + 9 insights + "Near you" picker | builder | ⬜ | The §13 manual checklist is automated in Playwright; 0 console errors; phone and desktop screenshots reviewed |
@@ -58,7 +57,7 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
-### Phase 2: Engine (2026-11-12, in progress)
+### Phase 2: Engine (2026-11-12, done)
 
 | Task | Status | Commit |
 |---|---|---|
@@ -66,8 +65,8 @@
 | 2.2 Python oracle `tests/oracle/engine.py` + `run.py` (receipts self-check; 500 seeded scenarios vs JS) + `js_runner.js` (purity check) | ✅ | `72db287` |
 | 2.3 12 hand-worked receipts, 58 cases, `tests/fixtures/receipts/` | ✅ 58/58 vs oracle | `72db287` |
 | 2.4 Builder: `src/js/engine.js` (one loop) + review fix round 1 | ✅ 58/58 receipts; 0 of 500 + 10,000 + 10,000 scenarios differ on three seeds; reviewer APPROVE | `be9e129`, `c4e21c4` |
-| 2.5 Tester: `tests/unit/engine.test.js`, 79 tests (58 receipt cases, §9 traps by name, purity, perMile, restFor on real data, a load guard); 16 mutations each caught | ✅ | `560eb54` |
-| 2.6 Close: full suite (238 unit, oracle, 2 e2e), reviewer on the tests, reflector, progress | 🟡 running | |
+| 2.5 Tester: `tests/unit/engine.test.js`, 81 tests (58 receipt cases, §9 traps by name, purity, perMile, restFor on real data and isolation, a load guard); 17 mutations each caught; reviewer APPROVE + fix round | ✅ | `560eb54`, latest |
+| 2.6 Close: full suite in a clean worktree (240 unit, oracle 58/58 + 0 of 5,500 scenarios, 2 e2e); no UI change, so the e2e screenshots are unchanged from Phase 1; reflector approved with one addition | ✅ | `2f7e05f` |
 
 **Phase 2 notes for a resuming session.**
 - The contract is the spec. Change it only by a decision, and change the oracle and receipts **before** the engine.
