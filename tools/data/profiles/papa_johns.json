@@ -1,0 +1,50 @@
+{
+  "id": "papa_johns",
+  "asOf": "2026-11-12",
+  "menu": [
+    {"name": "Large Original Crust Pepperoni", "dealItem": false, "prices": [
+      {"zip": "10002", "state": "NY", "price": 16.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4091"},
+      {"zip": "60610", "state": "IL", "price": 21.49, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4109"},
+      {"zip": "85003", "state": "AZ", "price": 16.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/1913"}
+    ]},
+    {"name": "Large Original Crust The Works Pizza", "dealItem": false, "prices": [
+      {"zip": "10002", "state": "NY", "price": 19.49, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4091"},
+      {"zip": "60610", "state": "IL", "price": 26.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4109"},
+      {"zip": "85003", "state": "AZ", "price": 19.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/1913"}
+    ]},
+    {"name": "Large Original Crust Sausage Pizza", "dealItem": false, "prices": [
+      {"zip": "10002", "state": "NY", "price": 16.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4091"},
+      {"zip": "60610", "state": "IL", "price": 21.49, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4109"},
+      {"zip": "85003", "state": "AZ", "price": 16.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/1913"}
+    ]},
+    {"name": "6 Piece Spicy Buffalo Wings", "dealItem": false, "prices": [
+      {"zip": "10002", "state": "NY", "price": 8.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4091"},
+      {"zip": "60610", "state": "IL", "price": 9.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4109"},
+      {"zip": "85003", "state": "AZ", "price": 8.94, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/1913"}
+    ]},
+    {"name": "8 Piece Garlic Knots", "dealItem": false, "prices": [
+      {"zip": "10002", "state": "NY", "price": 5.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4091"},
+      {"zip": "60610", "state": "IL", "price": 7.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4109"},
+      {"zip": "85003", "state": "AZ", "price": 7.49, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/1913"}
+    ]},
+    {"name": "2 Liter Pepsi", "dealItem": false, "prices": [
+      {"zip": "10002", "state": "NY", "price": 3.54, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4091"},
+      {"zip": "60610", "state": "IL", "price": 4.49, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4109"},
+      {"zip": "85003", "state": "AZ", "price": 3.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/1913"}
+    ]},
+    {"name": "8 Inch Chocolate Chip Cookie", "dealItem": false, "prices": [
+      {"zip": "10002", "state": "NY", "price": 7.99, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4091"},
+      {"zip": "60610", "state": "IL", "price": 8.79, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/4109"},
+      {"zip": "85003", "state": "AZ", "price": 9.00, "url": "https://www.papajohns.com/order/viewStoreMenu/CARRYOUT/BUSINESS/1913"}
+    ]}
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "amexGoldDirect": false,
+  "platforms": {
+    "dd": "Restaurant Business 2023-11-02 (https://www.restaurantbusinessonline.com/financing/third-party-delivery-has-become-huge-sales-driver-papa-johns): 'Sales of Papa Johns through DoorDash are up 150% over the past three years'; the chain 'gets 15% of its sales from companies like DoorDash and Uber Eats'. Re-read by the orchestrator 2026-11-12. Dated; not re-confirmed for 2026.",
+    "ue": "Restaurant Dive, 2026 (page refers to Q4 2025 earnings), 'First-party pizza delivery competition third-party aggregator costs': 'Papa Johns reported year-over-year declines in total delivery in the fourth quarter of 2025 despite \"notable strength in Uber Eats' performance\"'; also 'most operators, including Pizza Hut, Papa Johns, and Domino's, post listings on at least some third-party aggregators'. Loaded by curl 2026-11-12: https://restaurantdive.com/news/first-party-pizza-delivery-competition-third-party-aggregator-costs/816877 . Page date not confirmed in the text. Also Restaurant Business 2024-02-29 (https://www.restaurantbusinessonline.com/financing/papa-johns-delivery-shifts-its-own-apps-aggregators): 'business with companies like Uber Eats and DoorDash is thriving'."
+  },
+  "markup": {"useCategory": true},
+  "notes": "Menu: 7 items, pickup prices from papajohns.com store catalogue (product.getByStore API behind the store menu) at 3 carryout stores, one per state, observed 2026-11-12: NY store 4091 (343 Grand St, New York, NY 10002); IL store 4109 (230 W Division St, Chicago, IL 60610); AZ store 1913 (540 E Thomas, Phoenix, AZ 85003). Store IDs and ZIPs from stores.getCarryoutStores at city-hall coordinates (carryout open 2026-11-12). The /order/menu page itself still fails with ChunkLoadError (ISS-024), so the menu URL in each price is the store's viewStoreMenu page, and the data came from the store's catalogue API, not the rendered page. The API price is the catalogue displayPrice; it does not show a channel split, and no carryout-only price was separately observed (ISS-029). Sizes are chosen from the item names. Items with option-based prices (Create Your Own, sides with choices) were skipped. Deal: null. The homepage (https://www.papajohns.com/) says 'Some offers may be available online only' with no named direct-only offer and no terms page for it. Papa Rewards and percent-off codes are not in the schema. Delivery: no single delivery fee was observed. The delivery checkout chunks fail (ISS-024), and the store API has no fee field, so directDelivery is false (ISS-029). Markup: no chain-specific published figure was found, so the category default applies (est). Platforms: dd and ue from loaded trade press, see platforms. gh omitted: no 2026 evidence (2019-2022 Restaurant Dive reporting on Grubhub was not confirmed for 2026). Sources checked 2026-11-12."
+}
