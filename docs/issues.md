@@ -120,9 +120,10 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - Next step: price the same 5-8 items at a Chicago or Phoenix store, and confirm the single delivery fee from the bag view.
 
 ### ISS-015 — Dunkin' profile incomplete (task 1.7 batch B, 2026-11-12)
-- www.dunkindonuts.com loads without a challenge. The locations page lists stores (nearby NYC), but ORDER HERE does not open a store menu, and no store-level prices were captured.
-- Delivery: a first-party delivery page exists at /dunkin-delivers, fee not read.
-- Next step: find the store ordering URL (or the menu/bag flow after store selection) and read a coffee and a donut price at 2 stores in 2 states.
+- **Status: partly resolved 2026-11-12 (researcher, follow-up).** The profile is written: `tools/data/profiles/dunkin.json`, 7 items at 3 stores (NY 10007, IL 60601, AZ 85015).
+- **How prices were reached:** on /locations/, ORDER HERE then CONFIRM selects the store (no account). The store-scoped menu at /menu/categories/<slug> then shows prices. The earlier run stopped at the store modal, which needed CONFIRM.
+- **Delivery:** /dunkin-delivers says delivery is only through Grubhub, Uber Eats and DoorDash, with fees shown in those apps. So `directDelivery: false` (no first-party fee; not $0). Platforms dd/ue/gh come from that page.
+- **Still open:** (1) no direct-only deal found; the $6 Meal Deal page has no channel terms, so `deal: null`. (2) Coffee and Hash Browns sizes are not captured (the item dialog was not opened). (3) Markup is the category default (est), with no chain-specific figure.
 
 ### ISS-016 — Domino's direct delivery fee not observed (profile `dominos`)
 - **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch A) · **Phase:** 1 · **Status:** open
