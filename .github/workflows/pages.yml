@@ -1,0 +1,60 @@
+# GitHub Pages deploy for Pickup or Delivery (D-011, D-018, D-021).
+#
+# One-time repo setting (ISS-005): Settings -> Pages -> Source: "GitHub Actions".
+# Without it, the deploy job fails at actions/deploy-pages.
+#
+# The logic lives in tools/build-site.sh, which regenerates src/data/brands.js
+# and the store tiles from the latest All The Places run, sanity-checks them,
+# and writes a folder with ONLY index.html and src/. Run it locally with:
+#   ATP_RUN=latest bash tools/build-site.sh /tmp/site
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 7 * * 1'   # weekly, Monday 07:17 UTC (quiet hour)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build site (regenerate brands and store tiles, sanity-check)
+        run: bash tools/build-site.sh _site
+        env:
+          ATP_RUN: latest
+          ATP_CACHE: ${{ runner.temp }}/atp-cache
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
