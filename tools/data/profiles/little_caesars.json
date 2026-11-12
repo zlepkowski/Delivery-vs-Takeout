@@ -1,0 +1,39 @@
+{
+  "id": "little_caesars",
+  "asOf": "2026-11-12",
+  "menu": [
+    {"name": "Classic Pepperoni (Large)", "dealItem": false, "prices": [
+      {"zip": "11206", "state": "NY", "price": 10.99, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/21025/menu/"},
+      {"zip": "60642", "state": "IL", "price": 10.99, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/12392/menu/"},
+      {"zip": "85006", "state": "AZ", "price": 6.49, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/1350/menu/"}]},
+    {"name": "Classic Cheese (Large)", "dealItem": false, "prices": [
+      {"zip": "11206", "state": "NY", "price": 10.99, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/21025/menu/"},
+      {"zip": "60642", "state": "IL", "price": 10.99, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/12392/menu/"},
+      {"zip": "85006", "state": "AZ", "price": 6.49, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/1350/menu/"}]},
+    {"name": "Crazy Bread", "dealItem": false, "prices": [
+      {"zip": "11206", "state": "NY", "price": 4.49, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/21025/menu/"},
+      {"zip": "60642", "state": "IL", "price": 5.99, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/12392/menu/"},
+      {"zip": "85006", "state": "AZ", "price": 3.49, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/1350/menu/"}]},
+    {"name": "Italian Cheese Bread", "dealItem": false, "prices": [
+      {"zip": "11206", "state": "NY", "price": 6.99, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/21025/menu/"},
+      {"zip": "60642", "state": "IL", "price": 7.49, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/12392/menu/"},
+      {"zip": "85006", "state": "AZ", "price": 5.25, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/1350/menu/"}]},
+    {"name": "Cookie Dough Brownie with M&M'S Minis", "dealItem": false, "prices": [
+      {"zip": "11206", "state": "NY", "price": 4.89, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/21025/menu/"},
+      {"zip": "60642", "state": "IL", "price": 5.89, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/12392/menu/"},
+      {"zip": "85006", "state": "AZ", "price": 4.89, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/1350/menu/"}]},
+    {"name": "Pepsi-Cola 20 oz", "dealItem": false, "prices": [
+      {"zip": "11206", "state": "NY", "price": 2.49, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/21025/menu/"},
+      {"zip": "60642", "state": "IL", "price": 2.99, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/12392/menu/"},
+      {"zip": "85006", "state": "AZ", "price": 2.19, "url": "https://order.littlecaesars.com/en-us/order/pickup/stores/1350/menu/"}]}
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "amexGoldDirect": false,
+  "platforms": {
+    "dd": "PYMNTS 2020-10-12 (https://www.pymnts.com/news/retail/2020/little-caesars-doordash-grow-partnership/): Little Caesars delivery 'will be accessible through the third-party delivery marketplace of DoorDash'. Dated; not re-confirmed for 2026. (The Jan 2020 NRN deal was DoorDash Drive fulfilling orders on Little Caesars' own app and site, which is not marketplace evidence; checked by the orchestrator 2026-11-12.)",
+    "ue": "Uber Eats press release 2023-04-26 (https://www.businesswire.com/news/home/20230426005164/en/Uber-Eats-Announces-Delivery-Partnership-with-Little-Caesars): Uber Eats delivery partnership. Dated; not re-confirmed for 2026."
+  },
+  "markup": {"useCategory": true},
+  "notes": "Menu: pickup prices from the chain's own ordering site (order.littlecaesars.com, store menu data from onlo-api.littlecaesars.com/bff/menu) at three stores, found by carryout search for each City Hall address. NY: store 21025, 822 Broadway, Brooklyn NY 11206 (the search for City Hall Park returned this store first; no Manhattan store was listed). IL: store 12392, 850 W Superior St, Chicago IL 60642 (the search for 60602 returned this store first). AZ: store 1350, 933 16th St, Phoenix AZ 85006 (search for 85003 returned this store first). Item names: pizza size is the menu group 'Large Round Pizzas'; Crazy Bread count is not shown on the site so no count is in the name. Caesar Wings omitted: priced per flavour choice and the store prices differ too much to compare. Two of the three stores showed isOpen/isOrderable false at the time of capture (2026-11-12); menu prices were still displayed. Deal: none recorded. Site offers are percent-off codes (TOUCHDOWN 15% off $15+, DELIVERY20 20% off delivery $25+), not per-item prices, and the 'More For $X' menu bundles have no direct-only terms found. Direct delivery: false. Delivery is available at all three addresses (store finder and delivery-store API), and the cart shows 'Delivery fee and a service fee (max $4.00) apply' with no dollar delivery fee before checkout. Checkout needs personal details, so the fee was not read (ISS-025). Platforms: 2020 and 2023 press only; the Little Caesars site does not list apps. No Grubhub evidence found. Markup: no chain-specific published figure found, so category default (est). Sources checked 2026-11-12."
+}
