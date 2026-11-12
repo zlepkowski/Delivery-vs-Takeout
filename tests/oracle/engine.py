@@ -132,9 +132,9 @@ def calc(S, ch, override=None):
 
     # 5.1 deal
     deal = rest.get("deal")
+    scope = deal.get("scope") if deal is not None else None
     deal_applied = (not app) and bool(S.get("dealOn")) and ci["dealReady"] and (
-        deal["scope"] == "both" or (deal["scope"] == "delivery" and m == "d")
-        or (deal["scope"] == "pickup" and m == "p"))
+        scope == "both" or (scope == "delivery" and m == "d") or (scope == "pickup" and m == "p"))
     base = ci["dealSub"] if deal_applied else ci["menuSub"]
 
     # 5.2 markup
@@ -153,7 +153,7 @@ def calc(S, ch, override=None):
     if (not app) and m == "d":
         delivery = round2(rest["directFee"])
     ds = rest.get("directSvc")
-    dsvc_on = (not app) and ds is not None and m in (ds.get("modes") or [])
+    dsvc_on = (not app) and ds is not None and isinstance(ds.get("modes"), list) and m in ds["modes"]
     if dsvc_on:
         dsvc = round2(_cap(_num(ds.get("flat")) + food * _num(ds.get("pct")) / 100, ds.get("max")))
     fees = round2(delivery + service + small + reg + dsvc)
