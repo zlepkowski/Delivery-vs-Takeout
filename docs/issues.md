@@ -118,6 +118,7 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - Delivery fee: subway.com shows "Delivery fee of $2.99-$6.49" plus a 12% service fee for 100 Maiden Ln NY 10038 (store 24130-0). It is a range, not one fee, and the cart was not reached, so directDelivery is not set.
 - Deal: the only published Subway app BOGO (Oct 27 to Nov 8 2026) has expired. No current direct-only offer was confirmed.
 - Next step: price the same 5-8 items at a Chicago or Phoenix store, and confirm the single delivery fee from the bag view.
+- **Status: partly resolved 2026-11-12 (researcher, follow-up).** `tools/data/profiles/subway.json` is written with 7 items at 3 stores (NY 10007 store 19027-0, IL 60602 store 74838-0, AZ 85004 store 18419-0). The menu is complete. The delivery fee is still open: see ISS-027. The deal is still null.
 
 ### ISS-015 — Dunkin' profile incomplete (task 1.7 batch B, 2026-11-12)
 - **Status: partly resolved 2026-11-12 (researcher, follow-up).** The profile is written: `tools/data/profiles/dunkin.json`, 7 items at 3 stores (NY 10007, IL 60601, AZ 85015).
@@ -183,3 +184,9 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **Why it matters:** the menu prices are real store prices, but they are not from the City Hall stores the card named, and two may be out of hours. The national median could shift if a Manhattan or downtown store prices differently.
 - **Next step:** find a Manhattan and a downtown Chicago/Phoenix store (for example, by search by a closer address or the 'Change Restaurant' control) and recheck the prices when the stores are open.
 - **Also:** the TOUCHDOWN (15% off $15+) and DELIVERY20 (20% off delivery $25+) codes are percent-off site offers, not per-item prices, so they do not fit the `deal` schema. The "More For $X" menu bundles have no direct-only terms found. Left as `deal: null`.
+
+### ISS-027 — Subway direct delivery fee not observed (profile `subway`)
+- **Opened:** 2026-11-12 by researcher (Phase 1.7 follow-up) · **Phase:** 1 · **Status:** open
+- **What:** `tools/data/profiles/subway.json` has `directDelivery: false`. At 121 N LaSalle St, Chicago (store 7706-0) and 200 W Washington St, Phoenix (store 27050-0), subway.com's delivery page shows only the range "Delivery fee of $2.99-$6.49 USD" plus a 12% service fee. Adding an item (Italian B.M.T., via the Sandwiches category) and opening the bag did not show a single fee line in the browser run. The bag drawer did not open reliably, so no fee was read. The NYC run (ISS-014) also saw only the range.
+- **Why it matters:** the direct-delivery route is left out of the Subway comparison until one fee per store is observed, in 2+ states (D-027, §9.3).
+- **Next step:** open the bag drawer after adding an item (header bag icon at 1214,41 on a 1280-wide viewport) and read the delivery fee line at 2 stores in 2 states, then set `directDelivery: true` and `directFee.observed`.
