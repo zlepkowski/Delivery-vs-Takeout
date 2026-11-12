@@ -1,0 +1,44 @@
+{
+  "id": "chipotle",
+  "asOf": "2026-11-12",
+  "menu": [
+    {"name": "Chicken Burrito", "dealItem": false, "prices": [
+      {"zip": "10038", "state": "NY", "price": 11.50, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "60604", "state": "IL", "price": 9.35, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "85003", "state": "AZ", "price": 10.40, "url": "https://www.chipotle.com/order/build/burrito"}]},
+    {"name": "Steak Burrito", "dealItem": false, "prices": [
+      {"zip": "10038", "state": "NY", "price": 13.50, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "60604", "state": "IL", "price": 11.35, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "85003", "state": "AZ", "price": 12.55, "url": "https://www.chipotle.com/order/build/burrito"}]},
+    {"name": "Chicken Burrito Bowl", "dealItem": false, "prices": [
+      {"zip": "10038", "state": "NY", "price": 11.50, "url": "https://www.chipotle.com/order/build/burrito-bowl"},
+      {"zip": "60604", "state": "IL", "price": 9.35, "url": "https://www.chipotle.com/order/build/burrito-bowl"},
+      {"zip": "85003", "state": "AZ", "price": 10.40, "url": "https://www.chipotle.com/order/build/burrito-bowl"}]},
+    {"name": "Chips", "dealItem": false, "prices": [
+      {"zip": "10038", "state": "NY", "price": 2.30, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "60604", "state": "IL", "price": 1.95, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "85003", "state": "AZ", "price": 2.25, "url": "https://www.chipotle.com/order/build/burrito"}]},
+    {"name": "Chips & Guacamole", "dealItem": false, "prices": [
+      {"zip": "10038", "state": "NY", "price": 5.25, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "60604", "state": "IL", "price": 4.90, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "85003", "state": "AZ", "price": 5.20, "url": "https://www.chipotle.com/order/build/burrito"}]},
+    {"name": "Side of Guacamole", "dealItem": false, "prices": [
+      {"zip": "10038", "state": "NY", "price": 2.95, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "60604", "state": "IL", "price": 2.95, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "85003", "state": "AZ", "price": 2.95, "url": "https://www.chipotle.com/order/build/burrito"}]},
+    {"name": "Mexican Coca-Cola", "dealItem": false, "prices": [
+      {"zip": "10038", "state": "NY", "price": 3.85, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "60604", "state": "IL", "price": 3.45, "url": "https://www.chipotle.com/order/build/burrito"},
+      {"zip": "85003", "state": "AZ", "price": 3.75, "url": "https://www.chipotle.com/order/build/burrito"}]}
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "amexGoldDirect": false,
+  "platforms": {
+    "dd": "NRN 2020-07-23 (https://www.nrn.com/delivery-takeout-solutions/chipotle-mexican-grill-to-experiment-with-raising-menu-prices-on-third-party-delivery-apps) lists DoorDash; investing.com 2018 DoorDash partnership (https://www.investing.com/news/stock-market-news/chipotle-partners-with-doordash-for-food-delivery-1422834). Dated, unconfirmed for 2026.",
+    "ue": "NRN 2020-07-23 (https://www.nrn.com/delivery-takeout-solutions/chipotle-mexican-grill-to-experiment-with-raising-menu-prices-on-third-party-delivery-apps) lists Uber Eats. Dated, unconfirmed for 2026.",
+    "gh": "NRN 2020-07-23 (https://www.nrn.com/delivery-takeout-solutions/chipotle-mexican-grill-to-experiment-with-raising-menu-prices-on-third-party-delivery-apps) lists Grubhub. Dated, unconfirmed for 2026."
+  },
+  "markup": {"useCategory": true},
+  "notes": "Menu: pickup prices at 111 Fulton St, New York NY 10038 (store 1341); 10 E Jackson Blvd, Chicago IL 60604; 11 W Washington St Ste 140, Phoenix AZ 85003. Prices read from the builder pages at chipotle.com/order/build/* with store selected. Deal: none confirmed. The homepage promo '$0 DELIVERY FEE' (valid 11/5/2026-11/18/2026, 'Chipotle.com or Chipotle app only', $10 min) is a fee waiver, not a per-item price, so it is not recorded as a deal. directDelivery false: delivery to 100 Maiden Ln NY 10038 is offered, but the fee is only shown after an address-details form requiring customer name and phone, which was not filled in. Issue logged. Platforms: 2018-2020 press only; homepage terms say 'Chipotle.com or app only', which implies third-party apps. Markup: no chain-specific published figure found (NRN article gives no percentage), so category default (est). Sources checked 2026-11-12."
+}

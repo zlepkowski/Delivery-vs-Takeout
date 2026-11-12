@@ -100,3 +100,19 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **Next step:** orchestrator decides whether to accept the pizza value of 0 or override it. A per-app menu-only study (or a Plott Data methodology check, which was not reachable from WebFetch) would give real platform and category splits.
 - **Also:** WebFetch could not resolve several hosts (foodspark.io, cheaperly.ai, yahoo.com, plottdata.com) even though curl through the proxy reached them. Source text was read with curl. The Plott Data page carried no category markup figures.
 - **Orchestrator decision 2026-11-12:** pizza is overridden from 0 to the fast-food average (15.3%). One chain's parity pricing shouldn't set the default for every unprofiled pizza place; that would understate app costs. The other nine categories are accepted as researched. Revisit with a per-app, menu-only study.
+
+### ISS-013 — Taco Bell profile blocked: www.tacobell.com returns 502 (task 1.7 batch B, 2026-11-12)
+- www.tacobell.com returned HTTP 502 "upstream request failed" on two loads, and a page.goto timeout on a third. The proxy status shows no policy denial for this host (`curl` gives HTTP/2 INTERNAL_ERROR). Not a bot-challenge page, so not worked around.
+- Next step: retry later, or the user allows the host and confirms the gateway can reach it. Then research 5+ items at 2+ stores in 2+ states.
+- Status: no tools/data/profiles/taco_bell.json written.
+
+### ISS-014 — Subway profile incomplete (task 1.7 batch B, 2026-11-12)
+- Pickup menu prices read from one store only (store 19027-0, 165 Church St, NY 10007, subway.com menu API). A second state is missing.
+- Delivery fee: subway.com shows "Delivery fee of $2.99-$6.49" plus a 12% service fee for 100 Maiden Ln NY 10038 (store 24130-0). It is a range, not one fee, and the cart was not reached, so directDelivery is not set.
+- Deal: the only published Subway app BOGO (Oct 27 to Nov 8 2026) has expired. No current direct-only offer was confirmed.
+- Next step: price the same 5-8 items at a Chicago or Phoenix store, and confirm the single delivery fee from the bag view.
+
+### ISS-015 — Dunkin' profile incomplete (task 1.7 batch B, 2026-11-12)
+- www.dunkindonuts.com loads without a challenge. The locations page lists stores (nearby NYC), but ORDER HERE does not open a store menu, and no store-level prices were captured.
+- Delivery: a first-party delivery page exists at /dunkin-delivers, fee not read.
+- Next step: find the store ordering URL (or the menu/bag flow after store selection) and read a coffee and a donut price at 2 stores in 2 states.
