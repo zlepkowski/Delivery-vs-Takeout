@@ -72,6 +72,38 @@ Agents in `.claude/agents/` load only at session start, so a session that began 
 The ATP README (`raw.githubusercontent.com/alltheplaces/alltheplaces/master/README.md`, "License", read 2026-11-12) says the data its spiders generate is released under the Creative Commons CC-0 waiver. The spider code is MIT. Publishing derived store coordinates on Pages is allowed. Credit ATP in the `brands.js` provenance header and on the page anyway. Closes ISS-002.
 *Also found:* the latest run (`2026-10-31-13-32-34`, from `data.alltheplaces.xyz/runs/latest.json`) is one 2.9 GB `output.zip` covering 5,781 spiders worldwide. The host answers HTTP `Range` requests (206), so `tools/build-stores.py` should read the zip's central directory by range and download only the members it needs, not the whole file.
 
+**D-021 — Store data: selection, brands and the tile format** · 2026-11-12 · *accepted*
+Finalizes the store-tile proposal in the data-research skill. Where they differ, this wins.
+- **Run.** `tools/build-stores.py --run <run_id|latest>`. `latest` resolves through `https://data.alltheplaces.xyz/runs/latest.json`. The run id is recorded in every output.
+- **Download only what's needed.** Read `output.zip` through HTTP `Range` requests: `zipfile.ZipFile` over a small seekable reader object whose `read()` issues ranged GETs. The central directory takes about 3 requests. Downloaded members are cached in a `--cache` directory outside the repo.
+- **Which brands are restaurants.** A `brand:wikidata` is a food brand if it appears in the Name Suggestion Index files `data/brands/amenity/{fast_food,restaurant,cafe,ice_cream}.json` (`raw.githubusercontent.com/osmlab/name-suggestion-index/<ref>/…`, `--nsi-ref`, default `main`).
+- **Which members.** The run's `stats/_insights.json` lists, per Wikidata ID, the spiders holding its stores in each country (`atp_splits.US`). Download the union of the US spiders for the food brands only. That was 339 members for 338 brands in run `2026-10-31-13-32-34`.
+- **Which features.** `amenity` ∈ {fast_food, restaurant, cafe, ice_cream}; `brand:wikidata` in the food set; in the US (`addr:country` = `US`, or no `addr:country` and the spider name ends in `_us`); valid coordinates. Dedupe on (brand, lat×1000, lon×1000), rounded half away from zero.
+- **Brands kept:** at least 25 deduped US stores.
+- **Brand id:** the brand name lowercased, `&` → `and`, apostrophes dropped, every other run of non-alphanumerics → `_`, trimmed of `_`. On a collision, the brand with fewer stores gets `_` + its lowercased Wikidata ID appended.
+- **Category:** from the first `;`-separated token of `cuisine`. pizza → `pizza`; burger → `burger`; chicken, wings, fried_chicken → `chicken`; mexican, tex-mex, tacos, burrito → `mexican`; sandwich, sub, deli, bagel → `sandwich`; chinese, japanese, asian, sushi, thai, korean, vietnamese, indian, ramen, noodle → `asian`; coffee_shop, coffee, donut, tea, bubble_tea → `coffee`; ice_cream, frozen_yogurt, dessert, cake, cookies, juice, smoothie → `dessert`. With no match it falls back on `amenity`: restaurant → `casual`, cafe → `coffee`, ice_cream → `dessert`, fast_food → `other`. A brand's category is its most common store category; ties go to the alphabetically first. The 10 categories are the keys `categories.js` must cover.
+- **`brands.js`** assigns:
+  - `POD.data.BRANDS = { id: {name, category, wikidata, stores} }`. `profiled` is **not** stored: the page derives it from `POD.data.PROFILES`, so the generator doesn't depend on profiles.
+  - `POD.data.BRAND_IDS`: the ids, sorted. Tiles index into it.
+  - `POD.data.BRANDS_RUN`: the run id.
+  - `POD.data.TILE_INDEX = { cell: storeCount }` for every tile the run produced.
+- **Tiles.** Cell = `floor(lat)_floor(lon)` in degrees, e.g. `40_-74`. File `<tiles-out>/<cell>.js`: a provenance comment, then the ES5 wrapper assigning `POD.data.TILES["<cell>"] = { run: "<run_id>", s: "b,la,lo;b,la,lo;…" }`, creating `POD.data.TILES` if absent. `b` indexes `BRAND_IDS`; `la`/`lo` are ×1000 integers. Records sorted by (b, la, lo) and unique. Store id = `<brandId>@<la>,<lo>`.
+- **Fixtures** (`--cells … --tiles-out tests/fixtures/stores`): NYC `40_-74` and `40_-75`; around Big Timber, MT, `45_-111`, `45_-110`, `45_-109`, `46_-111`, `46_-110`, `46_-109`. The committed `brands.js` and the fixtures come from the same run.
+- **Deploy (D-011):** the Pages workflow regenerates `brands.js` *and* the tiles together, so the indexes always match.
+*Why:* 24 MB of downloads instead of 2.9 GB (339 members, 223 MB uncompressed, measured 2026-11-12), a brand list grounded in OSM tagging, and tiles that can't drift from the brand index.
+
+**D-022 — Gas prices come from EIA, not AAA** · 2026-11-12 · *accepted*
+AAA's site sits behind Cloudflare bot protection. A plain request on 2026-11-12 got "Sorry, you have been blocked", and getting around that isn't acceptable. EIA's weekly retail prices (`www.eia.gov`) are official and free. Where EIA publishes a state series (CA, CO, FL, MA, MN, NY, OH, TX, WA), use it. Every other state uses its PADD region, or the PADD 1 sub-region (1A New England, 1B Central Atlantic, 1C Lower Atlantic), per EIA's own PADD definitions. A comment on each `STATES` row names the series used. `GRADE_ADD` = EIA's U.S. midgrade, premium and diesel averages minus U.S. regular, for the same week. Closes ISS-003: the Phase 7 refresh uses the same source.
+*Why:* robustness beats precision here (BUILD.md §1: fuel rarely decides the answer).
+
+**D-023 — Which cars `cars.js` lists** · 2026-11-12 · *accepted*
+Source: EPA `https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip`.
+- **Models:** every (make, `baseModel`) with at least one record in model year ≥ `--since` (2025 for this build). Use only the records from that model's latest model year.
+- **Fuel:** the most common `fuelType1` among those records; ties go Regular > Premium > Diesel > Electricity. Regular or Midgrade Gasoline → no suffix; Premium Gasoline → `*`; Diesel → `d`; Electricity → `e`. Models whose fuel is anything else (hydrogen, natural gas) are dropped.
+- **Value:** the median, over those records with that fuel, of `comb08` (gas, diesel), or of `1000 / combE` for electric (mi/kWh × 10). Round half up to an integer.
+- **Names:** makes merged case-insensitively (`MINI` / `Mini` → `MINI`). Any `,` `:` `|` in a name becomes a space; whitespace collapsed. Makes and models sorted.
+- **Expected:** about 48 makes and 347 models (the spec's v4 figures were ~39 / ~330).
+
 ---
 
 ## Skill updates

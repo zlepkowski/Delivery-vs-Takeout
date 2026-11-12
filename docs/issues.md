@@ -21,13 +21,8 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **What:** The proxy refuses (`connect_rejected`) `www.fueleconomy.gov`, `gasprices.aaa.com`, `data.alltheplaces.xyz`, `vpic.nhtsa.dot.gov`, `api.eia.gov`, `router.project-osrm.org` and `api.mapbox.com`. Card issuer and chain menu sites are presumably blocked too. `raw.githubusercontent.com` (ZIP data) and the npm registry are reachable.
 - **Re-checked 2026-11-12** in the new repo's session: same result. Only the npm registry and `raw.githubusercontent.com` answer; every data host gets `CONNECT tunnel failed, response 403`.
 - **Why it matters:** blocks all of Phase 1 except ZIPs.
-- **Update 2026-11-12, partly resolved:** the user approved a new personal environment, **Delivery-vs-Takeout**, saved for this repo. It allows `www.fueleconomy.gov`, `gasprices.aaa.com`, `www.alltheplaces.xyz`, `data.alltheplaces.xyz`, `alltheplaces-data.openaddresses.io`, `www.americanexpress.com`, `creditcards.chase.com`, `www.chase.com`, `www.capitalone.com` and `taxfoundation.org`, and all ten answered. Still not allowed: `vpic.nhtsa.dot.gov` and `api.eia.gov` (Phase 7), the chain menu sites (request them once the 12 profiles are picked), and the bare `alltheplaces.xyz` that `www.` redirects to (not needed so far). The environment caps the list at 20 exact hosts, so the menu sites may need trimming.
+- **Update 2026-11-12, partly resolved:** the user approved a new personal environment, **Delivery-vs-Takeout**, saved for this repo. It allows `www.fueleconomy.gov`, `gasprices.aaa.com`, `www.alltheplaces.xyz`, `data.alltheplaces.xyz`, `alltheplaces-data.openaddresses.io`, `www.americanexpress.com`, `creditcards.chase.com`, `www.chase.com`, `www.capitalone.com` and `taxfoundation.org`, and all ten answered. Still not allowed: `vpic.nhtsa.dot.gov` and `api.eia.gov` (Phase 7), the chain menu sites (request them once the 12 profiles are picked), and the bare `alltheplaces.xyz` that `www.` redirects to (not needed so far). The environment caps the list at 20 exact hosts, so the menu sites may need trimming. **Later the same day:** removed `gasprices.aaa.com` (Cloudflare blocks automated requests, D-022) and `www.alltheplaces.xyz` (not needed); added `www.eia.gov`, `www.revenue.nh.gov`, `tax.vermont.gov`, `www.tax.virginia.gov` and `otr.cfo.dc.gov`. EIA, VA and DC answer. The NH and VT sites return their own 403 to automated requests.
 - **Next step:** at the start of Phase 1, the orchestrator calls `get_environment` and requests the exact hosts in one approval: EPA, AAA, All The Places, NHTSA, the tax sources, the issuer sites (americanexpress.com, chase.com, capitalone.com) and the menu sites for the chosen profiles.
-
-### ISS-003 — Gas price source for the automated refresh
-- **Opened:** 2026-11-11 by orchestrator · **Phase:** 7 · **Status:** open
-- **What:** AAA has state-level prices but means scraping (fragile, terms unclear). EIA is official and has an API (free key) but is regional (PADD), with only about 9 states broken out.
-- **Next step:** decide in Phase 7. Fuel rarely changes the answer (BUILD.md §1), so robustness beats precision here.
 
 ### ISS-004 — Phase 8 deployment needs the user's accounts
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 8 · **Status:** open
@@ -39,9 +34,21 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **What:** Pages will deploy from `main`. Work happens on `claude/sharp-heisenberg-tbo63x`. **Update 2026-11-12:** the new repo (D-018) has no Pages workflow at all; the old `pages.yml` belonged to `zlepkowski/test`.
 - **Next step:** Phase 1 adds `.github/workflows/pages.yml` with the store-tile build step (D-011). The user turns Pages on in the repo settings (Settings → Pages → Source: GitHub Actions). The user also sets the default branch to `main` (Settings → General → Default branch). GitHub made `claude/sharp-heisenberg-tbo63x` the default because it was pushed first. Open a PR to `main` when the user asks.
 
+### ISS-007 — All The Places has gaps for some big chains
+- **Opened:** 2026-11-12 by orchestrator · **Phase:** 1 · **Status:** open
+- **What:** In run `2026-10-31-13-32-34`, `stats/_insights.json` shows **no US stores for McDonald's** (Q38076: no `US` entry in `atp_splits`). Some chains are partial: Pizza Hut 2,200 and Little Caesars 2,316 against roughly 6,500 and 4,200 real US stores. Qdoba shows 5,786 against well under 1,000 real, which is probably duplicates. **Wonder isn't in ATP at all.**
+- **Why it matters:** the nearest-store search will miss chains or stores, so distances come out too long, and a missing brand can't be picked. Wonder and McDonald's are in the proposed profile list.
+- **Next step:** dedupe (D-021) may fix Qdoba. When the profiles are picked, the orchestrator weighs coverage. Later, possibly let `build-stores.py` take a brand from the newest earlier run where its US count looks healthy (Phase 7 refresh).
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
+
+### ISS-003 — Gas price source for the automated refresh
+- **Opened:** 2026-11-11 by orchestrator · **Phase:** 7 · **Status:** closed (2026-11-12, D-022)
+- **What:** AAA has state-level prices but means scraping (fragile, terms unclear). EIA is official and has an API (free key) but is regional (PADD), with only about 9 states broken out.
+- **Next step:** decide in Phase 7. Fuel rarely changes the answer (BUILD.md §1), so robustness beats precision here.
+- **Resolution:** EIA. AAA blocks automated requests (Cloudflare), so it can't be the scripted source.
 
 ### ISS-002 — Confirm the All The Places license allows redistributing the tiles
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 1 · **Status:** closed (2026-11-12, D-020)
