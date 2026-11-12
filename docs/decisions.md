@@ -133,6 +133,22 @@ BUILD.md §6 listed VA among the meal-tax states at 10.5%. Virginia has no state
 Picked per D-006. "How often a brand is nearby" was measured as the share of the 42,354 US ZIP centroids with a store of that brand within 5 miles (straight line), using run `2026-10-31-13-32-34`'s tiles. Subway 54.9% (#1), Taco Bell 43.9% (#2), Domino's 43.7% (#3), Dunkin' 38.2% (#5), Chipotle 31.8% (#8), Papa Johns 30.2% (#9), Wingstop 27.7% (#14), Pizza Hut 24.8% (#16), Five Guys 23.8% (#18), Buffalo Wild Wings 22.9% (#20), Little Caesars 19.2% (#27), The Cheesecake Factory 7.2% (#63).
 Changes from the handoff's list: **Wonder** (not in All The Places) and **McDonald's** (no US stores in this run, ISS-007) are replaced by **Subway** (top coverage, app-only deals) and **Dunkin'** (exercises the Amex Gold Dunkin' credit, a restricted credit). The Cheesecake Factory stays despite low coverage: it's an Amex Gold dining partner and the only sit-down chain in the set. Five Guys, Buffalo Wild Wings and The Cheesecake Factory are the `amexGoldDirect` profiles.
 
+**D-027 — How profiles and category defaults are researched and stored** · 2026-11-12 · *accepted*
+- **Inputs are hand-entered JSON with evidence, one file per chain:** `tools/data/profiles/<brandId>.json`, plus `tools/data/categories.json`. `tools/build-profiles.py` validates them and writes `src/data/profiles.js` and `src/data/categories.js`. Parallel researchers never touch the same file, and every number keeps its evidence in the repo.
+- **Chain file:**
+  - `id` must be a `BRAND_IDS` entry from D-026, and `asOf`.
+  - `menu`: 5–10 popular items, each `{name, dealItem, prices: [{zip, state, price, url}]}`, observed at **2–3 stores in different states** on the chain's own ordering site (pickup prices). The generator computes each item's price as the **median** of its observations (even count: mean of the middle two, rounded half up to the cent). It needs ≥ 2 observations from ≥ 2 states.
+  - `deal`: `null`, or a published **direct-only** offer `{label, price, minItems, scope, url, terms}`. `price` is per eligible item; `scope` ∈ both / pickup / delivery.
+  - `directDelivery`: true or false. When true, `directFee` = `{observed: [{zip, state, fee, url}]}`, and the generator takes the median fee, which must be > 0 (§9.3). If the fee can't be observed, `directDelivery` is false with a note, and an issue is logged. The route is left out, never priced at $0.
+  - `platforms`: `{dd|ue|gh: evidence}`, listing only apps with evidence that the chain is on them.
+  - `markup`: `{dd, ue, gh}` in percent for the listed platforms, with `source` (a URL) for chain-specific published reporting. Otherwise `{"useCategory": true}`: the generator then fills in the chain's category default from `categories.json` (category from `brands.js`) and marks it `est`.
+  - `amexGoldDirect`: true only for five_guys, buffalo_wild_wings and the_cheesecake_factory.
+  - `notes`.
+- **Output `PROFILES[id]`** = `{ menu: [[name, price, isDealItem]], deal: {label, price, minItems, scope} | null, markup: {dd?, ue?, gh?}, markupEst, directDelivery, directFee?, amexGoldDirect, platforms: [...] }` (§6 shape, keyed by brand id).
+- **`categories.json` → `CATEGORY_DEFAULTS[category]`** = `{ markup: {dd, ue, gh}, est, reason, sources }` for the 10 D-021 categories. Estimates are allowed here (data-research skill) when flagged.
+- **Browser research rules:** Playwright through the proxy. **No getting around bot protection**: no user-agent spoofing, stealth plugins or CAPTCHA solving. A chain that blocks automated access is reported BLOCKED, for option 2 (prices from the user) or option 3 (unprofiled). Don't create accounts or place orders. Use a public address (e.g. a city hall) to see a store's prices and delivery fee. Don't scrape the delivery apps' menus; platform presence is shown by the chain's own site or a citable statement.
+- **Network:** during this research the environment is temporarily **unrestricted** (approved by the user 2026-11-12). Afterwards it goes back to the 16-host list in ISS-001.
+
 ---
 
 ## Skill updates
