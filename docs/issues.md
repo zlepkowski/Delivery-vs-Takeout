@@ -21,12 +21,8 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **What:** The proxy refuses (`connect_rejected`) `www.fueleconomy.gov`, `gasprices.aaa.com`, `data.alltheplaces.xyz`, `vpic.nhtsa.dot.gov`, `api.eia.gov`, `router.project-osrm.org` and `api.mapbox.com`. Card issuer and chain menu sites are presumably blocked too. `raw.githubusercontent.com` (ZIP data) and the npm registry are reachable.
 - **Re-checked 2026-11-12** in the new repo's session: same result. Only the npm registry and `raw.githubusercontent.com` answer; every data host gets `CONNECT tunnel failed, response 403`.
 - **Why it matters:** blocks all of Phase 1 except ZIPs.
+- **Update 2026-11-12, partly resolved:** the user approved a new personal environment, **Delivery-vs-Takeout**, saved for this repo. It allows `www.fueleconomy.gov`, `gasprices.aaa.com`, `www.alltheplaces.xyz`, `data.alltheplaces.xyz`, `alltheplaces-data.openaddresses.io`, `www.americanexpress.com`, `creditcards.chase.com`, `www.chase.com`, `www.capitalone.com` and `taxfoundation.org`, and all ten answered. Still not allowed: `vpic.nhtsa.dot.gov` and `api.eia.gov` (Phase 7), the chain menu sites (request them once the 12 profiles are picked), and the bare `alltheplaces.xyz` that `www.` redirects to (not needed so far). The environment caps the list at 20 exact hosts, so the menu sites may need trimming.
 - **Next step:** at the start of Phase 1, the orchestrator calls `get_environment` and requests the exact hosts in one approval: EPA, AAA, All The Places, NHTSA, the tax sources, the issuer sites (americanexpress.com, chase.com, capitalone.com) and the menu sites for the chosen profiles.
-
-### ISS-002 — Confirm the All The Places license allows redistributing the tiles
-- **Opened:** 2026-11-11 by orchestrator · **Phase:** 1 · **Status:** open
-- **What:** The tiles redistribute derived store coordinates on a public site.
-- **Next step:** check the license terms of the ATP output before the first deploy, and record the result as a decision.
 
 ### ISS-003 — Gas price source for the automated refresh
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 7 · **Status:** open
@@ -41,11 +37,17 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 ### ISS-005 — Pages serves only from `main`
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 10 · **Status:** open
 - **What:** Pages will deploy from `main`. Work happens on `claude/sharp-heisenberg-tbo63x`. **Update 2026-11-12:** the new repo (D-018) has no Pages workflow at all; the old `pages.yml` belonged to `zlepkowski/test`.
-- **Next step:** Phase 1 adds `.github/workflows/pages.yml` with the store-tile build step (D-011). The user turns Pages on in the repo settings (Settings → Pages → Source: GitHub Actions). Open a PR to `main` when the user asks.
+- **Next step:** Phase 1 adds `.github/workflows/pages.yml` with the store-tile build step (D-011). The user turns Pages on in the repo settings (Settings → Pages → Source: GitHub Actions). The user also sets the default branch to `main` (Settings → General → Default branch). GitHub made `claude/sharp-heisenberg-tbo63x` the default because it was pushed first. Open a PR to `main` when the user asks.
 
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
+
+### ISS-002 — Confirm the All The Places license allows redistributing the tiles
+- **Opened:** 2026-11-11 by orchestrator · **Phase:** 1 · **Status:** closed (2026-11-12, D-020)
+- **What:** The tiles redistribute derived store coordinates on a public site.
+- **Next step:** check the license terms of the ATP output before the first deploy, and record the result as a decision.
+- **Resolution:** the data is CC-0 (ATP README, "License"). Publishing the tiles is allowed.
 
 ### ISS-006 — `.claude/settings.json` (auto-compact at 60%) created
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 0 · **Status:** closed (2026-11-12, the user told the orchestrator to write it; D-015 applied)
