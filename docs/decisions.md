@@ -155,6 +155,10 @@ Consequence: an unprofiled Five Guys has no `amexGoldDirect`, so the Amex Gold d
 **Retry outcome (same day):** `papa_johns` was profiled (`7af787d`). `taco_bell` stayed blocked: it answers only browser-like user agents, which D-027 rules out working around (ISS-013), so it ships unprofiled. Final Phase 1 set: **9 profiled**, with `taco_bell`, `pizza_hut` and `five_guys` unprofiled.
 *Why:* the user chose to retry the two transient failures and not hold Phase 1 for the two hard blocks. Shipping 8–10 sourced profiles beats shipping 12 with guessed numbers.
 
+**D-029 — The engine contract** · 2026-11-12 · *accepted*
+[`docs/engine-contract.md`](engine-contract.md) defines `POD.engine` exactly: the inputs, channel availability, every formula in §4.2 order with its rounding, the credit rules and the receipt lines. Both `src/js/engine.js` and the Python oracle implement it, and **where it differs from BUILD.md §4, the contract wins.** Changes go through a decision, and the oracle and receipts change before the engine. Its §7 lists the judgment calls that fill the spec's gaps: app pickup has no fees; small-order and regulatory fees apply to app delivery only; a membership applies at `food >= memberMin`; promos apply to both modes except `freedel`; EVs pay wear; a deal never raises an item's price; the engine enforces the §9.1 credit tiers itself; and a direct-channel service fee `directSvc` is modeled (ISS-031). `calc` reads `S.rest`, a resolved restaurant built by the pure `restFor(brandId, D)`, so the engine never touches `POD.data`.
+*Why:* the oracle can only match the JS to the cent if both follow one unambiguous definition. Writing the formulas once, with the order of floating-point operations fixed, makes the differential test exact.
+
 ---
 
 ## Skill updates

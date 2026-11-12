@@ -1,0 +1,88 @@
+{
+  "id": "r09-direct-deal",
+  "title": "A direct-only pickup deal: it reprices the flagged items at direct pickup only, needs the minimum count, and never raises a price",
+  "refs": ["§4.2 step 1", "D-029 §4", "D-029 §5.1"],
+  "dataNote": "A fixture restaurant: no profiled chain has a confirmed direct-only deal yet (all nine are deal: null). The shape matches D-027's deal.",
+  "patch": {
+    "rest": {
+      "id": "fixture_pizza", "name": "Fixture Pizza", "profiled": true,
+      "menu": [
+        ["Medium 2-topping", 13.99, true],
+        ["Medium specialty", 16.99, true],
+        ["Wings (8 pc)", 11.99, false],
+        ["2 L soda", 3.49, false],
+        ["Small cheese", 6.49, true]
+      ],
+      "deal": {"label": "Mix & Match $7.99 each, 2+", "price": 7.99, "minItems": 2, "scope": "pickup"},
+      "directDelivery": true, "directFee": 4.99, "directSvc": null, "amexGoldDirect": false,
+      "platforms": ["dd"], "markup": {"dd": 15.3}, "markupEst": true
+    },
+    "cart": {"0": 1, "1": 1, "3": 1}
+  },
+  "cases": [
+    {
+      "call": "cartInfo",
+      "expect": {"menuSub": 34.47, "dealSub": 19.47, "qty": 3, "eligQty": 2, "dealReady": true, "shortBy": 0},
+      "work": ["menuSub = 13.99 + 16.99 + 3.49 = 34.47; two flagged items ≥ minItems 2; dealSub = 7.99 + 7.99 + 3.49 = 19.47"]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "expect": {
+        "lines": [["Food", 19.47], ["Tax", 1.66], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 22.55]],
+        "net": 22.55, "notes": ["Deal: Mix & Match $7.99 each, 2+"]
+      },
+      "work": ["Scope pickup: food = dealSub 19.47; tax = 19.47 × 8.54% = 1.662738 → 1.66; gross = 19.47 + 1.66 + 1.42 = 22.55"]
+    },
+    {
+      "call": "calc", "channel": "direct-d",
+      "expect": {
+        "lines": [["Food", 34.47], ["Delivery fee", 4.99], ["Tax", 2.94], ["Tip", 5.17], ["TOTAL", 47.57]],
+        "net": 47.57, "notes": []
+      },
+      "work": [
+        "Scope pickup, so no deal on delivery: food = 34.47; delivery = 4.99",
+        "tax = 34.47 × 8.54% = 2.943738 → 2.94; tip = 34.47 × 15% = 5.1705 → 5.17",
+        "gross = 34.47 + 4.99 + 2.94 + 5.17 = 47.57"
+      ]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {
+        "lines": [["Food", 39.74], ["Delivery fee", 2.99], ["Service fee", 5.96], ["Tax", 3.39], ["Tip", 5.96], ["TOTAL", 58.04]],
+        "net": 58.04, "notes": []
+      },
+      "work": [
+        "Deals are direct-only: food = 34.47 × 1.153 = 39.74391 → 39.74",
+        "service = 39.74 × 15% = 5.961 → 5.96; fees = 8.95; tax = 39.74 × 8.54% = 3.393796 → 3.39; tip = 5.961 → 5.96",
+        "gross = 39.74 + 8.95 + 3.39 + 5.96 = 58.04"
+      ]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "patch": {"dealOn": false},
+      "expect": {"lines": [["Food", 34.47], ["Tax", 2.94], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 38.83]], "net": 38.83, "notes": []},
+      "work": ["The user switched the deal off: food = 34.47; gross = 34.47 + 2.94 + 1.42 = 38.83"]
+    },
+    {
+      "call": "cartInfo",
+      "override": {"cart": {"0": 1, "3": 1}},
+      "expect": {"menuSub": 17.48, "dealSub": 17.48, "qty": 2, "eligQty": 1, "dealReady": false, "shortBy": 1}
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "override": {"cart": {"0": 1, "3": 1}},
+      "expect": {"lines": [["Food", 17.48], ["Tax", 1.49], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 20.39]], "net": 20.39, "notes": []},
+      "work": ["One flagged item < 2: no deal. food = 13.99 + 3.49 = 17.48; tax = 1.492792 → 1.49; gross = 17.48 + 1.49 + 1.42 = 20.39"]
+    },
+    {
+      "call": "cartInfo",
+      "override": {"cart": {"0": 1, "4": 2}},
+      "expect": {"menuSub": 26.97, "dealSub": 20.97, "qty": 3, "eligQty": 3, "dealReady": true, "shortBy": 0},
+      "work": [
+        "menuSub = 13.99 + 2 × 6.49 = 26.97",
+        "The deal never raises a price: the small cheese stays 6.49 (below 7.99), the 2-topping drops to 7.99",
+        "dealSub = 7.99 + 2 × 6.49 = 20.97"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "r02-promo-minimum-and-tip-base",
+  "title": "A 20% DoorDash promo with a $31 minimum: the minimum is tested on marked-up food, and the tip ignores the discount",
+  "refs": ["§9.2", "§9.4", "§4.2 step 4-6", "D-029 §5.4-5.6"],
+  "patch": {"promos": {"dd": {"type": "percent", "value": 20, "cap": 0, "min": 31}}},
+  "cases": [
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {
+        "lines": [["Food", 31.11], ["Delivery fee", 2.99], ["Service fee", 4.67], ["Tax", 2.13], ["Tip", 4.67], ["Promo", -6.22], ["TOTAL", 39.35]],
+        "parts": {"food": 31.11, "fees": 7.66, "tax": 2.13, "tip": 4.67, "drive": 0},
+        "gross": 45.57, "disc": 6.22, "credit": 0, "off": 6.22, "net": 39.35
+      },
+      "work": [
+        "§9.2: the menu subtotal 26.98 is under the $31 minimum, but food after markup is 31.11 ≥ 31, so the promo applies",
+        "promo = 31.11 × 20% = 6.222 → 6.22 (no cap); disc = 6.22",
+        "tax on the discounted subtotal: (31.11 − 6.22) × 8.54% = 24.89 × 0.0854 = 2.125606 → 2.13",
+        "§9.4 tip on the PRE-discount food: 31.11 × 15% = 4.6665 → 4.67 (on 24.89 it would be 3.73)",
+        "gross = 31.11 + 7.66 + 2.13 + 4.67 = 45.57; net = 45.57 − 6.22 = 39.35"
+      ]
+    },
+    {
+      "call": "calc", "channel": "dd-p",
+      "expect": {
+        "lines": [["Food", 31.11], ["Tax", 2.13], ["Gas", 0.82], ["Wear", 0.60], ["Promo", -6.22], ["TOTAL", 28.44]],
+        "gross": 34.66, "net": 28.44
+      },
+      "work": [
+        "A percent promo applies to pickup too (D-029 §7): promo 6.22, tax 2.13 as above, tip 0",
+        "gross = 31.11 + 0 + 2.13 + 0 + 1.42 = 34.66; net = 34.66 − 6.22 = 28.44"
+      ]
+    },
+    {
+      "call": "allResults",
+      "expect": {"order": ["dd-p", "direct-p", "ue-p", "dd-d", "ue-d"]},
+      "work": ["With the promo, DoorDash pickup (28.44) beats ordering direct (30.70). Then ue-p 35.19, dd-d 39.35, ue-d 45.10."]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "patch": {"promos": {"dd": {"min": 31.12}}},
+      "expect": {"net": 46.10, "disc": 0},
+      "work": ["Raise the minimum to 31.12: food 31.11 < 31.12, so no promo, and dd-d is back to r01's 46.10 with no Promo row."]
+    }
+  ]
+}

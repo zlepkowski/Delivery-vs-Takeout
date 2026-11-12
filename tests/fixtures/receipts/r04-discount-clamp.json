@@ -1,0 +1,52 @@
+{
+  "id": "r04-discount-clamp",
+  "title": "A $40-off Uber Eats promo on a $5.75 order, plus a 10% pickup discount: discounts are clamped jointly to the food",
+  "refs": ["§4.2 step 4", "D-029 §5.4"],
+  "patch": {
+    "cart": {"6": 1},
+    "plats": {"ue": {"pickDisc": 10}},
+    "promos": {"ue": {"type": "dollar", "value": 40, "cap": 0, "min": 0}}
+  },
+  "cases": [
+    {
+      "call": "calc", "channel": "ue-p",
+      "expect": {
+        "lines": [["Food", 5.75], ["Tax", 0], ["Gas", 0.82], ["Wear", 0.60], ["Promo", -5.75], ["TOTAL", 1.42]],
+        "parts": {"food": 5.75, "fees": 0, "tax": 0, "tip": 0, "drive": 1.42},
+        "gross": 7.17, "disc": 5.75, "net": 1.42
+      },
+      "work": [
+        "food = 4.99 × 1.153 = 5.75347 → 5.75",
+        "promo = 40.00, clamped to food: min(40, 5.75) = 5.75",
+        "pick = 5.75 × 10% = 0.575 → 0.58, then clamped to food − promo = 0, so 0 (the row is left out)",
+        "disc = 5.75; tax = (5.75 − 5.75) × 8.54% = 0",
+        "gross = 5.75 + 0 + 0 + 0 + 1.42 = 7.17; net = 7.17 − 5.75 = 1.42 (you still pay to drive)"
+      ]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "expect": {
+        "lines": [["Food", 5.75], ["Delivery fee", 1.99], ["Service fee", 3.00], ["Small-order fee", 2.50], ["Tax", 0], ["Tip", 0.86], ["Promo", -5.75], ["TOTAL", 8.35]],
+        "gross": 14.10, "disc": 5.75, "net": 8.35
+      },
+      "work": [
+        "promo clamped to 5.75 as above; no pickup discount on delivery",
+        "fees = 1.99 + max(0.8625, 3.00) + 2.50 = 7.49; tax 0; tip = 5.75 × 15% = 0.8625 → 0.86 (pre-discount, §9.4)",
+        "gross = 5.75 + 7.49 + 0 + 0.86 = 14.10; net = 14.10 − 5.75 = 8.35"
+      ]
+    },
+    {
+      "call": "calc", "channel": "ue-p",
+      "patch": {"promos": {"ue": {"type": "none"}}},
+      "expect": {
+        "lines": [["Food", 5.75], ["Tax", 0.44], ["Gas", 0.82], ["Wear", 0.60], ["Pickup discount", -0.58], ["TOTAL", 7.03]],
+        "gross": 7.61, "disc": 0.58, "net": 7.03
+      },
+      "work": [
+        "With no promo, the pickup discount stands alone: pick = 0.575 → 0.58",
+        "tax = (5.75 − 0.58) × 8.54% = 5.17 × 0.0854 = 0.441518 → 0.44",
+        "gross = 5.75 + 0.44 + 1.42 = 7.61; net = 7.61 − 0.58 = 7.03"
+      ]
+    }
+  ]
+}

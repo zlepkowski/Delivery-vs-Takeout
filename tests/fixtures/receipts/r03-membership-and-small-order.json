@@ -1,0 +1,43 @@
+{
+  "id": "r03-membership-and-small-order",
+  "title": "DashPass: zero delivery fee and the member service rate above the minimum; the small-order fee below it",
+  "refs": ["§4.2 step 3", "D-029 §5.3", "D-029 §7"],
+  "patch": {"plats": {"dd": {"member": true}}},
+  "cases": [
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {
+        "lines": [["Food", 31.11], ["Delivery fee", 0], ["Service fee", 3.00], ["Tax", 2.66], ["Tip", 4.67], ["TOTAL", 41.44]],
+        "parts": {"food": 31.11, "fees": 3.00, "tax": 2.66, "tip": 4.67, "drive": 0},
+        "gross": 41.44, "net": 41.44, "member": "DashPass"
+      },
+      "work": [
+        "food 31.11 ≥ memberMin 12, so the membership applies",
+        "delivery = 0 (the row stays, and renders as \"waived\")",
+        "service = max(31.11 × 5% = 1.5555, svcMin 3.00) = 3.00: the floor still applies to members",
+        "gross = 31.11 + 3.00 + 2.66 + 4.67 = 41.44"
+      ]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "override": {"cart": {"6": 1}},
+      "expect": {
+        "lines": [["Food", 5.75], ["Delivery fee", 2.99], ["Service fee", 3.00], ["Small-order fee", 2.50], ["Tax", 0.49], ["Tip", 0.86], ["TOTAL", 15.59]],
+        "parts": {"food": 5.75, "fees": 8.49, "tax": 0.49, "tip": 0.86, "drive": 0},
+        "net": 15.59, "member": null
+      },
+      "work": [
+        "Override the cart to just the Coke: food = 4.99 × 1.153 = 5.75347 → 5.75",
+        "5.75 < memberMin 12, so no membership: delivery 2.99; service = max(0.8625, 3.00) = 3.00",
+        "small-order: 5.75 < smallMin 12, so 2.50; fees = 2.99 + 3.00 + 2.50 = 8.49",
+        "tax = 5.75 × 8.54% = 0.49105 → 0.49; tip = 5.75 × 15% = 0.8625 → 0.86",
+        "gross = 5.75 + 8.49 + 0.49 + 0.86 = 15.59"
+      ]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "expect": {"net": 45.10, "member": null},
+      "work": ["The membership is per app: ue.member is false, so ue-d is unchanged from r01."]
+    }
+  ]
+}

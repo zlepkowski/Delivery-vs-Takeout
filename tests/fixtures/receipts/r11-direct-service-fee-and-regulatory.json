@@ -1,0 +1,73 @@
+{
+  "id": "r11-direct-service-fee-and-regulatory",
+  "title": "Wingstop: direct delivery with a restaurant service fee (directSvc, ISS-031), and an app regulatory fee",
+  "refs": ["ISS-031", "D-029 §2.1", "D-029 §5.3"],
+  "dataNote": "rest copies the wingstop profile (2026-11-12): direct delivery fee 2.99, platforms [dd], dd markup 15.3. directSvc is a FIXTURE: wingstop.json's notes record a $2.00 service fee in the delivery cart, but whether it applies to pickup is unknown, so it is not in the profile (ISS-031). The regulatory fee is a fixture too.",
+  "patch": {
+    "rest": {
+      "id": "wingstop", "name": "Wingstop", "profiled": true,
+      "menu": [
+        ["5 Classic Wings", 6.59, false],
+        ["5 Boneless Wings", 4.59, false],
+        ["10 Boneless Wings", 11.59, false],
+        ["5 pc Crispy Tender Combo", 12.99, false],
+        ["Chicken Sandwich Combo", 8.99, false],
+        ["Chicken Sandwich", 5.99, false],
+        ["Triple Chocolate Chunk Brownie", 2.69, false],
+        ["Dasani Bottled Water", 2.79, false]
+      ],
+      "deal": null, "directDelivery": true, "directFee": 2.99,
+      "directSvc": {"flat": 2.00, "pct": 0, "modes": ["d"]},
+      "amexGoldDirect": false, "platforms": ["dd"], "markup": {"dd": 15.3}, "markupEst": true
+    },
+    "cart": {"2": 1, "6": 1},
+    "regFee": 0.50
+  },
+  "cases": [
+    {
+      "call": "calc", "channel": "direct-d",
+      "expect": {
+        "lines": [["Food", 14.28], ["Delivery fee", 2.99], ["Service fee", 2.00], ["Tax", 1.22], ["Tip", 2.14], ["TOTAL", 22.63]],
+        "parts": {"food": 14.28, "fees": 4.99, "tax": 1.22, "tip": 2.14, "drive": 0},
+        "net": 22.63
+      },
+      "work": [
+        "food = 11.59 + 2.69 = 14.28; delivery 2.99; service = 2.00 + 14.28 × 0% = 2.00",
+        "The regulatory fee is app-only (D-029 §7). fees = 2.99 + 2.00 = 4.99",
+        "tax = 14.28 × 8.54% = 1.219512 → 1.22; tip = 14.28 × 15% = 2.142 → 2.14",
+        "gross = 14.28 + 4.99 + 1.22 + 2.14 = 22.63"
+      ]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "expect": {"lines": [["Food", 14.28], ["Tax", 1.22], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 16.92]], "net": 16.92},
+      "work": ["directSvc lists only d, so pickup pays no service fee: gross = 14.28 + 1.22 + 1.42 = 16.92"]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {
+        "lines": [["Food", 16.46], ["Delivery fee", 2.99], ["Service fee", 3.00], ["Regulatory fee", 0.50], ["Tax", 1.41], ["Tip", 2.47], ["TOTAL", 26.83]],
+        "parts": {"food": 16.46, "fees": 6.49, "tax": 1.41, "tip": 2.47, "drive": 0},
+        "net": 26.83
+      },
+      "work": [
+        "food = 14.28 × 1.153 = 16.46484 → 16.46",
+        "service = max(16.46 × 15% = 2.469, 3.00) = 3.00; regulatory 0.50; fees = 2.99 + 3.00 + 0.50 = 6.49",
+        "tax = 16.46 × 8.54% = 1.405684 → 1.41; tip = 16.46 × 15% = 2.469 → 2.47",
+        "gross = 16.46 + 6.49 + 1.41 + 2.47 = 26.83"
+      ]
+    },
+    {
+      "call": "calc", "channel": "direct-d",
+      "patch": {"rest": {"directSvc": {"flat": 0, "pct": 12, "max": 1.50, "modes": ["d"]}}},
+      "expect": {"lines": [["Food", 14.28], ["Delivery fee", 2.99], ["Service fee", 1.50], ["Tax", 1.22], ["Tip", 2.14], ["TOTAL", 22.13]], "net": 22.13},
+      "work": ["A 12% fee with a $1.50 cap: 14.28 × 12% = 1.7136, capped at 1.50; fees = 4.49; gross = 14.28 + 4.49 + 1.22 + 2.14 = 22.13"]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "patch": {"rest": {"directSvc": {"flat": 0, "pct": 12, "max": 0, "modes": ["d", "p"]}}},
+      "expect": {"lines": [["Food", 14.28], ["Service fee", 1.71], ["Tax", 1.22], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 18.63]], "net": 18.63},
+      "work": ["Uncapped (max 0) and applying to pickup: 1.7136 → 1.71; gross = 14.28 + 1.71 + 1.22 + 0 + 1.42 = 18.63"]
+    }
+  ]
+}

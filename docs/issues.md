@@ -171,6 +171,7 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **What:** BUILD.md §4.2 step 3 models service fees only for the apps (`svc`, `svcMin`, `memberSvc`). Direct orders have only `directFee`. But chains charge their own: Wingstop's cart shows a $2.00 Service Fee next to its $2.99 Delivery Fee (`wingstop.json` notes; excluded from `directFee`), Subway shows a 12% service fee on delivery (ISS-027), and Little Caesars shows "a service fee (max $4.00)" (ISS-025). It's not known whether these apply to direct pickup too.
 - **Why it matters:** leaving them out makes ordering direct look cheaper than it is. Wingstop direct delivery is understated by $2.00 per order, which is enough to flip a close ranking.
 - **Next step:** Phase 2 (engine and oracle) decides the model: e.g. a `directSvc` `{flat|pct, appliesTo: delivery|both}` per profile, applied at step 3, with evidence per chain. Until then `directFee` stays the delivery fee alone, as D-027 defines it.
+- **Update 2026-11-12 (Phase 2): model decided (D-029).** `rest.directSvc = {flat, pct, max, modes}` is applied at step 3 for the direct modes it lists (engine contract §5.3). **Still open: the data.** Each chain's fee needs evidence, saying whether it applies to pickup too, before `directSvc` goes into its profile JSON. The generator and D-027 need a `directSvc` field when the first one is researched.
 
 ## Closed
 

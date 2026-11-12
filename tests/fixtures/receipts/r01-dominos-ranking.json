@@ -1,0 +1,85 @@
+{
+  "id": "r01-dominos-ranking",
+  "title": "Domino's, a large pizza and a 2 L Coke: every available channel, ranked",
+  "refs": ["§4.1", "§4.2", "§9.3", "D-029 §3", "D-029 §6"],
+  "patch": {},
+  "cases": [
+    {
+      "call": "allResults",
+      "expect": {
+        "order": ["direct-p", "dd-p", "ue-p", "ue-d", "dd-d"],
+        "net": {"direct-p": 30.70, "dd-p": 35.19, "ue-p": 35.19, "ue-d": 45.10, "dd-d": 46.10}
+      },
+      "work": [
+        "Domino's has no direct delivery and isn't on Grubhub, so direct-d, gh-d and gh-p are left out (§9.3).",
+        "dd-p and ue-p tie at 35.19; the tie keeps CHANNELS order, so dd-p comes first."
+      ]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "expect": {
+        "lines": [["Food", 26.98], ["Tax", 2.30], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 30.70]],
+        "parts": {"food": 26.98, "fees": 0, "tax": 2.30, "tip": 0, "drive": 1.42},
+        "gross": 30.70, "net": 30.70, "disc": 0, "credit": 0, "off": 0,
+        "name": "Order direct · pickup", "member": null, "notes": []
+      },
+      "work": [
+        "menuSub = 21.99 + 4.99 = 26.98; direct has no markup, so food = 26.98",
+        "tax = 26.98 × 8.54% = 2.304092 → 2.30",
+        "tip = 26.98 × 0% = 0 (row left out)",
+        "gas = 6 mi ÷ 30 mpg × 4.116 = 0.8232 → 0.82; wear = 6 × 0.10 = 0.60; time = 0",
+        "drive = 0.82 + 0.60 = 1.42",
+        "gross = 26.98 + 0 + 2.30 + 0 + 1.42 = 30.70; net = 30.70"
+      ]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {
+        "lines": [["Food", 31.11], ["Delivery fee", 2.99], ["Service fee", 4.67], ["Tax", 2.66], ["Tip", 4.67], ["TOTAL", 46.10]],
+        "parts": {"food": 31.11, "fees": 7.66, "tax": 2.66, "tip": 4.67, "drive": 0},
+        "gross": 46.10, "net": 46.10, "name": "DoorDash · delivery", "member": null
+      },
+      "work": [
+        "food = 26.98 × 1.153 = 31.10794 → 31.11",
+        "delivery = 2.99 (no membership)",
+        "service = max(31.11 × 15% = 4.6665, 3.00) = 4.6665 → 4.67",
+        "small-order: 31.11 is not < 12, so 0; regulatory 0; fees = 2.99 + 4.67 = 7.66",
+        "tax = 31.11 × 8.54% = 2.656794 → 2.66",
+        "tip = 31.11 × 15% = 4.6665 → 4.67",
+        "gross = 31.11 + 7.66 + 2.66 + 4.67 = 46.10"
+      ]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "expect": {
+        "lines": [["Food", 31.11], ["Delivery fee", 1.99], ["Service fee", 4.67], ["Tax", 2.66], ["Tip", 4.67], ["TOTAL", 45.10]],
+        "net": 45.10
+      },
+      "work": ["As dd-d with a 1.99 delivery fee: fees = 6.66; gross = 31.11 + 6.66 + 2.66 + 4.67 = 45.10"]
+    },
+    {
+      "call": "calc", "channel": "dd-p",
+      "expect": {
+        "lines": [["Food", 31.11], ["Tax", 2.66], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 35.19]],
+        "net": 35.19, "name": "DoorDash · pickup"
+      },
+      "work": ["App pickup has no fees (D-029 §7). gross = 31.11 + 2.66 + 1.42 = 35.19"]
+    },
+    {
+      "call": "calc", "channel": "gh-d",
+      "expect": {"result": null},
+      "work": ["Grubhub isn't in rest.platforms, so the channel is unavailable: null, never $0 (§9.3)."]
+    },
+    {
+      "call": "calc", "channel": "direct-d",
+      "expect": {"result": null},
+      "work": ["rest.directDelivery is false, so direct delivery is removed."]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "override": {"cart": {"0": 1, "6": 1, "99": 2, "x": 1, "01": 3}},
+      "expect": {"net": 30.70},
+      "work": ["Index 99 is past the menu, and \"x\" and \"01\" aren't canonical indexes: all ignored, so this is the same cart as above."]
+    }
+  ]
+}

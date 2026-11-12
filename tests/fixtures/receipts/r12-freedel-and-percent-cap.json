@@ -1,0 +1,48 @@
+{
+  "id": "r12-freedel-and-percent-cap",
+  "title": "Free-delivery promos (worth the fee actually charged, untaxed) and a capped percent promo",
+  "refs": ["§4.2 step 4-5", "D-029 §5.4", "D-029 §5.5", "D-029 §7"],
+  "patch": {
+    "promos": {
+      "dd": {"type": "freedel", "value": 0, "cap": 0, "min": 0},
+      "ue": {"type": "percent", "value": 50, "cap": 10, "min": 0}
+    }
+  },
+  "cases": [
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {
+        "lines": [["Food", 31.11], ["Delivery fee", 2.99], ["Service fee", 4.67], ["Tax", 2.66], ["Tip", 4.67], ["Promo", -2.99], ["TOTAL", 43.11]],
+        "gross": 46.10, "disc": 2.99, "net": 43.11
+      },
+      "work": [
+        "freedel = the delivery fee charged: 2.99; disc = 2.99",
+        "Tax ignores a free-delivery promo (D-029 §5.5): 31.11 × 8.54% = 2.66, not (31.11 − 2.99) × 8.54% = 2.40",
+        "gross = 46.10 (as r01); net = 46.10 − 2.99 = 43.11"
+      ]
+    },
+    {
+      "call": "calc", "channel": "dd-p",
+      "expect": {"net": 35.19, "disc": 0},
+      "work": ["Free delivery is worth nothing on pickup: no Promo row, same as r01's dd-p."]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "patch": {"plats": {"dd": {"member": true}}},
+      "expect": {"net": 41.44, "disc": 0, "member": "DashPass"},
+      "work": ["With DashPass the delivery fee is already 0, so free delivery adds nothing: r03's 41.44."]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "expect": {
+        "lines": [["Food", 31.11], ["Delivery fee", 1.99], ["Service fee", 4.67], ["Tax", 1.80], ["Tip", 4.67], ["Promo", -10], ["TOTAL", 34.24]],
+        "gross": 44.24, "disc": 10, "net": 34.24
+      },
+      "work": [
+        "50% of 31.11 = 15.555, capped at 10: promo = 10",
+        "tax = (31.11 − 10) × 8.54% = 21.11 × 0.0854 = 1.802794 → 1.80; tip 4.67 on pre-discount food",
+        "gross = 31.11 + 6.66 + 1.80 + 4.67 = 44.24; net = 44.24 − 10 = 34.24"
+      ]
+    }
+  ]
+}

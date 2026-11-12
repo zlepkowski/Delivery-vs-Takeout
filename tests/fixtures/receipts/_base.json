@@ -1,0 +1,41 @@
+{
+  "about": "Base engine state for the hand-worked receipts (docs/engine-contract.md). Each receipt's `patch` is deep-merged over this, then a case's own `patch` over that: objects merge key by key, EXCEPT `cart`, `creditOptIn` and `markup`, whose keys are data, so they replace whole. Anything else (numbers, strings, arrays, null) replaces. Real data as of 2026-11-12: rest = the Domino's profile in src/data/profiles.js; tax 8.54 and gas 4.116 = New York in src/data/states.js. Fixture values, not claims about the real world: the app fees, the trip, the car, the cart.",
+  "S": {
+    "rest": {
+      "id": "dominos", "name": "Domino's", "profiled": true,
+      "menu": [
+        ["Large (14\") ExtravaganZZa", 21.99, false],
+        ["Large (14\") The People's Pizza - Deluxe", 21.99, false],
+        ["Hot Buffalo Wings (8 pc)", 11.99, false],
+        ["Stuffed Cheesy Bread (8 pc)", 9.99, false],
+        ["Parmesan Bread Bites (16 pc)", 6.99, false],
+        ["5-Cheese Mac & Cheese", 9.49, false],
+        ["Coke® (2 L)", 4.99, false],
+        ["Domino's Marbled Cookie Brownie", 9.99, false]
+      ],
+      "deal": null, "directDelivery": false, "directSvc": null, "amexGoldDirect": false,
+      "platforms": ["dd", "ue"], "markup": {"dd": 15.3, "ue": 15.3}, "markupEst": true
+    },
+    "cart": {"0": 1, "6": 1},
+    "manualSubtotal": 0,
+    "dealOn": true,
+    "tax": 8.54,
+    "fuel": "regular", "gas": 4.116, "mpg": 30, "miPerKwh": 3.5, "kwh": 0.2,
+    "miles": 6, "minutes": 16, "wear": 0.1, "hourly": 0,
+    "tipDel": 15, "tipPick": 0,
+    "regFee": 0, "smallMin": 12, "smallFee": 2.5,
+    "plats": {
+      "direct": {"on": true},
+      "dd": {"on": true, "markup": 15.3, "delFee": 2.99, "svc": 15, "svcMin": 3, "member": false, "memberSvc": 5, "memberMin": 12, "pickDisc": 0},
+      "ue": {"on": true, "markup": 15.3, "delFee": 1.99, "svc": 15, "svcMin": 3, "member": false, "memberSvc": 5, "memberMin": 15, "pickDisc": 0},
+      "gh": {"on": true, "markup": 15.3, "delFee": 2.49, "svc": 15, "svcMin": 3, "member": false, "memberSvc": 5, "memberMin": 12, "pickDisc": 0}
+    },
+    "promos": {
+      "dd": {"type": "none", "value": 0, "cap": 0, "min": 0},
+      "ue": {"type": "none", "value": 0, "cap": 0, "min": 0},
+      "gh": {"type": "none", "value": 0, "cap": 0, "min": 0}
+    },
+    "credits": [],
+    "creditOptIn": {}
+  }
+}
