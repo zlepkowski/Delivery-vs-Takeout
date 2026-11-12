@@ -1,0 +1,18 @@
+{
+  "name": "pickup-or-delivery",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Decides whether delivery, app pickup, or ordering direct is cheapest once every fee, markup, deal and credit is priced in.",
+  "license": "MIT",
+  "scripts": {
+    "test": "npm run test:es5 && npm run test:unit && npm run test:oracle && npm run test:e2e",
+    "test:es5": "node tools/es5-check.js",
+    "test:unit": "node --test \"tests/unit/**/*.test.js\"",
+    "test:e2e": "node --test --test-concurrency=1 \"tests/e2e/**/*.e2e.js\"",
+    "test:oracle": "python3 -I tests/oracle/run.py"
+  },
+  "devDependencies": {
+    "acorn": "8.15.0",
+    "playwright": "1.63.0"
+  }
+}

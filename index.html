@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pickup or Delivery</title>
+  <meta name="description" content="Is it cheaper to get food delivered, order pickup in an app, or order direct? Every fee, markup, deal and card credit priced in.">
+  <link rel="stylesheet" href="src/css/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-head">
+      <h1>Pickup or Delivery</h1>
+      <p>The cheapest way to get the same food, with every fee, markup, deal and credit counted.</p>
+    </header>
+    <main id="app" aria-live="polite"></main>
+  </div>
+
+  <!--
+    LOAD ORDER — the single source of truth.
+    tests/helpers/load.js parses these tags, so add new files here and
+    nowhere else. Plain classic scripts: file:// must keep working.
+  -->
+  <script src="src/js/pod.js"></script>
+  <script src="src/js/app.js"></script>
+</body>
+</html>

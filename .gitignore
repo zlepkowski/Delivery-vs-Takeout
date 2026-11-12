@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+.vscode/
+.idea/
+*.log
+.env
+.env.local
+build/
+
+# Pickup or Delivery
+tests/e2e/screenshots/
+src/data/stores/
+__pycache__/
+.dev.vars
