@@ -55,8 +55,8 @@ rest = { id, name, profiled, menu, deal, directDelivery, directFee, directSvc,
 ```
 
 - **Profiled** (`D.PROFILES[brandId]` exists): copy `menu`, `deal`, `directDelivery`, `directFee` (only when `directDelivery`), `amexGoldDirect`, `platforms`, `markup`, `markupEst` from the profile. `directSvc` = the profile's `directSvc` or `null`. `profiled: true`.
-- **Unprofiled** (in `D.BRANDS` but not in `PROFILES`), per D-006: `menu: []`, `deal: null`, `directDelivery: false` (the route is removed, §9.3), `directSvc: null`, `amexGoldDirect: false`, `platforms: ["dd","ue","gh"]`, `markup` = `D.CATEGORY_DEFAULTS[category].markup`, `markupEst: true`, `profiled: false`.
-- `name` is `D.BRANDS[brandId].name` in both cases. A brand in neither table gives `null`.
+- **Unprofiled** (in `D.BRANDS` but not in `PROFILES`), per D-006: `menu: []`, `deal: null`, `directDelivery: false` (the route is removed, §9.3), `directSvc: null`, `amexGoldDirect: false`, `platforms: ["dd","ue","gh"]`, `markup` = `D.CATEGORY_DEFAULTS[category].markup`, `markupEst: true`, `profiled: false`. **If the brand's category has no default, `restFor` returns `null`:** the brand can't be priced, and a missing markup must never become 0%.
+- `name` is `D.BRANDS[brandId].name`, or the `brandId` itself for a profiled brand missing from `BRANDS`. A brand in neither table gives `null`.
 - `directSvc` (D-029, ISS-031) is `null` or `{ flat, pct, max, modes }`: a restaurant-imposed service fee on direct orders. `flat` and `pct` default to 0, `max` ≤ 0 or missing means no cap, and `modes` (`["d"]`, `["p"]` or `["d","p"]`) says which direct channels pay it.
 
 The state layer (Phase 4) copies `rest.markup[p]` into `S.plats[p].markup` and a card's `membership` into `S.plats[p].member`. **The engine reads markup and membership only from `S.plats`.**
@@ -93,7 +93,7 @@ Let `p` = the platform (`direct`, `dd`, `ue`, `gh`), `m` = the mode (`d` or `p`)
 
 **5.3 Fees.** All are 0 unless listed.
 - App delivery (`app` and `m = d`):
-  - `memberOn = P.member && food >= P.memberMin`
+  - `memberOn = P.member && food >= P.memberMin`. In every other channel `memberOn` is false, so `member` is `null` on pickup and direct.
   - `delivery = memberOn ? 0 : round2(P.delFee)`
   - `service = round2(Math.max(food * (memberOn ? P.memberSvc : P.svc) / 100, P.svcMin))`
   - `small = food < S.smallMin ? round2(S.smallFee) : 0`

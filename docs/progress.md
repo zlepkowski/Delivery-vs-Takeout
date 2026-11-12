@@ -1,6 +1,6 @@
 # Progress
 
-**Current phase:** 1 (Data rebuild) is **done**. Next is **Phase 2 (Engine, §4)**, waiting for the user's `/goal`
+**Current phase:** 2 (Engine, §4), **in progress** in the same session as Phase 1, at the user's request. Phase 3 starts in a fresh session
 **Last updated:** 2026-11-12
 **Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/sharp-heisenberg-tbo63x` (base: `main`)
 
@@ -27,7 +27,7 @@
 |---|---|---|---|---|
 | 0 | Scaffold | Opus | ✅ done | `npm test` green; the empty page loads from file:// with 0 console errors; agents and skills in place |
 | 1 | Data rebuild | researcher + Opus (cards) | ✅ done (`32dae9b`) | Schema tests pass. ZIPs = 42,354 / 18,908. Every credit has a tier, source URL and date. Store tiles build; fixtures committed |
-| 2 | Engine (§4) | Opus (oracle) → builder | ⬜ | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
+| 2 | Engine (§4) | Opus (oracle) → builder | 🟡 in progress | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
 | 3 | Geography + stores near you | builder | ⬜ | 59011 vs 10118 estimates differ ≥10×; `storesNear` passes fixture tests; an uncached ZIP takes <10 ms |
 | 4 | State, derivations, wallet (§5) | builder | ⬜ | Cascade tests pass; `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
 | 5 | UI + 9 insights + "Near you" picker | builder | ⬜ | The §13 manual checklist is automated in Playwright; 0 console errors; phone and desktop screenshots reviewed |
@@ -57,6 +57,22 @@
 - Workers are dispatched as `general-purpose` Haiku agents that read their agent file and skill first, until a fresh session loads them by name (D-019).
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
+
+### Phase 2: Engine (2026-11-12, in progress)
+
+| Task | Status | Commit |
+|---|---|---|
+| 2.1 Engine contract `docs/engine-contract.md` (D-029): exact formulas, float order, channel availability, credit tiers, lines; resolves ISS-031's model (`directSvc`) | ✅ | `72db287` (+ amendment below) |
+| 2.2 Python oracle `tests/oracle/engine.py` + `run.py` (receipts self-check; 500 seeded scenarios vs JS) + `js_runner.js` (purity check) | ✅ | `72db287` |
+| 2.3 12 hand-worked receipts, 58 cases, `tests/fixtures/receipts/` | ✅ 58/58 vs oracle | `72db287` |
+| 2.4 Builder: `src/js/engine.js` | 🟡 built; 58/58 receipts and 0/10,000 scenarios differ (orchestrator, fresh seed); reviewer running; fix card next (restFor null on a missing category default, name fallback) | — |
+| 2.5 Tester: `tests/unit/engine.test.js` (receipts, §9 traps by name, restFor, purity) | ⬜ | |
+| 2.6 Close: full suite, reviewer, reflector, progress | ⬜ | |
+
+**Phase 2 notes for a resuming session.**
+- The contract is the spec. Change it only by a decision, and change the oracle and receipts **before** the engine.
+- The builder implements from the contract and must not read `tests/oracle/engine.py` (independence).
+- Fuzzer power, measured: a `>=`→`>` change on `memberMin` was caught in 15/500 scenarios and by none of the receipts (boundary injection does that work). The receipts caught tip-after-discount (4 cases) and free-delivery-lowers-tax (1 case).
 
 ### Phase 1: Data rebuild (2026-11-12, done)
 

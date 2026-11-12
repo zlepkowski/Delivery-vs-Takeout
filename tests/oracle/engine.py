@@ -290,7 +290,9 @@ def rest_for(brand_id, D):
         if prof["directDelivery"]:
             r["directFee"] = prof["directFee"]
         return r
-    cat = (D.get("CATEGORY_DEFAULTS") or {})[b["category"]]
+    cat = (D.get("CATEGORY_DEFAULTS") or {}).get(b.get("category"))
+    if cat is None:
+        return None  # no category default: can't price it, never 0% (contract 2.1)
     return {"id": brand_id, "name": name, "profiled": False, "menu": [], "deal": None,
             "directDelivery": False, "directSvc": None, "amexGoldDirect": False,
             "platforms": ["dd", "ue", "gh"], "markup": cat["markup"], "markupEst": True}
