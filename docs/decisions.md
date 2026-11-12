@@ -82,14 +82,14 @@ Finalizes the store-tile proposal in the data-research skill. Where they differ,
 - **Fixture cells with no stores** get no file and no `TILE_INDEX` entry.
 - **Brands kept:** at least 25 deduped US stores.
 - **Brand name:** the most common `brand` property among the brand's kept US features; ties go to the alphabetically first.
-- **Brand id:** that name lowercased, `&` → `and`, apostrophes dropped, every other run of non-alphanumerics → `_`, trimmed of `_`. On a collision, the brand with fewer stores gets `_` + its lowercased Wikidata ID appended.
+- **Brand id:** that name lowercased, `&` → `and`, apostrophes dropped, every other run of non-alphanumerics → `_`, trimmed of `_`. On a collision, the brand with fewer stores gets `_` + its lowercased Wikidata ID appended; on an exact tie, every tied brand gets it. (In run `2026-10-31-13-32-34` the only collisions are taco_bell vs Q111972226 and taco_time vs Q7673970, neither a tie.)
 - **Category:** from the first `;`-separated token of `cuisine`. pizza → `pizza`; burger → `burger`; chicken, wings, fried_chicken → `chicken`; mexican, tex-mex, tacos, burrito → `mexican`; sandwich, sub, deli, bagel → `sandwich`; chinese, japanese, asian, sushi, thai, korean, vietnamese, indian, ramen, noodle → `asian`; coffee_shop, coffee, donut, tea, bubble_tea → `coffee`; ice_cream, frozen_yogurt, dessert, cake, cookies, juice, smoothie → `dessert`. With no match it falls back on `amenity`: restaurant → `casual`, cafe → `coffee`, ice_cream → `dessert`, fast_food → `other`. A brand's category is its most common store category; ties go to the alphabetically first. The 10 categories are the keys `categories.js` must cover.
 - **`brands.js`** assigns:
   - `POD.data.BRANDS = { id: {name, category, wikidata, stores} }`. `profiled` is **not** stored: the page derives it from `POD.data.PROFILES`, so the generator doesn't depend on profiles.
   - `POD.data.BRAND_IDS`: the ids, sorted. Tiles index into it.
   - `POD.data.BRANDS_RUN`: the run id.
   - `POD.data.TILE_INDEX = { cell: storeCount }` for every tile the run produced.
-- **Tiles.** Cell = `floor(lat)_floor(lon)` in degrees, e.g. `40_-74`. File `<tiles-out>/<cell>.js`: a provenance comment, then the ES5 wrapper assigning `POD.data.TILES["<cell>"] = { run: "<run_id>", s: "b,la,lo;b,la,lo;…" }`, creating `POD.data.TILES` if absent. `b` indexes `BRAND_IDS`; `la`/`lo` are ×1000 integers. Records sorted by (b, la, lo) and unique. Store id = `<brandId>@<la>,<lo>`.
+- **Tiles.** Cell = `floor(la/1000)_floor(lo/1000)` of the stored ×1000 integers, e.g. `40_-74`, so every record sits inside its own cell. *Amended 2026-11-12:* this was "floor of the float degrees". The two rules disagree for 194 stores within 0.0005° of a cell edge, and the integer rule keeps tiles self-consistent. **The geography lookup (Phase 3) must load every cell the search circle touches, never only the user's own cell**, so an edge store is always found. File `<tiles-out>/<cell>.js`: a provenance comment, then the ES5 wrapper assigning `POD.data.TILES["<cell>"] = { run: "<run_id>", s: "b,la,lo;b,la,lo;…" }`, creating `POD.data.TILES` if absent. `b` indexes `BRAND_IDS`; `la`/`lo` are ×1000 integers. Records sorted by (b, la, lo) and unique. Store id = `<brandId>@<la>,<lo>`.
 - **Fixtures** (`--cells … --tiles-out tests/fixtures/stores`): NYC `40_-74` and `40_-75`; around Big Timber, MT, `45_-111`, `45_-110`, `45_-109`, `46_-111`, `46_-110`, `46_-109`. The committed `brands.js` and the fixtures come from the same run.
 - **Deploy (D-011):** the Pages workflow regenerates `brands.js` *and* the tiles together, so the indexes always match.
 *Why:* 24 MB of downloads instead of 2.9 GB (339 members, 223 MB uncompressed, measured 2026-11-12), a brand list grounded in OSM tagging, and tiles that can't drift from the brand index.
@@ -114,7 +114,7 @@ Researched by the orchestrator on 2026-11-12 from the issuers' own card pages (D
   - Capital One Venture X and Savor (2). Neither has a food or delivery credit; they're listed so holders can see that.
 - **Only food-relevant credits are listed:** dining, restaurant, Resy, OpenTable, Uber Cash, DoorDash promos, Dunkin', and rideshare credits. Rideshare credits are listed as **locked** because people mistake them for Uber Eats money. Hotel, airline, streaming and retail credits are left out. A card with none has `credits: []`.
 - **`POD.data.CARDS`** is an ordered array of card objects (display order: Amex, Chase, Capital One). Card ids are unique.
-- **Card:** `{ id, issuer, name, url, asOf, membership?, note?, credits: [] }`. `membership` ("dd" | "ue" | "gh") means the card provides that platform's membership. The page turns it on by default, and the user can turn it off.
+- **Card:** `{ id, issuer, name, url, asOf, membership?, note?, credits: [] }`. `membership` ("dd" | "ue" | "gh") means the card *provides* that platform's membership. A card that only reimburses a membership the user must buy (Platinum's Uber One credit) does **not** set it. The page turns it on by default, and the user can turn it off.
 - **Credit:** `{ id, name, amount, cadence, plats, modes?, goldPartner?, restricted?, locked?, source, asOf, note }`.
   - The key for opt-ins and `used` flags is `cardId + "." + creditId`.
   - `amount` is per `cadence` period ("monthly" | "quarterly" | "semiannual" | "annual"), never annualized.
@@ -127,6 +127,11 @@ Researched by the orchestrator on 2026-11-12 from the issuers' own card pages (D
 **D-025 — Virginia's tax is its combined sales rate** · 2026-11-12 · *accepted*
 BUILD.md §6 listed VA among the meal-tax states at 10.5%. Virginia has no statewide meal tax: its meals taxes are levied by counties and cities at different rates, and no primary source for a "typical" local rate was reachable. Per §6's own rule (a state without a meal tax uses the combined sales rate), VA uses the Tax Foundation's published combined state + average local rate, with a note that local meals taxes are not included. All "combined" rows use the Tax Foundation's published combined figure as-is, not a re-added state + local sum. Resolves ISS-009.
 *Why:* a sourced number beats a null that breaks every Virginia calculation. Tax is applied the same way on every channel, so understating it barely moves the ranking.
+
+**D-026 — The 12 profiled chains** · 2026-11-12 · *accepted (user confirmed)*
+`dominos`, `taco_bell`, `chipotle`, `papa_johns`, `wingstop`, `pizza_hut`, `five_guys`, `buffalo_wild_wings`, `little_caesars`, `the_cheesecake_factory`, `subway`, `dunkin`.
+Picked per D-006. "How often a brand is nearby" was measured as the share of the 42,354 US ZIP centroids with a store of that brand within 5 miles (straight line), using run `2026-10-31-13-32-34`'s tiles. Subway 54.9% (#1), Taco Bell 43.9% (#2), Domino's 43.7% (#3), Dunkin' 38.2% (#5), Chipotle 31.8% (#8), Papa Johns 30.2% (#9), Wingstop 27.7% (#14), Pizza Hut 24.8% (#16), Five Guys 23.8% (#18), Buffalo Wild Wings 22.9% (#20), Little Caesars 19.2% (#27), The Cheesecake Factory 7.2% (#63).
+Changes from the handoff's list: **Wonder** (not in All The Places) and **McDonald's** (no US stores in this run, ISS-007) are replaced by **Subway** (top coverage, app-only deals) and **Dunkin'** (exercises the Amex Gold Dunkin' credit, a restricted credit). The Cheesecake Factory stays despite low coverage: it's an Amex Gold dining partner and the only sit-down chain in the set. Five Guys, Buffalo Wild Wings and The Cheesecake Factory are the `amexGoldDirect` profiles.
 
 ---
 
