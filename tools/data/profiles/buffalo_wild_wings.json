@@ -1,0 +1,44 @@
+{
+  "id": "buffalo_wild_wings",
+  "asOf": "2026-11-12",
+  "menu": [
+    {"name": "10 Boneless Wings + Fries", "dealItem": false, "prices": [
+      {"zip": "60602", "state": "IL", "price": 14.79, "url": "https://www.buffalowildwings.com/menu/categories/wings/"},
+      {"zip": "85003", "state": "AZ", "price": 14.79, "url": "https://www.buffalowildwings.com/menu/categories/wings/"}
+    ]},
+    {"name": "10 Bone-In Wings + Fries", "dealItem": false, "prices": [
+      {"zip": "60602", "state": "IL", "price": 17.79, "url": "https://www.buffalowildwings.com/menu/categories/wings/"},
+      {"zip": "85003", "state": "AZ", "price": 16.99, "url": "https://www.buffalowildwings.com/menu/categories/wings/"}
+    ]},
+    {"name": "Classic Chicken Sandwich + Fries", "dealItem": false, "prices": [
+      {"zip": "60602", "state": "IL", "price": 8.99, "url": "https://www.buffalowildwings.com/menu/categories/wings/"},
+      {"zip": "85003", "state": "AZ", "price": 9.99, "url": "https://www.buffalowildwings.com/menu/categories/wings/"}
+    ]},
+    {"name": "Buffalo Ranch Chicken Sandwich + Fries", "dealItem": false, "prices": [
+      {"zip": "60602", "state": "IL", "price": 10.99, "url": "https://www.buffalowildwings.com/menu/categories/wings/"},
+      {"zip": "85003", "state": "AZ", "price": 11.99, "url": "https://www.buffalowildwings.com/menu/categories/wings/"}
+    ]},
+    {"name": "All-American Cheeseburger + Fries", "dealItem": false, "prices": [
+      {"zip": "60602", "state": "IL", "price": 12.79, "url": "https://www.buffalowildwings.com/menu/categories/wings/"},
+      {"zip": "85003", "state": "AZ", "price": 13.79, "url": "https://www.buffalowildwings.com/menu/categories/wings/"}
+    ]},
+    {"name": "Original Chicken Dippers + Fries", "dealItem": false, "prices": [
+      {"zip": "60602", "state": "IL", "price": 10.99, "url": "https://www.buffalowildwings.com/menu/categories/wings/"},
+      {"zip": "85003", "state": "AZ", "price": 10.99, "url": "https://www.buffalowildwings.com/menu/categories/wings/"}
+    ]},
+    {"name": "Buffalo Chips", "dealItem": false, "prices": [
+      {"zip": "60602", "state": "IL", "price": 3.49, "url": "https://www.buffalowildwings.com/menu/categories/apps-sides/"},
+      {"zip": "85003", "state": "AZ", "price": 3.99, "url": "https://www.buffalowildwings.com/menu/categories/apps-sides/"}
+    ]},
+    {"name": "Pepsi® Bottle", "dealItem": false, "prices": [
+      {"zip": "60602", "state": "IL", "price": 2.99, "url": "https://www.buffalowildwings.com/menu/categories/drinks/"},
+      {"zip": "85003", "state": "AZ", "price": 2.99, "url": "https://www.buffalowildwings.com/menu/categories/drinks/"}
+    ]}
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "platforms": {},
+  "markup": {"useCategory": true},
+  "amexGoldDirect": true,
+  "notes": "Pickup prices from buffalowildwings.com with pickup mode set (header reads 'PICKUP FROM'): Chicago store 709 South Seeley Avenue (address ZIP 60602 used, store ZIP not shown on the page) and Phoenix store 1950 W. Indian School Rd. (address ZIP 85003 used). Observed 2026-11-12. Delivery fee: NOT observed. With delivery set to 121 N La Salle St, Chicago, the bag summary shows Subtotal and 'Taxes, fees, and total will be calculated at checkout' with no delivery fee line, so directDelivery is false (D-027, no $0 fee). Deal: none confirmed. No direct-only offer was verified on the promotions pages in this session. Platforms: buffalowildwings.com/faq says it is on 'some third-party delivery sites' without naming them, and the location record lists DoorDash as an active provider (api-idp.buffalowildwings.com location 1900). No platform is recorded because the evidence does not confirm a specific app's presence. Markup: no chain-specific figure found, so the category default applies (est). Bot protection: PerimeterX and kaptcha scripts loaded, but no challenge was shown during this session."
+}

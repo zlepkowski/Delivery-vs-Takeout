@@ -122,3 +122,24 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **What:** `tools/data/profiles/dominos.json` has `directDelivery: false`. On 2026-11-12 every nearby store showed "Closed, opens at 10:30am" and the NYC delivery address (City Hall Park, 10007) returned "Delivery not available", so no first-party delivery fee was observed. No fee range is used.
 - **Why it matters:** Domino's has first-party delivery, so the direct-delivery route is left out of the Domino's comparison until a fee is observed.
 - **Next step:** re-run the delivery check with an open store and a deliverable address, then set `directDelivery: true` with `directFee.observed` at 2+ states (D-027).
+
+### ISS-017 — Five Guys profile blocked by a Cloudflare challenge (task 1.7 batch C)
+- **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** open
+- **What:** `order.fiveguys.com` (the ordering site, which the store menus link to) returned HTTP 403 with a Cloudflare "Just a moment..." page loading `brunhild.challenges.cloudflare.com` (a Turnstile CAPTCHA). The public menu pages (`www.fiveguys.com/menu`, `/menu/burgers`) show no prices, so pickup prices, the delivery fee and any deal could not be observed. Per the hard rules, nothing was worked around.
+- **Why it matters:** no `tools/data/profiles/five_guys.json`, so Five Guys is unprofiled (category default used by the app).
+- **Next step:** a human or the user supplies prices from a store page (option 2 in D-027), or accepts Five Guys as unprofiled (option 3).
+
+### ISS-018 — The Cheesecake Factory profile not researched (task 1.7 batch C)
+- **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** open
+- **What:** Ran out of tool budget before its ordering site was probed. The homepage loaded without a challenge. No menu, delivery-fee or deal data was collected, and no `tools/data/profiles/the_cheesecake_factory.json` was written.
+- **Next step:** a fresh researcher session follows the Wingstop method (store menu API at three cities, cart summary for the fee, the chain's own deal page, and a platform/markup source).
+
+### ISS-019 — Buffalo Wild Wings: no direct delivery fee observed, no direct-only deal confirmed
+- **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** open
+- **What:** `tools/data/profiles/buffalo_wild_wings.json` has `directDelivery: false`. The bag summary (own site, delivery set to 121 N La Salle St) shows subtotal and "taxes, fees, and total will be calculated at checkout" with no delivery fee line. No direct-only offer was confirmed (`deal: null`). Platforms are empty: the FAQ says "some third-party delivery sites" without naming them. Bot protection (PerimeterX, kaptcha) loaded but did not challenge.
+- **Next step:** read the delivery fee from the checkout summary before the payment step (the bag page did not show it), and check the promotions pages for a web-only offer.
+
+### ISS-020 — Wingstop DoorDash evidence is dated (2018)
+- **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** open
+- **What:** The only citable platform evidence for Wingstop is a 2018 franchising.com press release on the DoorDash rollout. Current DoorDash status was not re-verified. No Uber Eats or Grubhub evidence meets the rules (the Uber Eats store pages were not used as evidence). Markup is the category default (est).
+- **Next step:** confirm current app presence from a dated Wingstop statement or a 2026 news source.

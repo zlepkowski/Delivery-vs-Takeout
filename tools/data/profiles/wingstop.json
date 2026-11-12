@@ -1,0 +1,59 @@
+{
+  "id": "wingstop",
+  "asOf": "2026-11-12",
+  "menu": [
+    {"name": "5 Classic Wings", "dealItem": false, "prices": [
+      {"zip": "85007", "state": "AZ", "price": 5.29, "url": "https://www.wingstop.com/location/wingstop-841-phoenix-az-85007/menu?handoffMode=carryout"},
+      {"zip": "60605", "state": "IL", "price": 6.99, "url": "https://www.wingstop.com/location/wingstop-537-chicago-il-60605/menu?handoffMode=carryout"},
+      {"zip": "10002", "state": "NY", "price": 6.59, "url": "https://www.wingstop.com/location/wingstop-941-new-york-ny-10002/menu?handoffMode=carryout"}
+    ]},
+    {"name": "5 Boneless Wings", "dealItem": false, "prices": [
+      {"zip": "85007", "state": "AZ", "price": 4.59, "url": "https://www.wingstop.com/location/wingstop-841-phoenix-az-85007/menu?handoffMode=carryout"},
+      {"zip": "60605", "state": "IL", "price": 3.79, "url": "https://www.wingstop.com/location/wingstop-537-chicago-il-60605/menu?handoffMode=carryout"},
+      {"zip": "10002", "state": "NY", "price": 4.89, "url": "https://www.wingstop.com/location/wingstop-941-new-york-ny-10002/menu?handoffMode=carryout"}
+    ]},
+    {"name": "10 Boneless Wings", "dealItem": false, "prices": [
+      {"zip": "85007", "state": "AZ", "price": 11.59, "url": "https://www.wingstop.com/location/wingstop-841-phoenix-az-85007/menu?handoffMode=carryout"},
+      {"zip": "60605", "state": "IL", "price": 10.99, "url": "https://www.wingstop.com/location/wingstop-537-chicago-il-60605/menu?handoffMode=carryout"},
+      {"zip": "10002", "state": "NY", "price": 13.49, "url": "https://www.wingstop.com/location/wingstop-941-new-york-ny-10002/menu?handoffMode=carryout"}
+    ]},
+    {"name": "5 pc Crispy Tender Combo", "dealItem": false, "prices": [
+      {"zip": "85007", "state": "AZ", "price": 12.99, "url": "https://www.wingstop.com/location/wingstop-841-phoenix-az-85007/menu?handoffMode=carryout"},
+      {"zip": "60605", "state": "IL", "price": 12.99, "url": "https://www.wingstop.com/location/wingstop-537-chicago-il-60605/menu?handoffMode=carryout"},
+      {"zip": "10002", "state": "NY", "price": 12.99, "url": "https://www.wingstop.com/location/wingstop-941-new-york-ny-10002/menu?handoffMode=carryout"}
+    ]},
+    {"name": "Chicken Sandwich Combo", "dealItem": false, "prices": [
+      {"zip": "85007", "state": "AZ", "price": 8.99, "url": "https://www.wingstop.com/location/wingstop-841-phoenix-az-85007/menu?handoffMode=carryout"},
+      {"zip": "60605", "state": "IL", "price": 8.99, "url": "https://www.wingstop.com/location/wingstop-537-chicago-il-60605/menu?handoffMode=carryout"},
+      {"zip": "10002", "state": "NY", "price": 8.99, "url": "https://www.wingstop.com/location/wingstop-941-new-york-ny-10002/menu?handoffMode=carryout"}
+    ]},
+    {"name": "Chicken Sandwich", "dealItem": false, "prices": [
+      {"zip": "85007", "state": "AZ", "price": 5.99, "url": "https://www.wingstop.com/location/wingstop-841-phoenix-az-85007/menu?handoffMode=carryout"},
+      {"zip": "60605", "state": "IL", "price": 5.99, "url": "https://www.wingstop.com/location/wingstop-537-chicago-il-60605/menu?handoffMode=carryout"},
+      {"zip": "10002", "state": "NY", "price": 5.99, "url": "https://www.wingstop.com/location/wingstop-941-new-york-ny-10002/menu?handoffMode=carryout"}
+    ]},
+    {"name": "Triple Chocolate Chunk Brownie", "dealItem": false, "prices": [
+      {"zip": "85007", "state": "AZ", "price": 2.69, "url": "https://www.wingstop.com/location/wingstop-841-phoenix-az-85007/menu?handoffMode=carryout"},
+      {"zip": "60605", "state": "IL", "price": 2.59, "url": "https://www.wingstop.com/location/wingstop-537-chicago-il-60605/menu?handoffMode=carryout"},
+      {"zip": "10002", "state": "NY", "price": 2.69, "url": "https://www.wingstop.com/location/wingstop-941-new-york-ny-10002/menu?handoffMode=carryout"}
+    ]},
+    {"name": "Dasani Bottled Water", "dealItem": false, "prices": [
+      {"zip": "85007", "state": "AZ", "price": 2.99, "url": "https://www.wingstop.com/location/wingstop-841-phoenix-az-85007/menu?handoffMode=carryout"},
+      {"zip": "60605", "state": "IL", "price": 2.79, "url": "https://www.wingstop.com/location/wingstop-537-chicago-il-60605/menu?handoffMode=carryout"},
+      {"zip": "10002", "state": "NY", "price": 2.69, "url": "https://www.wingstop.com/location/wingstop-941-new-york-ny-10002/menu?handoffMode=carryout"}
+    ]}
+  ],
+  "deal": null,
+  "directDelivery": true,
+  "directFee": {"observed": [
+    {"zip": "85003", "state": "AZ", "fee": 2.99, "url": "https://www.wingstop.com/order"},
+    {"zip": "60602", "state": "IL", "fee": 2.99, "url": "https://www.wingstop.com/order"},
+    {"zip": "10007", "state": "NY", "fee": 2.99, "url": "https://www.wingstop.com/order"}
+  ]},
+  "platforms": {
+    "dd": "Wingstop Begins National Delivery Rollout in Partnership with DoorDash (franchising.com, 2018-11-26): https://www.franchising.com/news/20181126_wingstop_begins_national_delivery_rollout_in_partn.html. Dated; current status not re-verified. Wingstop's offers page says offers 'may not be available on third party marketplaces' (https://www.wingstop.com/offers)."
+  },
+  "markup": {"useCategory": true},
+  "amexGoldDirect": false,
+  "notes": "Menu: carryout prices from the chain's own menu API at 3 stores (Phoenix N 7th #841 AZ, Chicago Harrison #537 IL, New York Delancey #941 NY), each store's own ZIP from the location API; observed 2026-11-12. Items with no price in the API (sides, 10 Classic Wings, Watch Party Bundle etc.) were left out. Deal: none. The offers page (https://www.wingstop.com/offers) lists offers that apply to both Wingstop.com and the app, so none is direct-only. Delivery: the cart summary on wingstop.com (cart API fees, empty cart, before checkout) shows Delivery Fee 2.99 at Phoenix City Hall, Chicago City Hall and 1 Centre St, New York (ZIP 10007). Excluded: the $2.00 Service Fee and the NYC Delivery Workers Fee of 2.99 (government-imposed, per the offers page terms). Markup: no chain-specific published figure found, so the category default applies (est). Platforms: DoorDash only, from a 2018 press release. Uber Eats store pages exist, but they are not citable evidence under the rules, so ue is omitted."
+}
