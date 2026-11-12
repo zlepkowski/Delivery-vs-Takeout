@@ -65,7 +65,7 @@
 | 1.4 States: EIA gas (D-022) + tax (D-025) | ✅ | `c539fc3` |
 | 1.5 Brands + tiles: 273 brands, 182,567 stores, 847 tiles (D-021) | ✅ | `2ebdc0d` |
 | 1.6 Cards: 22 cards, 21 credits (D-024) | ✅ | `83f24d7` |
-| 1.7 Profiles (12 chains, D-026) + `categories.js` | 🔶 7 of 12 chains committed (chipotle, dominos, wingstop, buffalo_wild_wings, the_cheesecake_factory, dunkin, little_caesars); dominos fix and subway running; taco_bell, pizza_hut, papa_johns, five_guys blocked (ISS-013/021/024/017) | `d3690ec`, `e1bc046` |
+| 1.7 Profiles (12 chains, D-026) + `categories.js` | 🔶 8 of 12 committed (chipotle, dominos, wingstop, buffalo_wild_wings, the_cheesecake_factory, dunkin, little_caesars, subway). Blocked: taco_bell (ISS-013), pizza_hut (ISS-021), papa_johns (ISS-024), five_guys (ISS-017); waiting on the user's call. Then: restore the parked tests, generate profiles.js + categories.js, add the script tags | `d3690ec`, `e1bc046`, `ec5e627`, `0a4262b` |
 | 1.8 Pages workflow with the tile build | ✅ | `69b429b` |
 | 1.9 Close: full suite, reflector, user sets the Phase 2 `/goal` | ⬜ | |
 
@@ -89,3 +89,4 @@
 - **Profiles (1.7), issue IDs:** workers appended issues under IDs already in use, five times (renumbered to ISS-016, 021, 024, 025, 026). Lesson: the skill must say "take max(ISS-n)+1 at write time" and the orchestrator checks `uniq -d` before every commit.
 - **Profiles (1.7), D-027 shape:** the tester found D-027's `CATEGORY_DEFAULTS` shape didn't match the generator. D-027 fixed to `{markup, est}`.
 - **Profiles (1.7), platform evidence:** the Little Caesars worker cited a Jan 2020 "delivery powered by DoorDash" story as DoorDash marketplace evidence. It was DoorDash Drive fulfilling the chain's own app orders. The orchestrator replaced it with the Oct 2020 marketplace announcement (`e1bc046`). Lesson: white-label/Drive/"powered by" deals are direct-channel evidence, never `platforms` evidence.
+- **Profiles (1.7), platform evidence quality:** of the last four workers, Domino's listed dd from an unread search snippet and left out Uber Eats (a widely reported 2023 deal), Subway gathered no platform evidence at all, and Little Caesars cited a Drive deal. The orchestrator read the primary sources and fixed all three (`ec5e627`, `0a4262b`, `e1bc046`). Lesson: workers spend their budget on menus and treat platforms as an afterthought. Cards need a separate, required "platforms" step with a read (not snippet) source per platform, or the orchestrator does platforms itself.
