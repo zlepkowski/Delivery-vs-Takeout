@@ -130,9 +130,9 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **Next step:** a human or the user supplies prices from a store page (option 2 in D-027), or accepts Five Guys as unprofiled (option 3).
 
 ### ISS-018 — The Cheesecake Factory profile not researched (task 1.7 batch C)
-- **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** open
+- **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** closed (2026-11-12, `tools/data/profiles/the_cheesecake_factory.json` written in the 1.7 follow-up; the open follow-ups are ISS-022 and ISS-023)
 - **What:** Ran out of tool budget before its ordering site was probed. The homepage loaded without a challenge. No menu, delivery-fee or deal data was collected, and no `tools/data/profiles/the_cheesecake_factory.json` was written.
-- **Next step:** a fresh researcher session follows the Wingstop method (store menu API at three cities, cart summary for the fee, the chain's own deal page, and a platform/markup source).
+- **Resolution:** Menu prices (6 items, 3 stores in NY, IL and AZ) come from the chain's Olo store menus. The profile has `directDelivery: false`, `deal: null`, `platforms: {dd}` and category markup (est). See the file's notes.
 
 ### ISS-019 — Buffalo Wild Wings: no direct delivery fee observed, no direct-only deal confirmed
 - **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** open
@@ -149,3 +149,15 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **What:** `https://www.pizzahut.com/menu` returned HTTP 502 "upstream request failed" on every load (3 browser loads: first with a 60 s timeout and `waitUntil: domcontentloaded`, then two more after a wait). curl gets `HTTP/2 stream 1 was not closed cleanly: INTERNAL_ERROR`. `order.pizzahut.com` fails its TLS certificate check (expired certificate). Control hosts (chipotle.com, dominos.com) load with HTTP 200 in the same session. Not a bot-challenge page, so not worked around. Same failure pattern as ISS-013 (Taco Bell).
 - **Why it matters:** no menu prices, deal, direct delivery fee or platform evidence could be read for `pizza_hut`. No `tools/data/profiles/pizza_hut.json` was written, because a profile needs 5-10 menu items observed in 2 states (D-027).
 - **Next step:** retry later, or the user confirms the gateway can reach www.pizzahut.com. Then research the menu at the three city-hall stores (NYC 10007, Chicago 60602, Phoenix 85003), the direct-only app/phone offer if one exists, and the first-party delivery fee before any payment step.
+
+### ISS-022 — The Cheesecake Factory: no direct delivery fee observed (task 1.7 follow-up, 2026-11-12)
+- **Opened:** 2026-11-12 by researcher (Phase 1.7 follow-up) · **Phase:** 1 · **Status:** open
+- **What:** `tools/data/profiles/the_cheesecake_factory.json` has `directDelivery: false`. The chain's Olo store list (`https://www.thecheesecakefactory.com/api/olo/restaurants?zip=11373`, 220 stores) sets `candeliver: false` for every store. `https://www.thecheesecakefactory.com/order` redirects to `/locations` until a store is chosen, and no delivery cart was opened, so no fee was read. Not a bot challenge.
+- **Why it matters:** the chain's delivery appears to run through DoorDash only (see the rewards page). If first-party delivery exists in a store flow not reached, `directDelivery` would be wrong. The app would then omit a direct delivery route it should price.
+- **Next step:** a researcher opens the Order Delivery flow at one store with a delivery-enabled address (ZIP entry only, before any personal-details step) and confirms whether a fee line appears. If none, keep `directDelivery: false`.
+
+### ISS-023 — The Cheesecake Factory: Grubhub evidence unverified, Uber Eats not evidenced (task 1.7 follow-up, 2026-11-12)
+- **Opened:** 2026-11-12 by researcher (Phase 1.7 follow-up) · **Phase:** 1 · **Status:** open
+- **What:** A WebSearch hit titled "Grubhub Expands Partnership With The Cheesecake Factory" (`https://www.prnewswire.com/news-releases/grubhub-expands-partnership-with-the-cheesecake-factory-to-deliver-menu-favorites-from-coast-to-coast-300570770.html`) could not be read: `www.prnewswire.com` does not resolve from this session. So `gh` is omitted from `platforms`. Uber Eats had no evidence in the search. The DoorDash exclusivity reports are from 2018 and 2020 (Skift, Business Wire), and the chain's rewards page (read 2026-11-12) confirms DoorDash only.
+- **Why it matters:** a Grubhub or Uber Eats omission means those platform markups are missing for this chain. The DoorDash exclusivity may have changed after 2026.
+- **Next step:** a researcher with access to the press release (or the businesswire 2020 release) confirms the Grubhub date and terms, and adds `gh` only with a dated citation. Uber Eats stays out unless a source shows it.

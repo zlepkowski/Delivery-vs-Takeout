@@ -1,0 +1,160 @@
+{
+  "id": "the_cheesecake_factory",
+  "asOf": "2026-11-12",
+  "menu": [
+    {
+      "name": "Chicken Madeira",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "11373",
+          "state": "NY",
+          "price": 28.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/elmhurst-ny/"
+        },
+        {
+          "zip": "60611",
+          "state": "IL",
+          "price": 29.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/chicago-il/"
+        },
+        {
+          "zip": "85016",
+          "state": "AZ",
+          "price": 28.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/phoenix-az/"
+        }
+      ]
+    },
+    {
+      "name": "Louisiana Chicken Pasta",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "11373",
+          "state": "NY",
+          "price": 27.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/elmhurst-ny/"
+        },
+        {
+          "zip": "60611",
+          "state": "IL",
+          "price": 29.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/chicago-il/"
+        },
+        {
+          "zip": "85016",
+          "state": "AZ",
+          "price": 26.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/phoenix-az/"
+        }
+      ]
+    },
+    {
+      "name": "Cobb Salad",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "11373",
+          "state": "NY",
+          "price": 23.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/elmhurst-ny/"
+        },
+        {
+          "zip": "60611",
+          "state": "IL",
+          "price": 23.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/chicago-il/"
+        },
+        {
+          "zip": "85016",
+          "state": "AZ",
+          "price": 21.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/phoenix-az/"
+        }
+      ]
+    },
+    {
+      "name": "Fried Macaroni and Cheese",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "11373",
+          "state": "NY",
+          "price": 17.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/elmhurst-ny/"
+        },
+        {
+          "zip": "60611",
+          "state": "IL",
+          "price": 19.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/chicago-il/"
+        },
+        {
+          "zip": "85016",
+          "state": "AZ",
+          "price": 17.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/phoenix-az/"
+        }
+      ]
+    },
+    {
+      "name": "Original Cheesecake (slice)",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "11373",
+          "state": "NY",
+          "price": 11.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/elmhurst-ny/"
+        },
+        {
+          "zip": "60611",
+          "state": "IL",
+          "price": 11.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/chicago-il/"
+        },
+        {
+          "zip": "85016",
+          "state": "AZ",
+          "price": 10.95,
+          "url": "https://thecheesecakefactory.olo.com/menu/phoenix-az/"
+        }
+      ]
+    },
+    {
+      "name": "To Go Arnold Palmer",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "11373",
+          "state": "NY",
+          "price": 4.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/elmhurst-ny/"
+        },
+        {
+          "zip": "60611",
+          "state": "IL",
+          "price": 4.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/chicago-il/"
+        },
+        {
+          "zip": "85016",
+          "state": "AZ",
+          "price": 4.5,
+          "url": "https://thecheesecakefactory.olo.com/menu/phoenix-az/"
+        }
+      ]
+    }
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "amexGoldDirect": true,
+  "platforms": {
+    "dd": "Chain site https://www.thecheesecakefactory.com/rewards (read 2026-11-12): \"DoorDash Offers ... Redeem rewards on DoorDash ... Link Your Account to Redeem Rewards on DoorDash\" (dd is the only platform the chain names; no DoorDash-specific date on that page). Exclusive-partnership history: Skift, 2018-07-31, https://skift.com/2018/07/31/the-cheesecake-factory-will-partner-exclusively-with-doordash-for-delivery/ (dated, not re-read)."
+  },
+  "markup": {
+    "useCategory": true
+  },
+  "notes": "Menu: pickup prices from the chain's Olo store menus (https://www.thecheesecakefactory.com/api/olo/restaurants/<id>/menu) at Queens Center, Elmhurst NY 11373 (Olo 47654, nearest NY-state store to NYC City Hall 10007 in the chain's list, about 7 mi), John Hancock Center, Chicago IL 60611 (Olo 47472, about 1 mi from Chicago City Hall 60602), and Biltmore Fashion Park, Phoenix AZ 85016 (Olo 47500, about 5 mi from Phoenix City Hall 85003). Store list: https://www.thecheesecakefactory.com/api/olo/restaurants?zip=11373 (220 stores, observed 2026-11-12). Prices are the Olo product 'cost' field. 'Original' is the slice in the Cheesecakes & Specialty Desserts category, not the 10-inch whole cake. Deal: none. The chain's rewards page (https://www.thecheesecakefactory.com/rewards) lists a DoorDash-only free-slice offer ($30 minimum, app-linked) and a birthday free slice for Cheesecake Rewards members; neither is a priced direct-only offer, so deal is null. Delivery: directDelivery false. The chain's Olo store list marks candeliver false for all 220 stores, and the order page redirects to /locations until a store is chosen; no delivery fee was observed from a cart. Issue logged. Platforms: dd only, from the chain's rewards page; no Uber Eats evidence found, and a Grubhub partnership press release (PR Newswire, id 300570770) was seen in search results only, its date and text not verified (prnewswire.com not reachable), so gh is omitted. Markup: no chain-specific published figure found, so the casual category default applies (est)."
+}
