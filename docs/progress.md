@@ -65,7 +65,7 @@
 | 1.4 States: EIA gas (D-022) + tax (D-025) | ✅ | `c539fc3` |
 | 1.5 Brands + tiles: 273 brands, 182,567 stores, 847 tiles (D-021) | ✅ | `2ebdc0d` |
 | 1.6 Cards: 22 cards, 21 credits (D-024) | ✅ | `83f24d7` |
-| 1.7 Profiles (12 chains, D-026) + `categories.js` | ⬜ **next** | |
+| 1.7 Profiles (12 chains, D-026) + `categories.js` | 🔶 7 of 12 chains committed (chipotle, dominos, wingstop, buffalo_wild_wings, the_cheesecake_factory, dunkin, little_caesars); dominos fix and subway running; taco_bell, pizza_hut, papa_johns, five_guys blocked (ISS-013/021/024/017) | `d3690ec`, `e1bc046` |
 | 1.8 Pages workflow with the tile build | ✅ | `69b429b` |
 | 1.9 Close: full suite, reflector, user sets the Phase 2 `/goal` | ⬜ | |
 
@@ -85,3 +85,7 @@
 - **Brands:** the range reader would read a whole 2.9 GB body if a server ignored `Range`; `IncompleteRead` wasn't retried; remote URLs went into JS comments unvalidated. All fixed (`2ebdc0d`). The edge-cell rule was resolved by amending D-021.
 - **Pages:** `build-site.sh`'s `rm -rf` guard didn't cover ancestors of the repo. **The orchestrator's fix card put destructive negative tests against the real repo in DONE WHEN, and the worker ran them before a correction arrived.** The guard held and nothing was lost (`69b429b`). Lesson: never put a destructive command aimed at a real path in a DONE WHEN; test guards on a throwaway copy.
 - **Cars:** the generator's rules have no unit tests (ISS-011, open).
+- **Profiles (1.7), turn budget:** three researchers given 3–4 chains each used all 80 turns exploring and wrote no files. Resumed with "stop exploring, write the JSON". After that, one chain per worker, write the file after each store, stop by call 60. Lesson: cards for browser research must cap exploration and require incremental writes.
+- **Profiles (1.7), issue IDs:** workers appended issues under IDs already in use, five times (renumbered to ISS-016, 021, 024, 025, 026). Lesson: the skill must say "take max(ISS-n)+1 at write time" and the orchestrator checks `uniq -d` before every commit.
+- **Profiles (1.7), D-027 shape:** the tester found D-027's `CATEGORY_DEFAULTS` shape didn't match the generator. D-027 fixed to `{markup, est}`.
+- **Profiles (1.7), platform evidence:** the Little Caesars worker cited a Jan 2020 "delivery powered by DoorDash" story as DoorDash marketplace evidence. It was DoorDash Drive fulfilling the chain's own app orders. The orchestrator replaced it with the Oct 2020 marketplace announcement (`e1bc046`). Lesson: white-label/Drive/"powered by" deals are direct-channel evidence, never `platforms` evidence.
