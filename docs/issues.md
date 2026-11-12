@@ -53,6 +53,13 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **Why it matters:** Phase 7 rewrites the generators for the scheduled refresh, and a silent rule change would ship.
 - **Next step:** before Phase 7 touches a generator, add a stdlib Python test per generator that runs it on a hand-written fixture with hand-computed expected output.
 
+### ISS-024 — Papa John's profile blocked: ordering pages fail to load (`papa_johns`, task 1.7 follow-up)
+- **Opened:** 2026-11-12 by researcher · **Phase:** 1 · **Status:** open
+- **What:** `tools/data/profiles/papa_johns.json` was not written. On 2026-11-12, about 10 Playwright loads over roughly 15 minutes of retries (`/order/menu`, `/order/delivery`, `/order/specials`, `/order/viewStoreMenu/CARRYOUT/BUSINESS/4091`, `/order/stores-near-me`) all showed the page error "OH NO! Looks like we left this page in the oven too long." The console shows `ChunkLoadError` for the route chunks `(checkout-pages)/order/menu/layout` and `.../delivery/page`, `.../specials/page`, each answered `302` to `https://www.papajohns.com/404`. The homepage, `/locations` (`locations.papajohns.com`) and the store directory load fine. The last retry loaded the menu shell with no items. `/deals` returns 404. No bot challenge page was seen. Fixing this needs the site's route chunks, not a workaround.
+- **Why it matters:** no menu prices, no delivery fee and no store carryout prices were observed, so the profile can't pass the D-027 rules (menu needs 5–10 items with ≥ 2 states). Papa John's is one of the 12 D-026 chains.
+- **Findings that are not blocked:** no US direct-only deal with published terms was found (the app-only first-order medium pizza is UK-only, hotukdeals/papajohns.co.uk). Platform evidence from search snippets only: Restaurant Business reports about 15% of sales via DoorDash and Uber Eats (undated in the snippet); 2019–2022 Restaurant Dive reporting says some locations were on Grubhub (not confirmed for 2026, so not listed). The Credit Suisse "Papa John's app prices equal menu" note could not be traced to a URL, so markup stays `useCategory`. The Restaurant Business and Restaurant Dive URLs could not be fetched (DNS failure in this session), so the sources are search snippets only.
+- **Next step:** re-run the menu capture when `www.papajohns.com/order/menu` renders items. Stores for City Hall are not in the locator's city lists, so use the nearest open carryout stores (candidates seen: 343 Grand St NY 10002, 4645 E Broadway Rd Phoenix 85040, and Chicago stores in 60616/60610/60607) and record their store ZIPs. Also re-check the restaurantbusinessonline and restaurantdive URLs once they resolve.
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
