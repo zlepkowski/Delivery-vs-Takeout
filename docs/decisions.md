@@ -149,6 +149,11 @@ Changes from the handoff's list: **Wonder** (not in All The Places) and **McDona
 - **Browser research rules:** Playwright through the proxy. **No getting around bot protection**: no user-agent spoofing, stealth plugins or CAPTCHA solving. A chain that blocks automated access is reported BLOCKED, for option 2 (prices from the user) or option 3 (unprofiled). Don't create accounts or place orders. Use a public address (e.g. a city hall) to see a store's prices and delivery fee. Don't scrape the delivery apps' menus; platform presence is shown by the chain's own site or a citable statement.
 - **Network:** during this research the environment is temporarily **unrestricted** (approved by the user 2026-11-12). Afterwards it goes back to the 16-host list in ISS-001.
 
+**D-028 — Pizza Hut and Five Guys ship unprofiled for now** · 2026-11-12 · *accepted (user confirmed)*
+Of the 12 D-026 chains, `pizza_hut` (connection resets and timeouts from this environment over HTTP/2 and HTTP/1.1, ISS-021) and `five_guys` (Cloudflare bot check, ISS-017) can't be researched under D-027's no-workaround rule. They ship as **unprofiled** brands per D-006: category-default markup (est), the user's typed cart total, no direct-delivery channel. `taco_bell` and `papa_johns`, whose earlier failures were transient (502s, ChunkLoadError), get one more research pass; if either is still blocked, it ships unprofiled the same way. All of them stay open issues for a later retry, and D-026's list stays the target.
+Consequence: an unprofiled Five Guys has no `amexGoldDirect`, so the Amex Gold dining credit isn't applied to ordering Five Guys direct. That under-credits, the safe direction (§9.1's trap is over-crediting). Buffalo Wild Wings and The Cheesecake Factory still carry the flag. Whether `amexGoldDirect` should become a brand-level flag independent of profiles is a Phase 3 question.
+*Why:* the user chose to retry the two transient failures and not hold Phase 1 for the two hard blocks. Shipping 8–10 sourced profiles beats shipping 12 with guessed numbers.
+
 ---
 
 ## Skill updates
