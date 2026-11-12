@@ -159,6 +159,18 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** the menu may not match the carryout checkout price if Papa Johns prices the channels differently, and the delivery route for Papa Johns is missing.
 - **Next step:** when the `/order/menu` chunks load, compare one store's carryout checkout total with the catalogue price, read the delivery fee at a public address before the personal-details step, and check for a named app/site-only offer with terms.
 
+### ISS-030 — Platform presence rests on dated evidence, and profiles.js doesn't carry the date (review of 1.7)
+- **Opened:** 2026-11-12 by orchestrator (reviewer finding 4) · **Phase:** 3 · **Status:** open
+- **What:** `PROFILES[id].platforms` is a bare list (`["dd","ue","gh"]`). The evidence behind it, kept in `tools/data/profiles/<id>.json`, is old for several chains: Subway dd/ue/gh rest on an Oct 2018 announcement, Wingstop dd on 2018, Little Caesars dd on Oct 2020 and ue on 2023, Chipotle on 2018–2020. Domino's (2023, 2025) and Papa Johns ue (2026) are recent.
+- **Why it matters:** in Phase 3 the engine will offer an app channel as current for a chain whose listing may have ended. A missing channel is a smaller error than a phantom one, but neither is visible to the user.
+- **Next step:** Phase 3 design: either carry an evidence date per platform into the output (D-027 shape change, with tests) and label old ones in the UI, or re-confirm presence with a fresher citable source per chain. Never scrape the apps (D-027).
+
+### ISS-031 — Direct-channel service fees aren't modeled (review of 1.7)
+- **Opened:** 2026-11-12 by orchestrator · **Phase:** 2 · **Status:** open
+- **What:** BUILD.md §4.2 step 3 models service fees only for the apps (`svc`, `svcMin`, `memberSvc`). Direct orders have only `directFee`. But chains charge their own: Wingstop's cart shows a $2.00 Service Fee next to its $2.99 Delivery Fee (`wingstop.json` notes; excluded from `directFee`), Subway shows a 12% service fee on delivery (ISS-027), and Little Caesars shows "a service fee (max $4.00)" (ISS-025). It's not known whether these apply to direct pickup too.
+- **Why it matters:** leaving them out makes ordering direct look cheaper than it is. Wingstop direct delivery is understated by $2.00 per order, which is enough to flip a close ranking.
+- **Next step:** Phase 2 (engine and oracle) decides the model: e.g. a `directSvc` `{flat|pct, appliesTo: delivery|both}` per profile, applied at step 3, with evidence per chain. Until then `directFee` stays the delivery fee alone, as D-027 defines it.
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
