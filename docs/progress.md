@@ -65,13 +65,21 @@
 | 2.1 Engine contract `docs/engine-contract.md` (D-029): exact formulas, float order, channel availability, credit tiers, lines; resolves ISS-031's model (`directSvc`) | ✅ | `72db287` (+ amendment below) |
 | 2.2 Python oracle `tests/oracle/engine.py` + `run.py` (receipts self-check; 500 seeded scenarios vs JS) + `js_runner.js` (purity check) | ✅ | `72db287` |
 | 2.3 12 hand-worked receipts, 58 cases, `tests/fixtures/receipts/` | ✅ 58/58 vs oracle | `72db287` |
-| 2.4 Builder: `src/js/engine.js` | 🟡 built; 58/58 receipts and 0/10,000 scenarios differ (orchestrator, fresh seed); reviewer running; fix card next (restFor null on a missing category default, name fallback) | — |
-| 2.5 Tester: `tests/unit/engine.test.js` (receipts, §9 traps by name, restFor, purity) | ⬜ | |
-| 2.6 Close: full suite, reviewer, reflector, progress | ⬜ | |
+| 2.4 Builder: `src/js/engine.js` (one loop) + review fix round 1 | ✅ 58/58 receipts; 0 of 500 + 10,000 + 10,000 scenarios differ on three seeds; reviewer APPROVE | `be9e129`, `c4e21c4` |
+| 2.5 Tester: `tests/unit/engine.test.js`, 79 tests (58 receipt cases, §9 traps by name, purity, perMile, restFor on real data, a load guard); 16 mutations each caught | ✅ | `560eb54` |
+| 2.6 Close: full suite (238 unit, oracle, 2 e2e), reviewer on the tests, reflector, progress | 🟡 running | |
 
 **Phase 2 notes for a resuming session.**
 - The contract is the spec. Change it only by a decision, and change the oracle and receipts **before** the engine.
 - The builder implements from the contract and must not read `tests/oracle/engine.py` (independence).
+**Review evidence for the Phase 2 reflector** (all fixed unless noted):
+- **Writing receipts by hand before any code found a spec flaw.** Under §4.2's literal order, a free-delivery promo lowered the tax on the food. The contract was amended (§5.5) before the engine existed (`72db287`).
+- **The oracle self-check caught a harness bug, not an engine bug.** The receipt merge rule merged `cart` objects instead of replacing them: 11 of 58 cases failed with impossible totals. Map-like fields (`cart`, `creditOptIn`, `markup`) now replace whole (`72db287`).
+- **The fuzzer only covers what it generates.** The first engine matched on 10,000 scenarios, yet the reviewer found that a `directSvc` with no `modes` threw and took down `allResults`, and a deal with no `scope` silently never applied. Neither shape is ever generated (`793577b`, `c4e21c4`). Lesson: review malformed and missing-field inputs separately from the differential test.
+- **An invented number hid in a code default.** `restFor` fell back to `markup {}` (0%) for a missing category, so the apps looked cheaper. The never-invent rule applies to code fallbacks too: return null (`ba25e38`, `c4e21c4`).
+- **The orchestrator's card repeated ISS-008.** A DONE WHEN compared VM-realm arrays with `deepStrictEqual`, so the builder reported BLOCKED on a correct engine. Compare with `JSON.stringify` or `loadData`'s clone (`c4e21c4` message).
+- **Generated tests can vanish silently.** The 58 receipt tests are generated from files: an empty glob would remove them and the suite would still pass. A guard test now pins the floor (`560eb54`).
+- **Stop hooks vs in-progress workers:** twice the hook asked to commit files a worker was still editing. The orchestrator waited for the worker and verified first; mid-edit commits would have pushed unverified code.
 - Fuzzer power, measured: a `>=`→`>` change on `memberMin` was caught in 15/500 scenarios and by none of the receipts (boundary injection does that work). The receipts caught tip-after-discount (4 cases) and free-delivery-lowers-tax (1 case).
 
 ### Phase 1: Data rebuild (2026-11-12, done)
