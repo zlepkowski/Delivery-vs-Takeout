@@ -143,3 +143,9 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** open
 - **What:** The only citable platform evidence for Wingstop is a 2018 franchising.com press release on the DoorDash rollout. Current DoorDash status was not re-verified. No Uber Eats or Grubhub evidence meets the rules (the Uber Eats store pages were not used as evidence). Markup is the category default (est).
 - **Next step:** confirm current app presence from a dated Wingstop statement or a 2026 news source.
+
+### ISS-021 — Pizza Hut profile blocked: www.pizzahut.com returns 502 (task 1.7 follow-up, 2026-11-12)
+- **Opened:** 2026-11-12 by researcher (Phase 1.7 follow-up) · **Phase:** 1 · **Status:** open
+- **What:** `https://www.pizzahut.com/menu` returned HTTP 502 "upstream request failed" on every load (3 browser loads: first with a 60 s timeout and `waitUntil: domcontentloaded`, then two more after a wait). curl gets `HTTP/2 stream 1 was not closed cleanly: INTERNAL_ERROR`. `order.pizzahut.com` fails its TLS certificate check (expired certificate). Control hosts (chipotle.com, dominos.com) load with HTTP 200 in the same session. Not a bot-challenge page, so not worked around. Same failure pattern as ISS-013 (Taco Bell).
+- **Why it matters:** no menu prices, deal, direct delivery fee or platform evidence could be read for `pizza_hut`. No `tools/data/profiles/pizza_hut.json` was written, because a profile needs 5-10 menu items observed in 2 states (D-027).
+- **Next step:** retry later, or the user confirms the gateway can reach www.pizzahut.com. Then research the menu at the three city-hall stores (NYC 10007, Chicago 60602, Phoenix 85003), the direct-only app/phone offer if one exists, and the first-party delivery fee before any payment step.
