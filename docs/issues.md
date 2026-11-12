@@ -40,21 +40,33 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **Why it matters:** the nearest-store search will miss chains or stores, so distances come out too long, and a missing brand can't be picked. Wonder and McDonald's are in the proposed profile list.
 - **Next step:** dedupe (D-021) may fix Qdoba. When the profiles are picked, the orchestrator weighs coverage. Later, possibly let `build-stores.py` take a brand from the newest earlier run where its US count looks healthy (Phase 7 refresh).
 
+### ISS-010 — NH, VT and DC meal-tax rates read from search results, not fetched from the state site
+- **Opened:** 2026-11-12 by researcher · **Phase:** 1 · **Status:** open
+- **What:** revenue.nh.gov and tax.vermont.gov return 403 to automated fetch, so NH 8.5%, VT 9% and DC 10% (otr.cfo.dc.gov, which also refused the direct fetch) were read from web search results on the official domains. The NH 2026 booklet also lists 8.5%. HB 1480 (2026) proposed 9.0% for NH, and enactment was not confirmed.
+- **Why it matters:** the rates match BUILD.md §6 but are not confirmed from the live pages.
+- **Next step:** a human checks the four pages (and the NH HB 1480 status) and confirms or corrects the rates in `tools/data/state-tax.csv`.
+
+### ISS-011 — No unit tests for the data generators' rules
+- **Opened:** 2026-11-12 by orchestrator (reviewer should-fix on 087d79c) · **Phase:** 1 → 7 · **Status:** open
+- **What:** the schema tests check the generated files' shape, counts and ranges, but nothing pins `tools/build-cars.py`'s tie order, half-up rounding, hydrogen/CNG drop or name cleaning. Switching `round_half_up` to Python's `round()` would still pass 11/11.
+- **Why it matters:** Phase 7 rewrites the generators for the scheduled refresh, and a silent rule change would ship.
+- **Next step:** before Phase 7 touches a generator, add a stdlib Python test per generator that runs it on a hand-written fixture with hand-computed expected output.
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
-
-### ISS-003 — Gas price source for the automated refresh
-- **Opened:** 2026-11-11 by orchestrator · **Phase:** 7 · **Status:** closed (2026-11-12, D-022)
-- **What:** AAA has state-level prices but means scraping (fragile, terms unclear). EIA is official and has an API (free key) but is regional (PADD), with only about 9 states broken out.
-- **Next step:** decide in Phase 7. Fuel rarely changes the answer (BUILD.md §1), so robustness beats precision here.
-- **Resolution:** EIA. AAA blocks automated requests (Cloudflare), so it can't be the scripted source.
 
 ### ISS-002 — Confirm the All The Places license allows redistributing the tiles
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 1 · **Status:** closed (2026-11-12, D-020)
 - **What:** The tiles redistribute derived store coordinates on a public site.
 - **Next step:** check the license terms of the ATP output before the first deploy, and record the result as a decision.
 - **Resolution:** the data is CC-0 (ATP README, "License"). Publishing the tiles is allowed.
+
+### ISS-003 — Gas price source for the automated refresh
+- **Opened:** 2026-11-11 by orchestrator · **Phase:** 7 · **Status:** closed (2026-11-12, D-022)
+- **What:** AAA has state-level prices but means scraping (fragile, terms unclear). EIA is official and has an API (free key) but is regional (PADD), with only about 9 states broken out.
+- **Next step:** decide in Phase 7. Fuel rarely changes the answer (BUILD.md §1), so robustness beats precision here.
+- **Resolution:** EIA. AAA blocks automated requests (Cloudflare), so it can't be the scripted source.
 
 ### ISS-006 — `.claude/settings.json` (auto-compact at 60%) created
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 0 · **Status:** closed (2026-11-12, the user told the orchestrator to write it; D-015 applied)
@@ -65,3 +77,17 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
   { "env": { "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60" } }
   ```
   It takes effect from the next session start.
+
+### ISS-008 — `tests/unit/data-cars.test.js` fails on a cross-realm array comparison (not a data error)
+- **Opened:** 2026-11-12 by researcher (Phase 1, task 3) · **Phase:** 1 · **Status:** closed (2026-11-12, 8962e13)
+- **What:** The first test "§6 CAR_DATA is an array of strings in the Make|Model:value format" runs `assert.deepEqual(bad.slice(0, 5), [])`. `CAR_DATA` comes from `loadData` (a `vm` context), so `bad.slice()` is a VM-realm array and fails `deepStrictEqual` against the main-realm `[]` even when empty ("Values have same structure but are not reference-equal"). `tests/unit/data-brands.test.js` has the same pattern, and every `deepEqual(bad, [])` there fails the same way. The data itself passes: all 48 makes match ROW_RE.
+- **Why it matters:** the DONE WHEN for cars.js cannot exit 0 until the test is fixed. The test was not changed (task card: never weaken a test).
+- **Next step:** the tester or orchestrator changes the comparisons to `assert.equal([...bad.slice(0, 5)].length, 0)` or `assert.deepEqual([...bad], [])`, or `tests/helpers/data.js` returns realm-neutral arrays. Confirmed with `node -e` on 2026-11-12: `[...bad.slice(0,5)]` passes `deepEqual([])`.
+- **Also:** `tests/unit/data-provenance.test.js` "every src/data/*.js is listed in index.html" fails for `src/data/cars.js` because `index.html` doesn't load it yet (index.html is outside the researcher's scope).
+- **Resolution:** `tests/helpers/data.js` `loadData()` now returns `structuredClone(...)` of the VM data, so every data test compares values from its own realm. No assertion changed.
+
+### ISS-009 — Virginia meal tax rate has no primary source
+- **Opened:** 2026-11-12 by researcher (Phase 1, task 4) · **Phase:** 1 · **Status:** closed (2026-11-12, D-025)
+- **What:** BUILD.md §6 uses VA 10.5 as the meal rate. The state sales rate on prepared food is 5.3% (4.3% state + 1% local, tax.virginia.gov). The rest is a local meals tax set by each locality (0 to about 10%, per search-result reporting). No primary source gives a typical or average figure, so `src/data/states.js` writes `mealTaxPct: null` for VA.
+- **Why it matters:** with no sourced meal rate, VA was written as null, which would break every Virginia calculation.
+- **Resolution:** D-025. Virginia has no statewide meal tax, so it uses the Tax Foundation's published combined rate (5.77%), with a note that local meals taxes are excluded. A locality-level rate could come later from a Virginia source (e.g. the Cooper Center's local tax survey) if the host becomes reachable.

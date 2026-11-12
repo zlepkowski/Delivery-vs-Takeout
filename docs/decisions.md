@@ -95,7 +95,7 @@ Finalizes the store-tile proposal in the data-research skill. Where they differ,
 *Why:* 24 MB of downloads instead of 2.9 GB (339 members, 223 MB uncompressed, measured 2026-11-12), a brand list grounded in OSM tagging, and tiles that can't drift from the brand index.
 
 **D-022 — Gas prices come from EIA, not AAA** · 2026-11-12 · *accepted*
-AAA's site sits behind Cloudflare bot protection. A plain request on 2026-11-12 got "Sorry, you have been blocked", and getting around that isn't acceptable. EIA's weekly retail prices (`www.eia.gov`) are official and free. Where EIA publishes a state series (CA, CO, FL, MA, MN, NY, OH, TX, WA), use it. Every other state uses its PADD region, or the PADD 1 sub-region (1A New England, 1B Central Atlantic, 1C Lower Atlantic), per EIA's own PADD definitions. A comment on each `STATES` row names the series used. `GRADE_ADD` = EIA's U.S. midgrade, premium and diesel averages minus U.S. regular, for the same week. Closes ISS-003: the Phase 7 refresh uses the same source.
+AAA's site sits behind Cloudflare bot protection. A plain request on 2026-11-12 got "Sorry, you have been blocked", and getting around that isn't acceptable. EIA's weekly retail prices (`www.eia.gov`) are official and free. Where EIA publishes a state series (CA, CO, FL, MA, MN, NY, OH, TX, WA), use it. Every other state uses its PADD region, or the PADD 1 sub-region (1A New England, 1B Central Atlantic, 1C Lower Atlantic), per EIA's own PADD definitions. A comment on each `STATES` row names the series used. `GRADE_ADD` = EIA's U.S. midgrade, premium and diesel averages minus U.S. regular, for the same week. Closes ISS-003: the Phase 7 refresh uses the same source. *Refined 2026-11-12:* PADD 5 states with no series of their own (AK, AZ, HI, NV, OR) use EIA's "West Coast (PADD 5) Except California" series. The plain PADD 5 average is pulled up by California, which is none of them.
 *Why:* robustness beats precision here (BUILD.md §1: fuel rarely decides the answer).
 
 **D-023 — Which cars `cars.js` lists** · 2026-11-12 · *accepted*
@@ -105,6 +105,28 @@ Source: EPA `https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip`.
 - **Value:** the median, over those records with that fuel, of `comb08` (gas, diesel), or of `1000 / combE` for electric (mi/kWh × 10). Round half up to an integer.
 - **Names:** makes merged case-insensitively (`MINI` / `Mini` → `MINI`). Any `,` `:` `|` in a name becomes a space; whitespace collapsed. Makes and models sorted.
 - **Expected:** about 48 makes and 347 models (the spec's v4 figures were ~39 / ~330).
+
+**D-024 — cards.js: which cards, which credits, and the shape** · 2026-11-12 · *accepted*
+Researched by the orchestrator on 2026-11-12 from the issuers' own card pages (D-013). Supersedes the spec's "27 cards".
+- **Cards (22):**
+  - every American Express consumer card with a live page on americanexpress.com (13): Platinum, Gold, Blue Cash Preferred, Blue Cash Everyday, Delta SkyMiles Blue/Gold/Platinum/Reserve, Hilton Honors/Surpass/Aspire, Marriott Bonvoy Bevy/Brilliant. Green, EveryDay, EveryDay Preferred and Cash Magnet now redirect to the card hub, so they're no longer offered and aren't listed.
+  - every Chase card whose page lists a DoorDash benefit (7): Sapphire Reserve, Sapphire Preferred, Freedom Unlimited, Freedom Flex, Freedom Rise, DoorDash Rewards Mastercard, Ink Business Preferred.
+  - Capital One Venture X and Savor (2). Neither has a food or delivery credit; they're listed so holders can see that.
+- **Only food-relevant credits are listed:** dining, restaurant, Resy, OpenTable, Uber Cash, DoorDash promos, Dunkin', and rideshare credits. Rideshare credits are listed as **locked** because people mistake them for Uber Eats money. Hotel, airline, streaming and retail credits are left out. A card with none has `credits: []`.
+- **`POD.data.CARDS`** is an ordered array of card objects (display order: Amex, Chase, Capital One). Card ids are unique.
+- **Card:** `{ id, issuer, name, url, asOf, membership?, note?, credits: [] }`. `membership` ("dd" | "ue" | "gh") means the card provides that platform's membership. The page turns it on by default, and the user can turn it off.
+- **Credit:** `{ id, name, amount, cadence, plats, modes?, goldPartner?, restricted?, locked?, source, asOf, note }`.
+  - The key for opt-ins and `used` flags is `cardId + "." + creditId`.
+  - `amount` is per `cadence` period ("monthly" | "quarterly" | "semiannual" | "annual"), never annualized.
+  - **Tier** (§9.1): universal = neither flag; `restricted: true` = applies only after the user opts in; `locked: true` = never applies, and `plats` is `[]`. Never both.
+  - A restricted credit's `plats` lists where it would apply after opt-in.
+  - **New `modes`:** `["d"]` or `["p"]` limits a credit to delivery or pickup channels of its `plats`; absent means both. The Phase 2 engine and oracle must honor it.
+- **When unsure, under-credit:** bonuses with odd timing (Platinum's extra $20 Uber Cash in December) aren't counted. A credit whose pickup eligibility isn't stated is limited to `modes: ["d"]`.
+*Why:* the spec's list was v4's. Issuer lineups changed, and listing non-food credits would only add noise to the Locked insight.
+
+**D-025 — Virginia's tax is its combined sales rate** · 2026-11-12 · *accepted*
+BUILD.md §6 listed VA among the meal-tax states at 10.5%. Virginia has no statewide meal tax: its meals taxes are levied by counties and cities at different rates, and no primary source for a "typical" local rate was reachable. Per §6's own rule (a state without a meal tax uses the combined sales rate), VA uses the Tax Foundation's published combined state + average local rate, with a note that local meals taxes are not included. All "combined" rows use the Tax Foundation's published combined figure as-is, not a re-added state + local sum. Resolves ISS-009.
+*Why:* a sourced number beats a null that breaks every Virginia calculation. Tax is applied the same way on every channel, so understating it barely moves the ranking.
 
 ---
 
