@@ -80,6 +80,8 @@ function checkCalc(S, kase) {
   const exp = kase.expect;
   const r = engine.calc(S, kase.channel, kase.override);
   if (Object.prototype.hasOwnProperty.call(exp, 'result')) {
+    // A {"result": null} case must carry nothing else; a mixed case fails loudly.
+    same(Object.keys(exp), ['result'], 'expect keys with result');
     assert.strictEqual(r, null, `${kase.channel} should be unavailable`);
     return;
   }
@@ -334,6 +336,46 @@ test('D-029 §2.1 restFor name falls back to the brand id for a profiled brand m
 
 // Guard (orchestrator): the receipt tests above are generated from files, so a broken glob
 // would make them vanish while the suite still passes. Pin the floor.
+test('D-029 §2.1 restFor shares no array or object with D (platforms, markup, deal, directSvc, menu rows)', () => {
+  const H = {
+    BRANDS: { f: { name: 'F', category: 'pizza' }, g: { name: 'G', category: 'pizza' } },
+    CATEGORY_DEFAULTS: { pizza: { markup: { dd: 1, ue: 2, gh: 3 }, est: true } },
+    PROFILES: {
+      f: {
+        menu: [['A', 5, true]],
+        deal: { label: 'L', price: 4, minItems: 1, scope: 'both' },
+        directDelivery: true,
+        directFee: 2,
+        directSvc: { flat: 1, modes: ['d'] },
+        amexGoldDirect: false,
+        platforms: ['dd'],
+        markup: { dd: 10 },
+        markupEst: false
+      }
+    }
+  };
+  const before = structuredClone(H);
+  const r = engine.restFor('f', H);
+  r.platforms.push('ue');
+  r.markup.dd = 99;
+  r.deal.price = 0;
+  r.directSvc.modes.push('p');
+  r.menu[0][1] = 0;
+  assert.deepStrictEqual(H, before);
+});
+
+test('D-029 §2.1 restFor copies an unprofiled brand\'s category markup (CATEGORY_DEFAULTS unchanged)', () => {
+  const H = {
+    BRANDS: { g: { name: 'G', category: 'pizza' } },
+    CATEGORY_DEFAULTS: { pizza: { markup: { dd: 1, ue: 2, gh: 3 }, est: true } },
+    PROFILES: {}
+  };
+  const before = structuredClone(H.CATEGORY_DEFAULTS);
+  const r = engine.restFor('g', H);
+  r.markup.dd = 99;
+  assert.deepStrictEqual(H.CATEGORY_DEFAULTS, before);
+});
+
 test('D-029 the hand-worked receipts are all loaded (at least 12 receipts, 58 cases)', () => {
   const cases = RECEIPTS.reduce((n, r) => n + r.cases.length, 0);
   assert.ok(RECEIPTS.length >= 12, `only ${RECEIPTS.length} receipts loaded`);
