@@ -1,0 +1,126 @@
+{
+  "asian": {
+    "est": true,
+    "markup": {
+      "dd": 12.6,
+      "ue": 12.6,
+      "gh": 12.6
+    },
+    "reason": "Fast-casual average delivery menu premium, 12.6% (Gordon Haskett, 2020); no Asian-cuisine measure found. Same value on dd/ue/gh: no platform-specific menu-only figure published.",
+    "sources": [
+      "https://www.restaurantdive.com/news/major-qsrs-hiking-delivery-menu-prices-by-over-15/582394/",
+      "https://www.foxbusiness.com/lifestyle/starbucks-mcdonalds-chick-fil-a-delivery-orders-report"
+    ]
+  },
+  "burger": {
+    "est": true,
+    "markup": {
+      "dd": 19.3,
+      "ue": 19.3,
+      "gh": 19.3
+    },
+    "reason": "McDonald's food-only menu prices on delivery apps are 19.3% above in-store (Self Financial, prices of 1 Apr 2025, blended across apps). Same value on dd/ue/gh: the study gives no per-app food-only split.",
+    "sources": [
+      "https://www.self.inc/info/most-expensive-cities-for-food-delivery-apps/"
+    ]
+  },
+  "casual": {
+    "est": true,
+    "markup": {
+      "dd": 3,
+      "ue": 3,
+      "gh": 3
+    },
+    "reason": "Casual-dining average delivery menu premium, about 3% (Gordon Haskett via Restaurant Dive, 2020). Same value on dd/ue/gh: no platform-specific menu-only figure published.",
+    "sources": [
+      "https://www.restaurantdive.com/news/major-qsrs-hiking-delivery-menu-prices-by-over-15/582394/"
+    ]
+  },
+  "chicken": {
+    "est": true,
+    "markup": {
+      "dd": 15.3,
+      "ue": 15.3,
+      "gh": 15.3
+    },
+    "reason": "Fast-food average delivery menu premium, 15.3% (Gordon Haskett, Jul 2020). Chick-fil-A at 29.8% is the highest outlier of 25 chains, so not used as typical. Same value on dd/ue/gh: no platform split published.",
+    "sources": [
+      "https://www.foxbusiness.com/lifestyle/starbucks-mcdonalds-chick-fil-a-delivery-orders-report",
+      "https://www.restaurantdive.com/news/major-qsrs-hiking-delivery-menu-prices-by-over-15/582394/"
+    ]
+  },
+  "coffee": {
+    "est": true,
+    "markup": {
+      "dd": 20.3,
+      "ue": 20.3,
+      "gh": 20.3
+    },
+    "reason": "Starbucks delivery menu premium, 20.3% (Gordon Haskett, Jul 2020); single chain used as the coffee proxy. Same value on dd/ue/gh: no platform split published.",
+    "sources": [
+      "https://www.foxbusiness.com/lifestyle/starbucks-mcdonalds-chick-fil-a-delivery-orders-report"
+    ]
+  },
+  "dessert": {
+    "est": true,
+    "markup": {
+      "dd": 15.3,
+      "ue": 15.3,
+      "gh": 15.3
+    },
+    "reason": "Fast-food average delivery menu premium, 15.3% (Gordon Haskett, Jul 2020); no dessert-specific measure found. Same value on dd/ue/gh: no platform split published.",
+    "sources": [
+      "https://www.foxbusiness.com/lifestyle/starbucks-mcdonalds-chick-fil-a-delivery-orders-report"
+    ]
+  },
+  "mexican": {
+    "est": true,
+    "markup": {
+      "dd": 12.6,
+      "ue": 12.6,
+      "gh": 12.6
+    },
+    "reason": "Fast-casual average delivery menu premium, 12.6% (Gordon Haskett, 2020). Chipotle's 21% premium (Credit Suisse via Restaurant Business) is one chain, so not used. Same value on dd/ue/gh: no platform split published.",
+    "sources": [
+      "https://www.restaurantdive.com/news/major-qsrs-hiking-delivery-menu-prices-by-over-15/582394/",
+      "https://www.restaurantbusinessonline.com/technology/restaurants-delivery-premiums-could-start-scaring-customers"
+    ]
+  },
+  "other": {
+    "est": true,
+    "markup": {
+      "dd": 15.3,
+      "ue": 15.3,
+      "gh": 15.3
+    },
+    "reason": "Fallback for unmatched fast-food brands: fast-food average delivery menu premium, 15.3% (Gordon Haskett, Jul 2020). Same value on dd/ue/gh: no platform split published.",
+    "sources": [
+      "https://www.foxbusiness.com/lifestyle/starbucks-mcdonalds-chick-fil-a-delivery-orders-report"
+    ]
+  },
+  "pizza": {
+    "est": true,
+    "markup": {
+      "dd": 15.3,
+      "ue": 15.3,
+      "gh": 15.3
+    },
+    "reason": "Fast-food average delivery menu premium, 15.3% (Gordon Haskett, Jul 2020). Orchestrator override 2026-11-12: the only pizza-specific figure is one chain (Papa John's: third-party menu equals first-party, Credit Suisse), and applying a single chain's parity to every unprofiled pizza place would understate app costs. Same value on dd/ue/gh: no platform split published.",
+    "sources": [
+      "https://www.foxbusiness.com/lifestyle/starbucks-mcdonalds-chick-fil-a-delivery-orders-report",
+      "https://www.restaurantbusinessonline.com/technology/restaurants-delivery-premiums-could-start-scaring-customers"
+    ]
+  },
+  "sandwich": {
+    "est": true,
+    "markup": {
+      "dd": 15.3,
+      "ue": 15.3,
+      "gh": 15.3
+    },
+    "reason": "Quick-service sandwich proxy: fast-food average delivery menu premium, 15.3% (Gordon Haskett, Jul 2020); no sandwich-specific measure found. Same value on dd/ue/gh.",
+    "sources": [
+      "https://www.foxbusiness.com/lifestyle/starbucks-mcdonalds-chick-fil-a-delivery-orders-report"
+    ]
+  }
+}
