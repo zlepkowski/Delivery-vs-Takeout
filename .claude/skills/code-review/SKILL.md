@@ -56,3 +56,8 @@ CHECKED: the checklist items that apply to this diff and passed, e.g. 1, 4, 5, 8
 ## Learned rules
 
 <!-- The reflector adds rules here. Each one cites its evidence. -->
+- **Blocker, mapping tables: check each changed row against the source, not against the tests.** DE, DC and MD on the wrong PADD passed every test (c539fc3).
+- **Blocker, platform citations: a `platforms` claim cited to Drive, a "powered by" story, a white-label deal or an unopened snippet is a phantom platform.** Open the URL and check it's a marketplace listing. Little Caesars cited a Drive deal (e1bc046); Domino's cited a snippet (ec5e627).
+- **Profile diffs: spot-check every item name (size, piece count, spelling) against the cited page, and open one URL per platform.** The 1.7 medians re-fetched correctly; the errors were in names and citations (ec5e627, 7af787d, 0a4262b).
+- **Blocker, credits: each `cards.js` row's "included" claim must match the issuer sentence.** Amex Platinum was marked as including Uber One, which the card only reimburses (83f24d7).
+- **Should-fix, issue log: a new `ISS-nnn` must be unused and sit under `## Open`.** Check `grep -o '^### ISS-[0-9]*' docs/issues.md | sort | uniq -d` prints nothing. Duplicate IDs (2fbdac1, c5f8b19, e1bc046) and open issues filed under Closed (3f44708) each needed a renumber.

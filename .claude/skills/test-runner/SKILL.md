@@ -88,3 +88,9 @@ FAIL tests/unit/engine.test.js:88  '§9.4 tip uses the pre-discount subtotal'
 ## Learned rules
 
 <!-- The reflector adds rules here. Each one cites its evidence. -->
+- **Pin every lookup table to the source's own list, item by item.** A test that checks shape and range passes a state filed under the wrong PADD. Assert the expected group for each row from the source (c539fc3: DE, DC, MD on 1C, 12/12 green).
+- **Pin aggregates by value, with independent expected numbers.** Cover an even count, a .5 rounding case and a min-vs-median case. A shape test passes a median that returns the minimum (1.7 review, findings 1 and 2).
+- **Quote the issuer sentence beside every pinned credit amount.** A reimbursed membership is not an included one. The Platinum test pinned an over-credit because the card row said so (83f24d7, blocker).
+- **Read data through `tests/helpers/data.js` `loadData()`, and compare with literals.** A `deepEqual` against `[]` fails on VM-realm arrays even when they're empty (ISS-008, 8962e13).
+- **Run destructive negative tests on a throwaway copy in the scratch directory, never the real repo, even when a card's DONE WHEN says to.** The task 1.8 fix card ran `rm -rf` guard tests against the real repo. The guard held by luck (69b429b). If the card says otherwise, report NEEDS-CARD.
+- **Every generator rule that rejects input gets a failing-input test,** a fixture that must exit non-zero with the rule's message (platform evidence with no https URL: 56cc487, 1.7 review 3a; ISS-011 is still open for the cars generator). **A rule enforced only by a test gets a mutation check:** break the data in a scratch copy and show the test fails (observation ZIP vs state, 1.7 review 3b).

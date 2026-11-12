@@ -160,3 +160,28 @@ Consequence: an unprofiled Five Guys has no `amexGoldDirect`, so the Amex Gold d
 ## Skill updates
 
 <!-- The reflector appends here at the end of each phase. -->
+
+### Phase 1 (2026-11-12): reflector proposal, approved by the orchestrator with citation fixes
+- data-research: + map each state to its PADD from EIA's glossary, row by row (c539fc3)
+- data-research: + write the chain JSON after each store; one chain per run; stop exploring by call 60 (progress.md 1.7 turn budget, ISS-018)
+- data-research: + platforms cite a dated page opened and read; Drive, "powered by" and white-label are not platform evidence (e1bc046, ec5e627, ISS-023, ISS-024)
+- data-research: + copy item names with size or piece count as shown (ec5e627)
+- data-research: + record every bag or checkout fee line with amount or range and type (ISS-031, ISS-027, ISS-014)
+- data-research: + reachability checks use the default user agent only (ISS-013, D-027)
+- data-research: + new issue IDs are max+1 at write time, under `## Open` (2fbdac1, c5f8b19, e1bc046, 3f44708)
+- data-research: ~ profiles and categories are generated from JSON (D-027), not hand-entered; the table and profile bullets say so
+- data-research: ~ tax and gas sources: VA is 5.77 (D-025), gas is EIA by PADD (D-022); NH/VT/DC flagged as unconfirmed (ISS-010)
+- data-research: − removed "Wonder" from the amexGoldDirect list (D-027 names three brands)
+- test-runner: + pin lookup tables to the source item by item (c539fc3)
+- test-runner: + pin aggregates by value, with even-count and .5 cases (1.7 review findings 1, 2)
+- test-runner: + quote the issuer sentence beside each pinned credit amount (83f24d7)
+- test-runner: + read data via loadData(), compare with literals (ISS-008, 8962e13)
+- test-runner: + destructive negative tests run on a scratch copy, never the real repo (69b429b)
+- test-runner: + every generator rejection rule gets a failing-input test; a test-only rule gets a mutation check (56cc487, 1.7 review 3a/3b, ISS-011)
+- code-review: + blocker, mapping tables checked against the source (c539fc3)
+- code-review: + blocker, platform citations that are Drive, white-label or unopened snippets (e1bc046, ec5e627)
+- code-review: + profile diffs spot-check item names and one URL per platform (ec5e627, 1.7 review)
+- code-review: + blocker, credit "included" claims match the issuer sentence (83f24d7)
+- code-review: + should-fix, new ISS ids unused and under `## Open` (2fbdac1, c5f8b19, 3f44708)
+- frontend: no change (no Phase 1 frontend evidence)
+- backend: no change (Phase 8, no evidence yet)
