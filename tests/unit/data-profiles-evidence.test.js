@@ -14,6 +14,11 @@ const { APP_ROOT } = require('../helpers/load');
 
 const EVIDENCE_DIR = path.join(APP_ROOT, 'tools', 'data', 'profiles');
 const PLATFORMS = ['dd', 'ue', 'gh'];
+const CATEGORIES_JSON = path.join(APP_ROOT, 'tools', 'data', 'categories.json');
+// Same patterns as tools/build-profiles.py: platform evidence uses re.search (any https host inside
+// the string); a markup source uses URL_RE, which is anchored at the start and at the end.
+const HTTPS_RE = /https:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
+const MARKUP_URL_RE = /^https:\/\/[A-Za-z0-9.-]+(\/[^\s*]*)?$/;
 
 // Hand-computed pins (orchestrator, from the evidence observations).
 const PINNED = [
@@ -33,6 +38,11 @@ function load() {
     ]);
   }
   return cached;
+}
+
+/** tools/data/categories.json, parsed. This is the source the generator reads, not categories.js. */
+function readCategories() {
+  return JSON.parse(fs.readFileSync(CATEGORIES_JSON, 'utf8'));
 }
 
 /** Every chain evidence file, parsed. */
@@ -145,12 +155,15 @@ test('D-027 every menu price equals the integer-cent median of its evidence obse
 test('D-027 directFee equals the integer-cent median of its fee observations when directDelivery is true', () => {
   const { PROFILES } = load();
   const problems = [];
+  let checked = 0;
   for (const { data } of evidence()) {
     if (data.directDelivery !== true) continue;
+    checked++;
     const want = medianCents(data.directFee.observed.map((o) => o.fee));
     const got = toCents(PROFILES[data.id].directFee);
     if (got !== want) problems.push(`${data.id}: got ${got} cents, want ${want}`);
   }
+  assert.ok(checked > 0, 'no directDelivery chains were checked');
   assert.deepEqual(problems, []);
 });
 
@@ -175,40 +188,77 @@ test('D-027 every observation zip exists in ZIP_PACKED and its state matches the
   assert.ok(problems.length === 0, problems.join('\n'));
 });
 
-test('D-027 useCategory markup: markupEst is true and each listed platform takes the brand category default', () => {
-  const { PROFILES, BRANDS, CATEGORY_DEFAULTS } = load();
+test('D-027 useCategory markup: markupEst is true and each listed platform equals categories.json for the brand category', () => {
+  const { PROFILES, BRANDS } = load();
+  const cats = readCategories();
   const problems = [];
+  let checked = 0;
   for (const { data } of evidence()) {
     if (!data.markup || data.markup.useCategory !== true) continue;
+    checked++;
     const p = PROFILES[data.id];
     const cat = BRANDS[data.id] && BRANDS[data.id].category;
     if (p.markupEst !== true) problems.push(`${data.id}: markupEst ${p.markupEst}`);
-    if (!CATEGORY_DEFAULTS[cat]) {
-      problems.push(`${data.id}: no CATEGORY_DEFAULTS for "${cat}"`);
+    if (!cats[cat]) {
+      problems.push(`${data.id}: no categories.json entry for "${cat}"`);
       continue;
     }
     for (const k of Object.keys(data.platforms)) {
-      const want = CATEGORY_DEFAULTS[cat].markup[k];
-      if (p.markup[k] !== want) problems.push(`${data.id}.${k}: got ${p.markup[k]}, category ${cat} default ${want}`);
+      const want = cats[cat].markup[k];
+      if (typeof want !== 'number') problems.push(`${data.id}.${k}: categories.json ${cat} has no ${k} markup`);
+      if (p.markup[k] !== want) problems.push(`${data.id}.${k}: got ${p.markup[k]}, categories.json ${cat} ${want}`);
+    }
+  }
+  assert.ok(checked > 0, 'no useCategory chains were checked');
+  assert.deepEqual(problems, []);
+});
+
+test('D-021 CATEGORY_DEFAULTS in categories.js equals tools/data/categories.json markup for all 10 categories', () => {
+  const { CATEGORY_DEFAULTS } = load();
+  const cats = readCategories();
+  const names = Object.keys(cats).sort();
+  assert.equal(names.length, 10);
+  assert.deepEqual(Object.keys(CATEGORY_DEFAULTS).sort(), names);
+  const problems = [];
+  for (const c of names) {
+    for (const k of PLATFORMS) {
+      if (CATEGORY_DEFAULTS[c].markup[k] !== cats[c].markup[k]) {
+        problems.push(`${c}.${k}: categories.js ${CATEGORY_DEFAULTS[c].markup[k]}, json ${cats[c].markup[k]}`);
+      }
     }
   }
   assert.deepEqual(problems, []);
 });
 
-test('D-027 sourced markup: markupEst is false and each listed platform keeps the evidence value', () => {
+test('D-027 every profile: markupEst equals (useCategory is true), and sourced markup keeps the evidence values', () => {
   const { PROFILES } = load();
+  const files = evidence();
   const problems = [];
-  for (const { data } of evidence()) {
-    if (!data.markup || data.markup.useCategory === true) continue;
+  let checked = 0;
+  for (const { data } of files) {
     const p = PROFILES[data.id];
-    if (p.markupEst !== false) problems.push(`${data.id}: markupEst ${p.markupEst}`);
-    if (!(typeof data.markup.source === 'string' && data.markup.source.startsWith('https://'))) {
-      problems.push(`${data.id}: sourced markup needs an https source`);
+    if (!p) {
+      problems.push(`${data.id}: no PROFILES entry`);
+      continue;
     }
-    for (const k of Object.keys(data.platforms)) {
-      if (p.markup[k] !== data.markup[k]) problems.push(`${data.id}.${k}: got ${p.markup[k]}, evidence ${data.markup[k]}`);
+    if (!data.markup) {
+      problems.push(`${data.id}: no markup block in evidence`);
+      continue;
+    }
+    checked++;
+    const useCat = data.markup.useCategory === true;
+    if (p.markupEst !== useCat) problems.push(`${data.id}: markupEst ${p.markupEst}, evidence useCategory ${useCat}`);
+    if (!useCat) {
+      if (!(typeof data.markup.source === 'string' && MARKUP_URL_RE.test(data.markup.source))) {
+        problems.push(`${data.id}: sourced markup needs an https source URL`);
+      }
+      for (const k of Object.keys(data.platforms)) {
+        if (p.markup[k] !== data.markup[k]) problems.push(`${data.id}.${k}: got ${p.markup[k]}, evidence ${data.markup[k]}`);
+      }
     }
   }
+  assert.ok(files.length > 0, 'no evidence files found');
+  assert.equal(checked, files.length, 'every evidence file must be checked');
   assert.deepEqual(problems, []);
 });
 
@@ -227,7 +277,7 @@ test('D-027 every platform evidence string cites an https:// source', () => {
   const problems = [];
   for (const { data } of evidence()) {
     for (const [k, ev] of Object.entries(data.platforms)) {
-      if (typeof ev !== 'string' || !ev.includes('https://')) problems.push(`${data.id}.${k}`);
+      if (typeof ev !== 'string' || !HTTPS_RE.test(ev)) problems.push(`${data.id}.${k}`);
     }
   }
   assert.deepEqual(problems, []);

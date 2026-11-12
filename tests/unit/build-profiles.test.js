@@ -127,6 +127,21 @@ test('D-027 build-profiles: a directFee with directDelivery false is rejected', 
   assert.match(r.stderr, /directFee given but directDelivery is false/);
 });
 
+test('D-027 build-profiles: sourced markup keeps the fixture values and is not an estimate', () => {
+  const r = build('sourced-markup');
+  assert.equal(r.status, 0, r.stderr);
+  // Markup numbers are the fixture's own (dd 4.5, ue 6); the generator must not swap in a category default.
+  assert.deepEqual(r.PROFILES.chipotle.markup, { dd: 4.5, ue: 6 });
+  assert.equal(r.PROFILES.chipotle.markupEst, false);
+});
+
+test('D-027 build-profiles: sourced markup with no source URL is rejected', () => {
+  const r = build('reject-markup-no-source');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /markup needs a source url/);
+});
+
 test('D-027 build-profiles: platform evidence with no https URL is rejected', () => {
   const r = build('reject-no-https');
   assert.equal(r.ok, false, 'generator should exit non-zero');
