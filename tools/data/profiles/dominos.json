@@ -1,0 +1,85 @@
+{
+  "id": "dominos",
+  "asOf": "2026-11-12",
+  "menu": [
+    {
+      "name": "ExtravaganZZa",
+      "dealItem": false,
+      "prices": [
+        {"zip": "10038", "state": "NY", "price": 19.99, "url": "https://www.dominos.com/menu/specialty"},
+        {"zip": "60654", "state": "IL", "price": 21.99, "url": "https://www.dominos.com/menu/specialty"},
+        {"zip": "85004", "state": "AZ", "price": 21.99, "url": "https://www.dominos.com/menu/specialty"}
+      ]
+    },
+    {
+      "name": "The People's Pizza - Deluxe",
+      "dealItem": false,
+      "prices": [
+        {"zip": "10038", "state": "NY", "price": 19.99, "url": "https://www.dominos.com/menu/specialty"},
+        {"zip": "60654", "state": "IL", "price": 21.99, "url": "https://www.dominos.com/menu/specialty"},
+        {"zip": "85004", "state": "AZ", "price": 21.99, "url": "https://www.dominos.com/menu/specialty"}
+      ]
+    },
+    {
+      "name": "Hot Buffalo Wings",
+      "dealItem": false,
+      "prices": [
+        {"zip": "10038", "state": "NY", "price": 9.99, "url": "https://www.dominos.com/menu/wings"},
+        {"zip": "60654", "state": "IL", "price": 12.99, "url": "https://www.dominos.com/menu/wings"},
+        {"zip": "85004", "state": "AZ", "price": 11.99, "url": "https://www.dominos.com/menu/wings"}
+      ]
+    },
+    {
+      "name": "Stuffed Cheesy Bread",
+      "dealItem": false,
+      "prices": [
+        {"zip": "10038", "state": "NY", "price": 9.99, "url": "https://www.dominos.com/menu/bread"},
+        {"zip": "60654", "state": "IL", "price": 9.99, "url": "https://www.dominos.com/menu/bread"},
+        {"zip": "85004", "state": "AZ", "price": 9.99, "url": "https://www.dominos.com/menu/bread"}
+      ]
+    },
+    {
+      "name": "Parmesan Bread Bites",
+      "dealItem": false,
+      "prices": [
+        {"zip": "10038", "state": "NY", "price": 6.99, "url": "https://www.dominos.com/menu/bread"},
+        {"zip": "60654", "state": "IL", "price": 7.49, "url": "https://www.dominos.com/menu/bread"},
+        {"zip": "85004", "state": "AZ", "price": 6.99, "url": "https://www.dominos.com/menu/bread"}
+      ]
+    },
+    {
+      "name": "5-Cheese Mac & Cheese",
+      "dealItem": false,
+      "prices": [
+        {"zip": "10038", "state": "NY", "price": 8.99, "url": "https://www.dominos.com/menu/pasta"},
+        {"zip": "85004", "state": "AZ", "price": 9.99, "url": "https://www.dominos.com/menu/pasta"}
+      ]
+    },
+    {
+      "name": "Coke®",
+      "dealItem": false,
+      "prices": [
+        {"zip": "10038", "state": "NY", "price": 3.79, "url": "https://www.dominos.com/menu/drinks"},
+        {"zip": "60654", "state": "IL", "price": 4.99, "url": "https://www.dominos.com/menu/drinks"},
+        {"zip": "85004", "state": "AZ", "price": 4.99, "url": "https://www.dominos.com/menu/drinks"}
+      ]
+    },
+    {
+      "name": "Domino's Marbled Cookie Brownie",
+      "dealItem": false,
+      "prices": [
+        {"zip": "10038", "state": "NY", "price": 8.49, "url": "https://www.dominos.com/menu/dessert"},
+        {"zip": "60654", "state": "IL", "price": 9.99, "url": "https://www.dominos.com/menu/dessert"},
+        {"zip": "85004", "state": "AZ", "price": 9.99, "url": "https://www.dominos.com/menu/dessert"}
+      ]
+    }
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "platforms": {
+    "dd": "DoorDash partnership announced April 2025 (QSR Magazine, https://www.qsrmagazine.com/story/dominos-deepens-third-party-ties-with-doordash-partnership/ ; search result only, page not loaded)"
+  },
+  "markup": {"useCategory": true},
+  "amexGoldDirect": false,
+  "notes": "Stores: NYC 45 Catherine St (store ZIP 10038, NY), Chicago 509 N Orleans St (store ZIP 60654, IL), Phoenix 2819 N Central Ave (store ZIP 85004, AZ). Captured 2026-11-12 via the carryout store locator with a Future Order slot on 2026-11-13 (all stores were closed at capture time; prices are the menu prices shown for that slot). Prices come from the dominos.com web-bff GraphQL category data. Deal: none. The Mix & Match tile ($6.99 each, 2-item minimum) is published on dominos.com/deals/MixAndMatch, but its terms do not say it is direct-only, the Weeklong Carryout block excludes Specialty pizzas, and no direct-only source was confirmed, so deal is null. directDelivery false: no first-party delivery fee was observed; the NYC delivery address returned 'Delivery not available' because all nearby stores were closed. Mac & Cheese has no Chicago observation (2 states only). Uber Eats: a 2023 listing, with exclusivity ended May 2025 per press; current status unverified, so not listed. Markup: no chain-specific published figure found, so category default (est)."
+}

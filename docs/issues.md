@@ -116,3 +116,9 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - www.dunkindonuts.com loads without a challenge. The locations page lists stores (nearby NYC), but ORDER HERE does not open a store menu, and no store-level prices were captured.
 - Delivery: a first-party delivery page exists at /dunkin-delivers, fee not read.
 - Next step: find the store ordering URL (or the menu/bag flow after store selection) and read a coffee and a donut price at 2 stores in 2 states.
+
+### ISS-016 — Domino's direct delivery fee not observed (profile `dominos`)
+- **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch A) · **Phase:** 1 · **Status:** open
+- **What:** `tools/data/profiles/dominos.json` has `directDelivery: false`. On 2026-11-12 every nearby store showed "Closed, opens at 10:30am" and the NYC delivery address (City Hall Park, 10007) returned "Delivery not available", so no first-party delivery fee was observed. No fee range is used.
+- **Why it matters:** Domino's has first-party delivery, so the direct-delivery route is left out of the Domino's comparison until a fee is observed.
+- **Next step:** re-run the delivery check with an open store and a deliverable address, then set `directDelivery: true` with `directFee.observed` at 2+ states (D-027).
