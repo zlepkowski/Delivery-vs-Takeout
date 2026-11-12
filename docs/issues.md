@@ -130,6 +130,7 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 - **What:** `tools/data/profiles/dominos.json` has `directDelivery: false`. On 2026-11-12 every nearby store showed "Closed, opens at 10:30am" and the NYC delivery address (City Hall Park, 10007) returned "Delivery not available", so no first-party delivery fee was observed. No fee range is used.
 - **Why it matters:** Domino's has first-party delivery, so the direct-delivery route is left out of the Domino's comparison until a fee is observed.
 - **Next step:** re-run the delivery check with an open store and a deliverable address, then set `directDelivery: true` with `directFee.observed` at 2+ states (D-027).
+- **Update 2026-11-12 (1.7 follow-up):** NYC fee observed: 1 Centre St, New York NY 10007-1602 (City Hall Park itself returned "Delivery not available"), store 3695, cart `summaryCharges` "Delivery Fee" = $6.99 (https://www.dominos.com/menu, delivery flow, cart read before any checkout). Chicago (121 N LaSalle St) and Phoenix (200 W Washington St) reached a delivery store (2788, 7651) but add-to-cart failed in the automated session, so no fee. `directDelivery` stays false until a second state is observed. Still open.
 
 ### ISS-017 — Five Guys profile blocked by a Cloudflare challenge (task 1.7 batch C)
 - **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 batch C) · **Phase:** 1 · **Status:** open
