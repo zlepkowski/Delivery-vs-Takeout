@@ -62,15 +62,17 @@ The gate does **not** catch newer **APIs**. Don't use `Array.prototype.includes/
 
 ## The engine (§4): the order is load-bearing
 
+The exact definition is `docs/engine-contract.md` (D-029), which overrides BUILD.md §4 where they differ. Implement from it.
+
 `POD.engine.calc(S, channelId, override)` is **pure**. It reads only its arguments: no `POD.S`, no DOM, no `new Date()` (pass dates in). The convenience wrapper `POD.calc(ch, o)` supplies `POD.S`.
 
 | # | Step | Rule |
 |---|---|---|
 | 1 | Direct-only deal | Only for `plat === "direct"`, and only when the cart has `deal.minItems` flagged items. Produces `dealSub` |
 | 2 | Markup | `food = menu × (1 + markup/100)`. Direct is 0%. Phase B: a sum over cart lines with per-item overrides |
-| 3 | Fees | delivery, service (% with a `svcMin` floor), small-order (`food < smallMin`), regulatory. A membership zeroes delivery above $12 and swaps `svc` → `memberSvc` |
+| 3 | Fees | delivery, service (% with a `svcMin` floor), `directSvc` (a restaurant fee on the direct modes it lists), small-order (`food < smallMin`) and regulatory (both app delivery only). A membership (`food >= memberMin`, the app's own threshold, not a fixed $12) zeroes delivery and swaps `svc` → `memberSvc` |
 | 4 | Subtotal discounts | promo (`percent` with cap / `dollar` / `freedel`) + pickup discount. **Clamped jointly to ≤ food** |
-| 5 | Tax | `(food − disc) × tax%`, on the **discounted** subtotal |
+| 5 | Tax | `(food − disc) × tax%`, on the **discounted** subtotal, except that a `freedel` promo doesn't lower taxable food (contract §5.5) |
 | 6 | Tip | on the **pre-discount** subtotal. Separate rates for delivery and pickup |
 | 7 | Drive | pickup only: `miles × (fuel/mpg + wear)`, or `miles ÷ miPerKwh × kwh` for an EV, + `hourly × minutes/60` |
 | 8 | Credits | flat, last, clamped to `gross − disc` |
@@ -79,12 +81,12 @@ The gate does **not** catch newer **APIs**. Don't use `Array.prototype.includes/
 
 **Rounding (decision D-012):** round each component to the cent with `POD.util.round2` when it's computed, the way a receipt does. `gross` and `net` are sums of rounded components. The Python oracle does the same, so the two must match exactly.
 
-The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override` argument (`{cart, miles}`) exists for counterfactuals: never mutate `S` inside `calc`.
+The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override` argument (`cart`, `manualSubtotal`, `miles`, `minutes`) exists for counterfactuals: never mutate `S` or `override` inside `calc`.
 
 ## Restaurant model (v5: decisions D-005 and D-006)
 
 - Restaurants come **from the user's location**, not a fixed list. State holds `S.brand` (a brand id) and `S.store` (`{id, lat, lon}`). The trip distance comes from the picked store: straight line × 2 × 1.25. `estimateMiles()` is only the fallback.
-- **Profiled brands** (`POD.data.PROFILES[brandId]`) have a menu, deal, per-platform markup, `directFee` and the `amexGoldDirect` flag.
+- **Profiled brands** (`POD.data.PROFILES[brandId]`) have a menu, deal, per-platform markup, `directFee`, the `amexGoldDirect` flag and an optional `directSvc`.
 - **Unprofiled brands** use `POD.data.CATEGORY_DEFAULTS[category]`, and the user's `manualSubtotal` as the cart. **Their direct-delivery channel is removed, not priced at $0** (§9.3). Label the numbers as estimates.
 - A channel a brand doesn't offer is **left out** of `allResults`, never priced at zero.
 
@@ -105,3 +107,8 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 ## Learned rules
 
 <!-- The reflector adds rules here. Each one cites its evidence. -->
+- **Never put a neutral number in a code fallback.** A missing table value makes the brand unpriceable (`null`). `restFor` gave `markup {}` (0%) for a missing category, so the apps looked cheaper (ba25e38, c4e21c4).
+- **A malformed optional input has no effect; it never throws.** A `directSvc` with no `modes` took down `allResults`, and a deal with no `scope` silently never applied. Guard each optional field (793577b, c4e21c4).
+- **Return copies of table data, never references.** `restFor` shared `directSvc.modes` with `D` until it deep-copied (c4e21c4).
+- **Implement the engine from `docs/engine-contract.md` alone; don't open `tests/oracle/`.** The differential test only means something if the engine wasn't written from the oracle. The Phase 2 builder didn't read it and all 500 scenarios matched (be9e129).
+- **Realm-sensitive compares: `JSON.stringify` or `structuredClone`, never `deepStrictEqual` on `loadApp()`/`loadData()` output (ISS-008).** If a card's DONE WHEN does this, report BLOCKED with that diagnosis and don't edit the test (c4e21c4, where the builder's check 4 failed on the card, not the engine).

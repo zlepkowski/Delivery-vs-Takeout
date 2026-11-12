@@ -11,10 +11,10 @@ A finding needs a **concrete failure scenario**: specific inputs, and then the w
 
 ## Blockers (any one means CHANGES-REQUESTED)
 
-1. **Engine order (§4.2).** A step moved, tax isn't on the *discounted* subtotal, tip isn't on the *pre-discount* subtotal, credits aren't last, or discounts aren't jointly clamped to `food`.
+1. **Engine order (§4.2, as amended by `docs/engine-contract.md` §5; D-029).** A step moved, tax isn't on the *discounted* subtotal, tip isn't on the *pre-discount* subtotal, credits aren't last, or discounts aren't jointly clamped to `food`.
 2. **Credit tiers (§9.1).** A `restricted` credit applied without `S.creditOptIn[key]`, a `locked` credit applied at all, or a missing `amexGoldDirect` check on the partner path.
 3. **`syncCredits` loses user state:** `used` flags, `manual` credits or opt-ins.
-4. **A $0 fee used to stand in for a missing route (§9.3).** That includes an unprofiled brand getting a direct-delivery channel.
+4. **A $0 fee or 0% markup used to stand in for a missing route or value (§9.3, ba25e38).** That includes an unprofiled brand getting a direct-delivery channel, and a code default such as `markup {}` for a missing category.
 5. **Impure `calc`.** It reads `POD.S`, the DOM or `new Date()` instead of its arguments, or it mutates `S` or `override`.
 6. **DOM access at load time,** or a new bare global outside `POD`.
 7. **An ES2015+ API in `src/`** that the syntax gate can't see (`includes`, `find`, `Object.assign`, `Map`, `padStart`, …) and that isn't feature-detected.
@@ -61,3 +61,4 @@ CHECKED: the checklist items that apply to this diff and passed, e.g. 1, 4, 5, 8
 - **Profile diffs: spot-check every item name (size, piece count, spelling) against the cited page, and open one URL per platform.** The 1.7 medians re-fetched correctly; the errors were in names and citations (ec5e627, 7af787d, 0a4262b).
 - **Blocker, credits: each `cards.js` row's "included" claim must match the issuer sentence.** Amex Platinum was marked as including Uber One, which the card only reimburses (83f24d7).
 - **Should-fix, issue log: a new `ISS-nnn` must be unused and sit under `## Open`.** Check `grep -o '^### ISS-[0-9]*' docs/issues.md | sort | uniq -d` prints nothing. Duplicate IDs (2fbdac1, c5f8b19, e1bc046) and open issues filed under Closed (3f44708) each needed a renumber.
+- **Should-fix, optional inputs: review a missing and a malformed value for each optional field, not only the fuzzer's shapes.** The first engine passed 10,000 scenarios, yet a `directSvc` with no `modes` threw and a deal with no `scope` never applied (793577b, c4e21c4). A throw inside `calc` or `allResults` is a blocker, because it takes the page down.
