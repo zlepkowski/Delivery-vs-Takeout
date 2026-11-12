@@ -32,7 +32,7 @@ Open blockers, bugs and unresolved questions. Workers append entries; the orches
 ### ISS-005 — Pages serves only from `main`
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 10 · **Status:** open
 - **What:** Pages will deploy from `main`. Work happens on `claude/sharp-heisenberg-tbo63x`. **Update 2026-11-12:** the new repo (D-018) has no Pages workflow at all; the old `pages.yml` belonged to `zlepkowski/test`.
-- **Next step:** Phase 1 adds `.github/workflows/pages.yml` with the store-tile build step (D-011). The user turns Pages on in the repo settings (Settings → Pages → Source: GitHub Actions). The user also sets the default branch to `main` (Settings → General → Default branch). GitHub made `claude/sharp-heisenberg-tbo63x` the default because it was pushed first. Open a PR to `main` when the user asks.
+- **Next step:** Phase 1 adds `.github/workflows/pages.yml` with the store-tile build step (D-011). The user turns Pages on in the repo settings (Settings → Pages → Source: GitHub Actions). The user also sets the default branch to `main` (Settings → General → Default branch). GitHub made `claude/sharp-heisenberg-tbo63x` the default because it was pushed first. Open a PR to `main` when the user asks. **Update 2026-11-12:** `.github/workflows/pages.yml` now exists (`69b429b`). It deploys only after the user turns Pages on and something is merged to `main`.
 
 ### ISS-007 — All The Places has gaps for some big chains
 - **Opened:** 2026-11-12 by orchestrator · **Phase:** 1 · **Status:** open
