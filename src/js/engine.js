@@ -23,12 +23,23 @@
     return max > 0 ? Math.min(x, max) : x;
   }
 
-  function copyObj(o) {
-    var out = {};
-    for (var k in o) {
-      if (has(o, k)) { out[k] = o[k]; }
+  /** Deep copy of plain data (objects and arrays), so the copy shares nothing with the source. */
+  function deepCopy(v) {
+    var out;
+    var k;
+    if (Object.prototype.toString.call(v) === "[object Array]") {
+      out = [];
+      for (k = 0; k < v.length; k++) { out.push(deepCopy(v[k])); }
+      return out;
     }
-    return out;
+    if (v !== null && typeof v === "object") {
+      out = {};
+      for (k in v) {
+        if (has(v, k)) { out[k] = deepCopy(v[k]); }
+      }
+      return out;
+    }
+    return v;
   }
 
   /** Is the channel offered by this restaurant and this state? */
@@ -147,7 +158,7 @@
     } else if (!app && m === "d") {
       delivery = round2(rest.directFee);
     }
-    if (!app && rest.directSvc && rest.directSvc.modes.indexOf(m) >= 0) {
+    if (!app && rest.directSvc && Array.isArray(rest.directSvc.modes) && rest.directSvc.modes.indexOf(m) >= 0) {
       var ds = rest.directSvc;
       dsvc = round2(cap((ds.flat || 0) + food * (ds.pct || 0) / 100, ds.max));
       dsvcOn = true;
@@ -281,13 +292,13 @@
   /** The S.rest object for a brand (contract 2.1, D-006). null for an unknown brand. */
   function restFor(brandId, D) {
     var brand = has(D.BRANDS, brandId) ? D.BRANDS[brandId] : null;
-    var name = brand ? brand.name : null;
 
     if (has(D.PROFILES, brandId)) {
       var prof = D.PROFILES[brandId];
+      var name = brand ? brand.name : brandId;
       var menu = [];
       for (var i = 0; i < prof.menu.length; i++) {
-        menu.push(prof.menu[i].slice(0));
+        menu.push(deepCopy(prof.menu[i]));
       }
       var directDelivery = prof.directDelivery === true;
       var rest = {
@@ -295,12 +306,12 @@
         name: name,
         profiled: true,
         menu: menu,
-        deal: prof.deal ? copyObj(prof.deal) : null,
+        deal: prof.deal ? deepCopy(prof.deal) : null,
         directDelivery: directDelivery,
-        directSvc: prof.directSvc ? copyObj(prof.directSvc) : null,
+        directSvc: prof.directSvc ? deepCopy(prof.directSvc) : null,
         amexGoldDirect: prof.amexGoldDirect === true,
-        platforms: prof.platforms.slice(0),
-        markup: copyObj(prof.markup),
+        platforms: deepCopy(prof.platforms),
+        markup: deepCopy(prof.markup),
         markupEst: prof.markupEst === true
       };
       if (directDelivery) { rest.directFee = prof.directFee; }
@@ -309,9 +320,10 @@
 
     if (!brand) { return null; }
     var cat = has(D.CATEGORY_DEFAULTS, brand.category) ? D.CATEGORY_DEFAULTS[brand.category] : null;
+    if (!cat) { return null; }
     return {
       id: brandId,
-      name: name,
+      name: brand.name,
       profiled: false,
       menu: [],
       deal: null,
@@ -319,7 +331,7 @@
       directSvc: null,
       amexGoldDirect: false,
       platforms: ["dd", "ue", "gh"],
-      markup: copyObj(cat ? cat.markup : {}),
+      markup: deepCopy(cat.markup),
       markupEst: true
     };
   }
