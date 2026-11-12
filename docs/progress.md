@@ -1,6 +1,6 @@
 # Progress
 
-**Current phase:** 1 (Data rebuild), in progress: 6 of 8 tasks done; next is **task 1.7, profiles + categories**
+**Current phase:** 1 (Data rebuild) is **done**. Next is **Phase 2 (Engine, §4)**, waiting for the user's `/goal`
 **Last updated:** 2026-11-12
 **Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/sharp-heisenberg-tbo63x` (base: `main`)
 
@@ -9,8 +9,11 @@
 1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
 3. **ISS-006** is closed: `.claude/settings.json` sets auto-compact at 60%.
-4. **Phase 1 next step: task 1.7** (below). It needs the user's call on how menu prices are sourced, and network access to the chosen chains' sites.
-5. The session's network is the personal environment **Delivery-vs-Takeout** (ISS-001 lists its hosts). A fresh session should start on it.
+4. **Phase 2 starts with the orchestrator, not a worker** (CLAUDE.md): write the Python oracle in `tests/oracle/` and the hand-worked receipts in `tests/fixtures/receipts/` *before* the builder touches the engine. Read BUILD.md §4 (engine, the §4.2 order) and §9 (traps) for it.
+5. **Phase 2 open questions to settle first:** **ISS-031**, how direct-channel service fees are modeled (Wingstop $2.00, Subway 12%, Little Caesars up to $4); §4.2 has none for direct orders today. Also decide how the engine prices **unprofiled** brands (D-006: category markup est, typed subtotal, no direct delivery), since 3 of the 12 D-026 chains are unprofiled (D-028).
+6. **Later-phase notes from Phase 1:** ISS-030 (platform evidence dates, Phase 3), D-028's question of whether `amexGoldDirect` becomes brand-level (Phase 3), and no profiled chain has a confirmed direct-only deal (all 9 `deal: null`). That is the biggest gap in the product's premise, so research it again before Phase 5's insights.
+7. **Network:** the personal environment **Delivery-vs-Takeout** is back to **limited**, with the 16 hosts in ISS-001. Phase 2 needs no network. A fresh session should start on that environment.
+8. **User actions pending:** ISS-005 (set GitHub's default branch to `main` and Pages Source to GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
 
@@ -23,7 +26,7 @@
 | # | Phase | Owner | Status | Done when |
 |---|---|---|---|---|
 | 0 | Scaffold | Opus | ✅ done | `npm test` green; the empty page loads from file:// with 0 console errors; agents and skills in place |
-| 1 | Data rebuild | researcher + Opus (cards) | 🟡 6/8 | Schema tests pass. ZIPs = 42,354 / 18,908. Every credit has a tier, source URL and date. Store tiles build; fixtures committed |
+| 1 | Data rebuild | researcher + Opus (cards) | ✅ done (`32dae9b`) | Schema tests pass. ZIPs = 42,354 / 18,908. Every credit has a tier, source URL and date. Store tiles build; fixtures committed |
 | 2 | Engine (§4) | Opus (oracle) → builder | ⬜ | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
 | 3 | Geography + stores near you | builder | ⬜ | 59011 vs 10118 estimates differ ≥10×; `storesNear` passes fixture tests; an uncached ZIP takes <10 ms |
 | 4 | State, derivations, wallet (§5) | builder | ⬜ | Cascade tests pass; `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
@@ -55,7 +58,7 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
-### Phase 1: Data rebuild (2026-11-12, in progress)
+### Phase 1: Data rebuild (2026-11-12, done)
 
 | Task | Status | Commit |
 |---|---|---|
@@ -65,13 +68,13 @@
 | 1.4 States: EIA gas (D-022) + tax (D-025) | ✅ | `c539fc3` |
 | 1.5 Brands + tiles: 273 brands, 182,567 stores, 847 tiles (D-021) | ✅ | `2ebdc0d` |
 | 1.6 Cards: 22 cards, 21 credits (D-024) | ✅ | `83f24d7` |
-| 1.7 Profiles + `categories.js`: **9 profiled** (buffalo_wild_wings, chipotle, dominos, dunkin, little_caesars, papa_johns, subway, the_cheesecake_factory, wingstop); taco_bell, pizza_hut, five_guys unprofiled (D-028) | ✅ generated and loaded; review should-fixes: generator `56cc487`, evidence tests running | `bab5ce1` |
+| 1.7 Profiles + `categories.js`: **9 profiled** (buffalo_wild_wings, chipotle, dominos, dunkin, little_caesars, papa_johns, subway, the_cheesecake_factory, wingstop); taco_bell, pizza_hut, five_guys unprofiled (D-028) | ✅ generated and loaded; reviewer APPROVE, should-fixes done | `bab5ce1`, `56cc487`, `b92ebb8`, `1fe89a6` |
 | 1.8 Pages workflow with the tile build | ✅ | `69b429b` |
-| 1.9 Close: full suite, reflector, user sets the Phase 2 `/goal` | ⬜ | |
+| 1.9 Close: full suite, e2e screenshots reviewed (placeholder page fine at phone and desktop), reflector approved with fixes, network reverted | ✅ | `32dae9b` |
 
-`npm test` after `69b429b`: es5 OK, 103/103 unit, oracle stub, 2/2 e2e.
+`npm test` at Phase 1 close (`32dae9b`, clean worktree): es5 OK (9 files), **159/159 unit**, oracle stub, 2/2 e2e.
 
-**Task 1.7 notes.**
+**Task 1.7 notes** (kept for the record; the rules now live in the data-research skill).
 - The 12 chains are in D-026; their brand ids are in `src/data/brands.js`.
 - Profile rules are in the data-research skill: menu prices from the chain's own site (median of 2–3 stores in different states, with ZIPs recorded); `deal` must be a published direct-only offer; `markup` cited, or the category default with `est: true`; `directDelivery: false` rather than `directFee: 0`; `amexGoldDirect` for Five Guys, Buffalo Wild Wings and The Cheesecake Factory.
 - `categories.js` must cover the 10 categories in D-021.
