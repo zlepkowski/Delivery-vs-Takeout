@@ -147,7 +147,12 @@ In this order: `applyCar`, `applyAddress` (which runs `applyState`), `applyBrand
      restricted: !!c.restricted, locked: !!c.locked, goldPartner: !!c.goldPartner,
      used: S.usedIn[key] === periodOf(c.cadence, now), manual: false }
    ```
-   then one entry per **manual credit** (§5.3), in `S.manualCredits` order, with `manual: true`.
+   then one entry per **manual credit** `m` (§5.3), in `S.manualCredits` order:
+   ```
+   { key: m.key, cardId: null, name: m.name, amount: m.amount, cadence: m.cadence, plats: copy of m.plats,
+     modes: copy of m.modes (only if it has one), restricted: false, locked: false, goldPartner: false,
+     used: S.usedIn[m.key] === periodOf(m.cadence, now), manual: true }
+   ```
 3. **Kept, never cleared by a sync:** `S.creditOptIn`, `S.usedIn` and `S.manualCredits`. That's how opt-ins, used flags and manual credits survive a card toggle (and come back when a card is re-added).
 4. Memberships (§5.4).
 
@@ -167,9 +172,9 @@ For each app `p`: `plats[p].member = plats[p].memberOwn === true || (cardHas(p) 
 
 ## 6. Actions (what a user change runs)
 
-- `setAddress(S, D, text, opts)`: `address = String(text)` (a non-string becomes `""`); `pos = null` (a typed address replaces a GPS position); `applyAddress`; then the trip (as in `derive`'s last step).
+- `setAddress(S, D, text, opts)`: `address = text` if it's a string, else `""`; `pos = null` (a typed address replaces a GPS position); `applyAddress`; then the trip (as in `derive`'s last step).
 - `setPosition(S, D, lat, lon, opts)`: lat in [−90, 90] and lon in [−180, 180], finite, else return `null` and change nothing. `pos = {lat, lon, src: "gps"}`; `applyAddress`; the trip.
-- `setCar(S, D, make, model)`: `make = String(make)`, `model = String(model)` (non-strings → `""`); `applyCar`.
+- `setCar(S, D, make, model)`: `make` and `model` are each the argument if it's a string, else `""`; `applyCar`.
 - `setBrand(S, D, brandId, opts)`: `brand` = the string, or `null`; `cart = {}`; `dealOn = true`; `store = null`; `storePicked = false`; `applyBrand`. Then, if `milesBy` has an own key `brand` with a finite number ≥ 0: `miles` = it, `milesAuto = false`, `milesSrc = "pinned"`, `applyMinutes`, return `{status: "off", …}`. Else `milesAuto = true` and return `autoMiles`. (`manualSubtotal` is kept.)
 - `pickStore(S, D, store, opts)`: `store` must be an object with a string `id`, a string `brand`, finite `lat` and `lon` (a `storesNear` row), else return `null`. If `store.brand !== S.brand`, run `setBrand(S, D, store.brand, opts)` first. Then `S.store = {id, lat, lon}`, `storePicked = true`, `milesAuto = true`, delete `milesBy[brand]`; return `autoMiles` (which takes step 3).
 - `setQty(S, index, qty)`: `S.rest` must be profiled, `index` an integer with `0 <= index < rest.menu.length`, and `qty` an integer ≥ 0, else `false`. `qty > 0` sets `cart[String(index)] = qty`; `0` deletes the key. `true`. (`setPath` can't do this: it never creates keys.)
@@ -202,15 +207,16 @@ The key is `POD.STORAGE_KEY` (`"pod.v5"`, D-010). `storage` is any object with `
 
 **The user fields** (everything else is derived and never saved): `address`, `pos` (only when `src` is `"gps"`), `make`, `model`, `fuel`, `mpg`, `miPerKwh`, `kwh`, `brand`, `store`, `storePicked`, `cart`, `manualSubtotal`, `dealOn`, `miles`, `speed`, `milesAuto`, `milesBy`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`, `cards`, `creditOptIn`, `usedIn`, `manualCredits`, `plats` (per app: `on`, `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `pickDisc`, `memberOwn`, `cardMember`; `direct.on`), `promos`.
 
-- `save(S, storage)`: `storage.setItem(key, JSON.stringify(those fields))` inside try/catch. `true` on success; `false` if anything throws or `storage` has no `setItem`.
+- `save(S, storage)`: `storage.setItem(key, JSON.stringify(those fields))` inside try/catch. `pos` is written only when it's a GPS position; otherwise the key is left out. `plats` is written with only the fields listed above (never `markup` or `member`). `true` on success; `false` if anything throws or `storage` has no `setItem`.
 - `load(storage, D, now, opts)`: `S = fresh(D)`. Read `storage.getItem(key)` and `JSON.parse` it inside try/catch; if anything throws, the value isn't a string, or the parse isn't an object, use `{}`. Then **merge field by field**: a saved field replaces the fresh one only when it has the right type, else the fresh value stays:
   - strings: `address`, `make`, `model`; `brand` a string or `null`; `fuel` one of the four.
   - numbers (finite, ≥ 0): `mpg`, `miPerKwh`, `kwh`, `manualSubtotal`, `miles`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`; `speed` > 0. (`mpg`, `miPerKwh` and `miles` may also be `null`.)
   - booleans: `dealOn`, `milesAuto`, `storePicked`.
   - `pos`: `{lat, lon, src: "gps"}` with a valid position. `store`: `{id: string, lat, lon}` with finite numbers (or `null`).
   - `cart`: an object; keep each key that is a canonical non-negative integer (`"0"`, `"12"`) with an integer value ≥ 0. `milesBy`: keep string keys with finite numbers ≥ 0. `creditOptIn`: keep keys whose value is `true`. `usedIn`: keep keys whose value is a string.
-  - `cards`: an array; keep the strings. `manualCredits`: an array; keep each entry `addManualCredit` would accept that also has a `key` matching `/^manual\.[1-9][0-9]*$/` (no duplicate keys).
-  - `plats`: per app and field as in `fresh`: numbers finite ≥ 0, booleans boolean. `promos`: per app, `type` one of `none`, `percent`, `dollar`, `freedel`; `value`, `cap`, `min` finite ≥ 0.
+  - `cards`: an array; keep the strings. `manualCredits`: an array; keep each entry `addManualCredit` would accept that also has a `key` matching `/^manual\.[1-9][0-9]*$/`, the first one with a given key only, stored as `addManualCredit` stores it (`{key, name, amount, cadence, plats, modes?}`, `cadence` defaulting to `"once"`, nothing else).
+  - `plats`: per app and field as in `fresh`: numbers finite ≥ 0, booleans boolean (`markup` and `member` are derived and never loaded). `promos`: per app **and field**: `type` one of `none`, `percent`, `dollar`, `freedel`; `value`, `cap`, `min` finite ≥ 0. A bad field falls back alone (a bad `type` with a good `value` gives `{type: "none", value: …}`).
+  - Unknown fields and unknown apps are dropped.
   Then `derive(S, D, now, opts)`. `load` never throws and never writes to `storage`. A storage that throws on every call gives exactly `derive(fresh(D))`.
 
 ## 9. What this leaves to later phases

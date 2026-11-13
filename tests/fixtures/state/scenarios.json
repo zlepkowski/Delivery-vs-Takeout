@@ -1,0 +1,4402 @@
+{
+ "about": "Hand-worked scenarios for POD.state (docs/state-contract.md, D-031). Expected values are worked by hand in each `work` (closed-form meridian distances, the engine contract's formulas), never copied from state.js. Run a scenario like this: D = a deep copy of datasets[data], with `patch` replacing whole top-level keys; now = new Date(step.now || doc.now), a local date-time with no zone (JS reads it as local time, so a period never depends on the machine's time zone); steps run in order on one S. `fresh` and `load` create S (it replaces the current one); every other call takes S. `signatures` gives each call's arguments: \"*\" is the step's `args` spread in place, S the current state, D the scenario's dataset, now as above, opts the step's `opts` (default undefined), storage the scenario's storage. `returns`, when present, is the expected return value. Then each `expect` key is checked: a plain key is a dotted path into S (array indexes allowed, e.g. credits.0.used); $missing, $appMissing.<app>, $forEngine (null or not), $forEngine.<path>, $calc.<channel>.<field> (POD.engine.calc on forEngine(S)), $allResults.ids (POD.engine.allResults(forEngine(S)) ids in order), $getPath.<path> (getPath; \"$undefined\" means undefined), $saved.<path> / $savedKeys (the object save wrote, \"$absent\" = not there), $has.<path> (the path exists in S), $storageWrites (setItem calls), $protoClean (Object.prototype gained nothing). storage: memory (a Map-backed getItem/setItem; `value` is the initial string), throwing (both methods throw), none (storage is null). Numbers compare exactly.",
+ "now": "2026-11-13T12:00:00",
+ "datasetsAbout": "S1: fixture values, not claims about the world. NY ZIPs 10001-10007 sit on longitude -74 at latitudes 40.000, 40.010, ... 40.060; MT ZIPs 20001-20007 on -110 at 45.000 ... 45.060. Tile 40_-74: Burger Co (bg) at 40.100; Pizza Co (pz) at 40.030 and 40.050, all on -74. Along a meridian, miles = 69.094094428 x degrees. Speed 30 mph. pz is profiled (dd 20%, ue 25%; a pickup deal: 2 flagged items at $15 each); bg is unprofiled (burger default 15%); xx's category has no default, so it can't be priced. gh's fees are null.",
+ "datasets": {
+  "S1": {
+   "ZIP_CITIES": [
+    "Alpha",
+    "Beta"
+   ],
+   "ZIP_PACKED": "10001,40000,-74000,0,NY;10002,40010,-74000,0,NY;10003,40020,-74000,0,NY;10004,40030,-74000,0,NY;10005,40040,-74000,0,NY;10006,40050,-74000,0,NY;10007,40060,-74000,0,NY;20001,45000,-110000,1,MT;20002,45010,-110000,1,MT;20003,45020,-110000,1,MT;20004,45030,-110000,1,MT;20005,45040,-110000,1,MT;20006,45050,-110000,1,MT;20007,45060,-110000,1,MT",
+   "STATES": [
+    [
+     "MT",
+     "Montana",
+     3.5,
+     0.0
+    ],
+    [
+     "NY",
+     "New York",
+     4.1,
+     8.875
+    ]
+   ],
+   "GRADE_ADD": {
+    "midgrade": 0.5,
+    "premium": 1.0,
+    "diesel": 2.0
+   },
+   "CAR_DATA": [
+    "Acme|Sedan:30,Sport:25*,Truck:20d,Volt:35e",
+    "Zeta|Sedan:40"
+   ],
+   "BRANDS": {
+    "bg": {
+     "name": "Burger Co",
+     "category": "burger",
+     "wikidata": "Q2",
+     "stores": 50
+    },
+    "pz": {
+     "name": "Pizza Co",
+     "category": "pizza",
+     "wikidata": "Q1",
+     "stores": 100
+    },
+    "xx": {
+     "name": "Mystery",
+     "category": "other",
+     "wikidata": "Q3",
+     "stores": 10
+    }
+   },
+   "BRAND_IDS": [
+    "bg",
+    "pz",
+    "xx"
+   ],
+   "BRANDS_RUN": "run-S",
+   "TILE_INDEX": {
+    "40_-74": 3
+   },
+   "TILES": {
+    "40_-74": {
+     "run": "run-S",
+     "s": "0,40100,-74000;1,40030,-74000;1,40050,-74000"
+    }
+   },
+   "PROFILES": {
+    "pz": {
+     "menu": [
+      [
+       "Large",
+       20,
+       true
+      ],
+      [
+       "Wings",
+       10,
+       false
+      ]
+     ],
+     "deal": {
+      "label": "2 large for $15 each",
+      "price": 15,
+      "minItems": 2,
+      "scope": "pickup"
+     },
+     "markup": {
+      "dd": 20,
+      "ue": 25
+     },
+     "markupEst": false,
+     "directDelivery": true,
+     "directFee": 4,
+     "amexGoldDirect": false,
+     "platforms": [
+      "dd",
+      "ue"
+     ]
+    }
+   },
+   "CATEGORY_DEFAULTS": {
+    "burger": {
+     "markup": {
+      "dd": 15,
+      "ue": 15,
+      "gh": 15
+     },
+     "est": true
+    }
+   },
+   "CARDS": [
+    {
+     "id": "c_gold",
+     "issuer": "X",
+     "name": "Gold",
+     "credits": [
+      {
+       "id": "dining",
+       "name": "Dining",
+       "amount": 10,
+       "cadence": "monthly",
+       "plats": [
+        "gh"
+       ],
+       "goldPartner": true
+      },
+      {
+       "id": "resy",
+       "name": "Resy",
+       "amount": 50,
+       "cadence": "semiannual",
+       "plats": [
+        "direct"
+       ],
+       "restricted": true
+      },
+      {
+       "id": "ride",
+       "name": "Rides",
+       "amount": 10,
+       "cadence": "monthly",
+       "plats": [],
+       "locked": true
+      }
+     ]
+    },
+    {
+     "id": "c_dd",
+     "issuer": "Y",
+     "name": "DashCard",
+     "membership": "dd",
+     "credits": [
+      {
+       "id": "promo",
+       "name": "DD promo",
+       "amount": 5,
+       "cadence": "quarterly",
+       "plats": [
+        "dd"
+       ],
+       "modes": [
+        "d"
+       ]
+      }
+     ]
+    }
+   ],
+   "DEFAULTS": {
+    "plats": {
+     "dd": {
+      "delFee": 2.99,
+      "svc": 15,
+      "svcMin": 3,
+      "memberSvc": 5,
+      "memberMin": 12,
+      "pickDisc": 0
+     },
+     "ue": {
+      "delFee": 1.99,
+      "svc": 15,
+      "svcMin": 3,
+      "memberSvc": 5,
+      "memberMin": 15,
+      "pickDisc": 0
+     },
+     "gh": {
+      "delFee": null,
+      "svc": null,
+      "svcMin": null,
+      "memberSvc": null,
+      "memberMin": null,
+      "pickDisc": 0
+     }
+    },
+    "fees": {
+     "smallMin": 10,
+     "smallFee": 2.5,
+     "regFee": 0
+    },
+    "trip": {
+     "wear": 0.11,
+     "kwh": 0.17,
+     "speed": 30
+    },
+    "tips": {
+     "tipDel": 15,
+     "tipPick": 0
+    }
+   }
+  }
+ },
+ "signatures": {
+  "fresh": [
+   "D"
+  ],
+  "getPath": [
+   "S",
+   "*"
+  ],
+  "setPath": [
+   "S",
+   "*"
+  ],
+  "applyCar": [
+   "S",
+   "D"
+  ],
+  "applyState": [
+   "S",
+   "D"
+  ],
+  "applyAddress": [
+   "S",
+   "D"
+  ],
+  "applyBrand": [
+   "S",
+   "D"
+  ],
+  "autoMiles": [
+   "S",
+   "D",
+   "opts"
+  ],
+  "applyMinutes": [
+   "S"
+  ],
+  "syncCredits": [
+   "S",
+   "D",
+   "now"
+  ],
+  "derive": [
+   "S",
+   "D",
+   "now",
+   "opts"
+  ],
+  "setAddress": [
+   "S",
+   "D",
+   "*",
+   "opts"
+  ],
+  "setPosition": [
+   "S",
+   "D",
+   "*",
+   "opts"
+  ],
+  "setCar": [
+   "S",
+   "D",
+   "*"
+  ],
+  "setBrand": [
+   "S",
+   "D",
+   "*",
+   "opts"
+  ],
+  "pickStore": [
+   "S",
+   "D",
+   "*",
+   "opts"
+  ],
+  "setQty": [
+   "S",
+   "*"
+  ],
+  "pinMiles": [
+   "S",
+   "*"
+  ],
+  "unpinMiles": [
+   "S",
+   "D",
+   "opts"
+  ],
+  "toggleCard": [
+   "S",
+   "D",
+   "*",
+   "now"
+  ],
+  "setOptIn": [
+   "S",
+   "D",
+   "*",
+   "now"
+  ],
+  "markUsed": [
+   "S",
+   "D",
+   "*",
+   "now"
+  ],
+  "addManualCredit": [
+   "S",
+   "D",
+   "*",
+   "now"
+  ],
+  "removeManualCredit": [
+   "S",
+   "D",
+   "*",
+   "now"
+  ],
+  "load": [
+   "storage",
+   "D",
+   "now",
+   "opts"
+  ],
+  "save": [
+   "S",
+   "storage"
+  ]
+ },
+ "periods": [
+  [
+   "monthly",
+   "2026-01-15T12:00:00",
+   "2026-01"
+  ],
+  [
+   "monthly",
+   "2026-12-31T12:00:00",
+   "2026-12"
+  ],
+  [
+   "quarterly",
+   "2026-03-31T12:00:00",
+   "2026-Q1"
+  ],
+  [
+   "quarterly",
+   "2026-04-01T12:00:00",
+   "2026-Q2"
+  ],
+  [
+   "quarterly",
+   "2026-12-01T12:00:00",
+   "2026-Q4"
+  ],
+  [
+   "semiannual",
+   "2026-06-30T12:00:00",
+   "2026-H1"
+  ],
+  [
+   "semiannual",
+   "2026-07-01T12:00:00",
+   "2026-H2"
+  ],
+  [
+   "annual",
+   "2026-07-01T12:00:00",
+   "2026"
+  ],
+  [
+   "once",
+   "2026-07-01T12:00:00",
+   "once"
+  ],
+  [
+   "weekly",
+   "2026-07-01T12:00:00",
+   null
+  ],
+  [
+   "monthly",
+   "invalid",
+   null
+  ],
+  [
+   "monthly",
+   null,
+   null
+  ]
+ ],
+ "scenarios": [
+  {
+   "id": "fresh: blank state with the defaults",
+   "refs": [
+    "§2"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    }
+   ],
+   "expect": {
+    "address": "",
+    "pos": null,
+    "zip": null,
+    "zipRec": null,
+    "state": null,
+    "tax": null,
+    "gas": null,
+    "make": "",
+    "model": "",
+    "fuel": "regular",
+    "mpg": null,
+    "miPerKwh": null,
+    "kwh": 0.17,
+    "brand": null,
+    "rest": null,
+    "store": null,
+    "storePicked": false,
+    "cart": {},
+    "manualSubtotal": 0,
+    "dealOn": true,
+    "miles": null,
+    "minutes": null,
+    "speed": 30,
+    "milesAuto": true,
+    "milesSrc": null,
+    "milesBy": {},
+    "tipDel": 15,
+    "tipPick": 0,
+    "wear": 0.11,
+    "hourly": 0,
+    "regFee": 0,
+    "smallMin": 10,
+    "smallFee": 2.5,
+    "cards": [],
+    "credits": [],
+    "creditOptIn": {},
+    "usedIn": {},
+    "manualCredits": [],
+    "plats": {
+     "direct": {
+      "on": true
+     },
+     "dd": {
+      "delFee": 2.99,
+      "svc": 15,
+      "svcMin": 3,
+      "memberSvc": 5,
+      "memberMin": 12,
+      "pickDisc": 0,
+      "on": true,
+      "markup": null,
+      "member": false,
+      "memberOwn": false,
+      "cardMember": true
+     },
+     "ue": {
+      "delFee": 1.99,
+      "svc": 15,
+      "svcMin": 3,
+      "memberSvc": 5,
+      "memberMin": 15,
+      "pickDisc": 0,
+      "on": true,
+      "markup": null,
+      "member": false,
+      "memberOwn": false,
+      "cardMember": true
+     },
+     "gh": {
+      "delFee": null,
+      "svc": null,
+      "svcMin": null,
+      "memberSvc": null,
+      "memberMin": null,
+      "pickDisc": 0,
+      "on": true,
+      "markup": null,
+      "member": false,
+      "memberOwn": false,
+      "cardMember": true
+     }
+    },
+    "promos": {
+     "dd": {
+      "type": "none",
+      "value": 0,
+      "cap": 0,
+      "min": 0
+     },
+     "ue": {
+      "type": "none",
+      "value": 0,
+      "cap": 0,
+      "min": 0
+     },
+     "gh": {
+      "type": "none",
+      "value": 0,
+      "cap": 0,
+      "min": 0
+     }
+    },
+    "$missing": [
+     "rest",
+     "tax",
+     "mpg",
+     "gas",
+     "miles",
+     "minutes"
+    ],
+    "$forEngine": null
+   },
+   "work": "Every default copied from S1.DEFAULTS; gh's null fees stay null. missing: no rest, no tax (no state), regular fuel needs mpg and gas, no trip yet."
+  },
+  {
+   "id": "fresh: a default that isn't a finite number becomes null; hourly is always 0",
+   "refs": [
+    "§2",
+    "D-032"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    }
+   ],
+   "expect": {
+    "kwh": null,
+    "speed": null,
+    "tipDel": null,
+    "tipPick": null,
+    "wear": 0.11,
+    "hourly": 0,
+    "regFee": null,
+    "plats.dd.delFee": null,
+    "plats.dd.svc": 15
+   },
+   "work": "kwh is the string \"0.17\" and speed is absent -> null; tips {} -> both null; fees lacks regFee -> null; dd.delFee is the string \"2.99\" -> null. hourly is 0 by BUILD.md §4.2, not a default.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": "2.99",
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": "0.17"
+     },
+     "tips": {}
+    }
+   }
+  },
+  {
+   "id": "fresh: no DEFAULTS table at all",
+   "refs": [
+    "§2"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    }
+   ],
+   "expect": {
+    "kwh": null,
+    "speed": null,
+    "wear": null,
+    "tipDel": null,
+    "hourly": 0,
+    "plats.dd.delFee": null,
+    "plats.dd.pickDisc": null,
+    "plats.dd.on": true,
+    "plats.dd.cardMember": true
+   },
+   "work": "Every default is null; the switches keep their fresh values.",
+   "patch": {
+    "DEFAULTS": null
+   }
+  },
+  {
+   "id": "setAddress: the ZIP sets state, tax, gas and the position",
+   "refs": [
+    "§4.3",
+    "§4.2"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "123 Main St, New York, NY 10004"
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "address": "123 Main St, New York, NY 10004",
+    "zip": "10004",
+    "zipRec": {
+     "z": "10004",
+     "la": 40.03,
+     "lo": -74,
+     "c": "Alpha",
+     "st": "NY"
+    },
+    "state": "NY",
+    "pos": {
+     "lat": 40.03,
+     "lon": -74,
+     "src": "zip"
+    },
+    "tax": 8.875,
+    "gas": 4.1,
+    "miles": null,
+    "milesSrc": null
+   },
+   "work": "10004 is the 4th NY ZIP: 40.030, -74. NY row: gas 4.1, tax 8.875; regular fuel adds 0. No brand yet, so autoMiles step 2: miles null."
+  },
+  {
+   "id": "setAddress: the last 5-digit run wins over a 5-digit house number",
+   "refs": [
+    "§4.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "12345 Elm Rd, Big Sky, MT 20003"
+     ]
+    }
+   ],
+   "expect": {
+    "zip": "20003",
+    "state": "MT",
+    "tax": 0.0,
+    "gas": 3.5,
+    "pos": {
+     "lat": 45.02,
+     "lon": -110,
+     "src": "zip"
+    }
+   },
+   "work": "12345 is a house number; 20003 is the last 5-digit run. MT: gas 3.5, tax 0."
+  },
+  {
+   "id": "setAddress: ZIP+4",
+   "refs": [
+    "§4.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "Suite 4, NY 10004-1234"
+     ]
+    }
+   ],
+   "expect": {
+    "zip": "10004",
+    "state": "NY"
+   },
+   "work": ""
+  },
+  {
+   "id": "setAddress: two ZIPs, the last one counts",
+   "refs": [
+    "§4.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "from 10004 to 20003"
+     ]
+    }
+   ],
+   "expect": {
+    "zip": "20003",
+    "state": "MT"
+   },
+   "work": ""
+  },
+  {
+   "id": "setAddress: a longer digit run isn't a ZIP",
+   "refs": [
+    "§4.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "order 1000412"
+     ]
+    }
+   ],
+   "expect": {
+    "zip": null,
+    "zipRec": null,
+    "state": null,
+    "pos": null,
+    "tax": null,
+    "gas": null
+   },
+   "work": "1000412 is 7 digits; no standalone 5-digit run."
+  },
+  {
+   "id": "setAddress: no ZIP",
+   "refs": [
+    "§4.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "no zip here"
+     ]
+    }
+   ],
+   "expect": {
+    "address": "no zip here",
+    "zip": null,
+    "zipRec": null,
+    "state": null,
+    "pos": null,
+    "tax": null,
+    "gas": null
+   },
+   "work": "A first address set NY; the second has no ZIP, so the location is cleared, not kept."
+  },
+  {
+   "id": "setAddress: an unknown ZIP keeps the code and clears the rest",
+   "refs": [
+    "§4.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "ZIP 99999"
+     ]
+    }
+   ],
+   "expect": {
+    "zip": "99999",
+    "zipRec": null,
+    "state": null,
+    "pos": null,
+    "tax": null
+   },
+   "work": ""
+  },
+  {
+   "id": "setAddress: a non-string becomes an empty address",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      10004
+     ]
+    }
+   ],
+   "expect": {
+    "address": "",
+    "zip": null
+   },
+   "work": ""
+  },
+  {
+   "id": "setPosition: GPS finds the nearest ZIP",
+   "refs": [
+    "§6",
+    "§4.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setPosition",
+     "args": [
+      40.0,
+      -74.0
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "pos": {
+     "lat": 40,
+     "lon": -74,
+     "src": "gps"
+    },
+    "zip": "10001",
+    "zipRec": {
+     "z": "10001",
+     "la": 40.0,
+     "lo": -74,
+     "c": "Alpha",
+     "st": "NY"
+    },
+    "state": "NY",
+    "tax": 8.875,
+    "address": ""
+   },
+   "work": "40.000, -74.000 is exactly 10001's centroid."
+  },
+  {
+   "id": "setPosition: out of range changes nothing",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "20003"
+     ]
+    },
+    {
+     "call": "setPosition",
+     "args": [
+      91,
+      0
+     ],
+     "returns": null
+    }
+   ],
+   "expect": {
+    "state": "MT",
+    "pos": {
+     "lat": 45.02,
+     "lon": -110,
+     "src": "zip"
+    }
+   },
+   "work": ""
+  },
+  {
+   "id": "setAddress after GPS: the typed address wins",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setPosition",
+     "args": [
+      40.0,
+      -74.0
+     ]
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "20003"
+     ]
+    }
+   ],
+   "expect": {
+    "pos": {
+     "lat": 45.02,
+     "lon": -110,
+     "src": "zip"
+    },
+    "state": "MT"
+   },
+   "work": ""
+  },
+  {
+   "id": "setCar: premium adds GRADE_ADD.premium",
+   "refs": [
+    "§4.1",
+    "§4.2"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sport"
+     ]
+    }
+   ],
+   "expect": {
+    "fuel": "premium",
+    "mpg": 25,
+    "miPerKwh": null,
+    "gas": 5.1
+   },
+   "work": "Sport:25* -> premium, 25 mpg. NY 4.1 + 1.0 = 5.1."
+  },
+  {
+   "id": "setCar: diesel",
+   "refs": [
+    "§4.1"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Truck"
+     ]
+    }
+   ],
+   "expect": {
+    "fuel": "diesel",
+    "mpg": 20,
+    "gas": 6.1
+   },
+   "work": "Truck:20d. 4.1 + 2.0."
+  },
+  {
+   "id": "setCar: electric",
+   "refs": [
+    "§4.1"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Volt"
+     ]
+    }
+   ],
+   "expect": {
+    "fuel": "ev",
+    "miPerKwh": 3.5,
+    "mpg": null,
+    "gas": 4.1
+   },
+   "work": "Volt:35e -> 35 / 10 = 3.5 mi/kWh. EV gas is the regular price (unused)."
+  },
+  {
+   "id": "setCar: same model name under another make",
+   "refs": [
+    "§4.1"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Zeta",
+      "Sedan"
+     ]
+    }
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 40
+   },
+   "work": ""
+  },
+  {
+   "id": "setCar: an unknown car keeps the user's own fuel and mpg",
+   "refs": [
+    "§4.1"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "mpg",
+      33
+     ],
+     "returns": true
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "fuel",
+      "premium"
+     ],
+     "returns": true
+    },
+    {
+     "call": "applyState",
+     "args": []
+    }
+   ],
+   "expect": {
+    "make": "Other",
+    "model": "",
+    "fuel": "premium",
+    "mpg": 33,
+    "gas": 5.1
+   },
+   "work": "Sedan sets regular/30; Other isn't in CAR_DATA, so nothing changes; the user then types 33 mpg and premium, and applyState adds the premium spread."
+  },
+  {
+   "id": "setCar: an unknown model under a known make changes nothing",
+   "refs": [
+    "§4.1"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Hover"
+     ]
+    }
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": null
+   },
+   "work": ""
+  },
+  {
+   "id": "setBrand: a profiled brand, its markups and the nearest store",
+   "refs": [
+    "§6",
+    "§4.4",
+    "§4.5"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "brand": "pz",
+    "rest.id": "pz",
+    "rest.profiled": true,
+    "rest.directFee": 4,
+    "plats.dd.markup": 20,
+    "plats.ue.markup": 25,
+    "plats.gh.markup": null,
+    "cart": {},
+    "dealOn": true,
+    "store": {
+     "id": "pz@40030,-74000",
+     "lat": 40.03,
+     "lon": -74
+    },
+    "storePicked": false,
+    "milesSrc": "store",
+    "miles": 5.2,
+    "minutes": 10
+   },
+   "work": "From 40.000: pz stores at 0.030 and 0.050 deg; nearest 0.030 = 2.072823 mi straight; trip round1(x 2.5) = 5.2; minutes round(5.2 / 30 x 60) = 10. gh isn't in pz's markup -> null."
+  },
+  {
+   "id": "setBrand: tiles not loaded -> need, and no distance is invented",
+   "refs": [
+    "§4.5"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ],
+     "returns": {
+      "status": "need",
+      "need": [
+       "40_-74"
+      ],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "miles": null,
+    "minutes": null,
+    "store": null,
+    "milesSrc": null,
+    "rest.id": "pz"
+   },
+   "work": "",
+   "patch": {
+    "TILES": {}
+   }
+  },
+  {
+   "id": "setBrand: a tile failed -> the estimator, partial",
+   "refs": [
+    "§4.5"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ],
+     "opts": {
+      "failed": {
+       "40_-74": true
+      }
+     },
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": true
+     }
+    }
+   ],
+   "expect": {
+    "miles": 1.0,
+    "minutes": 2,
+    "milesSrc": "estimate",
+    "store": null
+   },
+   "work": "No store data, so estimateMiles: spacing from 40.000 = mean of 0.01..0.06 deg = 2.418293 mi; zipsPerStore 14/100; raw 0.45 x sqrt(0.14) x spacing^0.75 = 0.326519 -> clamped to 0.4; round 1.0; minutes 1.0/30 x 60 = 2.",
+   "patch": {
+    "TILES": {}
+   }
+  },
+  {
+   "id": "pinMiles, then a pin is per brand",
+   "refs": [
+    "§6",
+    "§4.5"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7
+     ],
+     "returns": true
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "bg"
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "milesBy": {
+     "pz": 7
+    },
+    "milesAuto": true,
+    "miles": 17.3,
+    "minutes": 35,
+    "milesSrc": "store",
+    "store": {
+     "id": "bg@40100,-74000",
+     "lat": 40.1,
+     "lon": -74
+    },
+    "rest.profiled": false,
+    "plats.dd.markup": 15,
+    "plats.ue.markup": 15,
+    "plats.gh.markup": 15
+   },
+   "work": "pz pinned at 7. bg has no pin: its store at 0.100 deg = 6.909409 mi, trip 17.3, minutes 35. bg is unprofiled: burger default 15 on all three."
+  },
+  {
+   "id": "setBrand restores the brand's pin",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "bg"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ],
+     "returns": {
+      "status": "off",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "miles": 7,
+    "minutes": 14,
+    "milesAuto": false,
+    "milesSrc": "pinned",
+    "store": null,
+    "milesBy": {
+     "pz": 7
+    }
+   },
+   "work": "Back to pz: its pin 7 comes back; minutes 7/30 x 60 = 14."
+  },
+  {
+   "id": "unpinMiles goes back to the nearest store",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7
+     ]
+    },
+    {
+     "call": "unpinMiles",
+     "args": [],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "milesBy": {},
+    "milesAuto": true,
+    "miles": 5.2,
+    "milesSrc": "store",
+    "store": {
+     "id": "pz@40030,-74000",
+     "lat": 40.03,
+     "lon": -74
+    }
+   },
+   "work": ""
+  },
+  {
+   "id": "pinMiles rejects bad input",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      -1
+     ],
+     "returns": false
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      "7"
+     ],
+     "returns": false
+    }
+   ],
+   "expect": {
+    "miles": null,
+    "milesAuto": true
+   },
+   "work": ""
+  },
+  {
+   "id": "pinMiles keeps the value as typed",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7.25
+     ],
+     "returns": true
+    }
+   ],
+   "expect": {
+    "miles": 7.25,
+    "minutes": 15,
+    "milesBy": {}
+   },
+   "work": "No brand: no milesBy entry. 7.25/30 x 60 = 14.5 -> 15 (half up)."
+  },
+  {
+   "id": "setBrand: a brand whose category has no default can't be priced",
+   "refs": [
+    "§4.4",
+    "§7"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "xx"
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "rest": null,
+    "plats.dd.markup": null,
+    "plats.ue.markup": null,
+    "plats.gh.markup": null,
+    "miles": null,
+    "$missing": [
+     "rest",
+     "miles",
+     "minutes"
+    ]
+   },
+   "work": "restFor gives null (engine contract §2.1), so autoMiles step 2 clears the trip."
+  },
+  {
+   "id": "setBrand keeps manualSubtotal and empties the cart",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ],
+     "returns": true
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "manualSubtotal",
+      25
+     ],
+     "returns": true
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "bg"
+     ]
+    }
+   ],
+   "expect": {
+    "cart": {},
+    "manualSubtotal": 25,
+    "dealOn": true
+   },
+   "work": ""
+  },
+  {
+   "id": "setQty",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ],
+     "returns": true
+    },
+    {
+     "call": "setQty",
+     "args": [
+      1,
+      3
+     ],
+     "returns": true
+    },
+    {
+     "call": "setQty",
+     "args": [
+      1,
+      0
+     ],
+     "returns": true
+    },
+    {
+     "call": "setQty",
+     "args": [
+      2,
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      1.5
+     ],
+     "returns": false
+    },
+    {
+     "call": "setQty",
+     "args": [
+      -1,
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setQty",
+     "args": [
+      "0",
+      1
+     ],
+     "returns": false
+    }
+   ],
+   "expect": {
+    "cart": {
+     "0": 2
+    }
+   },
+   "work": "No rest -> false. Index 2 is past the 2-item menu; 1.5 isn't an integer; -1 and \"0\" aren't valid indexes. qty 0 deletes."
+  },
+  {
+   "id": "setQty on an unprofiled brand is refused",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "bg"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      1
+     ],
+     "returns": false
+    }
+   ],
+   "expect": {
+    "cart": {}
+   },
+   "work": ""
+  },
+  {
+   "id": "derive never resets a user field",
+   "refs": [
+    "§4.7"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "dealOn",
+      false
+     ],
+     "returns": true
+    },
+    {
+     "call": "derive",
+     "args": [],
+     "returns": {
+      "status": "off",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "cart": {
+     "0": 2
+    },
+    "miles": 7,
+    "milesAuto": false,
+    "dealOn": false,
+    "rest.id": "pz"
+   },
+   "work": ""
+  },
+  {
+   "id": "pickStore: a picked store sets the trip",
+   "refs": [
+    "§6",
+    "§4.5"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "id": "pz@40050,-74000",
+       "brand": "pz",
+       "name": "Pizza Co",
+       "category": "pizza",
+       "profiled": true,
+       "lat": 40.05,
+       "lon": -74,
+       "mi": 3.454704721,
+       "trip": 8.6
+      }
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "store": {
+     "id": "pz@40050,-74000",
+     "lat": 40.05,
+     "lon": -74
+    },
+    "storePicked": true,
+    "milesAuto": true,
+    "miles": 8.6,
+    "minutes": 17,
+    "milesSrc": "store"
+   },
+   "work": "0.050 deg = 3.454705 mi -> trip 8.6, minutes 17."
+  },
+  {
+   "id": "pickStore: the picked store survives a move; the trip is re-measured",
+   "refs": [
+    "§4.5"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "id": "pz@40050,-74000",
+       "brand": "pz",
+       "name": "Pizza Co",
+       "category": "pizza",
+       "profiled": true,
+       "lat": 40.05,
+       "lon": -74,
+       "mi": 3.454704721,
+       "trip": 8.6
+      }
+     ]
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10002"
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "store": {
+     "id": "pz@40050,-74000",
+     "lat": 40.05,
+     "lon": -74
+    },
+    "storePicked": true,
+    "miles": 6.9,
+    "minutes": 14
+   },
+   "work": "From 40.010 to the picked 40.050: 0.040 deg -> trip 6.9 (the nearest store, 40.030, would be 0.020)."
+  },
+  {
+   "id": "pickStore: another brand's store switches the brand",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "id": "bg@40100,-74000",
+       "brand": "bg",
+       "lat": 40.1,
+       "lon": -74,
+       "trip": 17.3
+      }
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "brand": "bg",
+    "rest.profiled": false,
+    "cart": {},
+    "store": {
+     "id": "bg@40100,-74000",
+     "lat": 40.1,
+     "lon": -74
+    },
+    "storePicked": true,
+    "miles": 17.3
+   },
+   "work": "setBrand runs first (cart emptied)."
+  },
+  {
+   "id": "pickStore overrides a pin",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7
+     ]
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "id": "pz@40050,-74000",
+       "brand": "pz",
+       "name": "Pizza Co",
+       "category": "pizza",
+       "profiled": true,
+       "lat": 40.05,
+       "lon": -74,
+       "mi": 3.454704721,
+       "trip": 8.6
+      }
+     ]
+    }
+   ],
+   "expect": {
+    "milesAuto": true,
+    "milesBy": {},
+    "miles": 8.6
+   },
+   "work": ""
+  },
+  {
+   "id": "pickStore rejects a malformed store",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "brand": "pz",
+       "lat": 40.05,
+       "lon": -74
+      }
+     ],
+     "returns": null
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "id": "pz@1,1",
+       "brand": "pz",
+       "lat": "40.05",
+       "lon": -74
+      }
+     ],
+     "returns": null
+    }
+   ],
+   "expect": {
+    "store": {
+     "id": "pz@40030,-74000",
+     "lat": 40.03,
+     "lon": -74
+    },
+    "storePicked": false
+   },
+   "work": "No id; then a string lat."
+  },
+  {
+   "id": "setBrand clears a picked store",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "id": "pz@40050,-74000",
+       "brand": "pz",
+       "name": "Pizza Co",
+       "category": "pizza",
+       "profiled": true,
+       "lat": 40.05,
+       "lon": -74,
+       "mi": 3.454704721,
+       "trip": 8.6
+      }
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    }
+   ],
+   "expect": {
+    "storePicked": false,
+    "store": {
+     "id": "pz@40030,-74000",
+     "lat": 40.03,
+     "lon": -74
+    },
+    "miles": 5.2
+   },
+   "work": "Re-selecting the brand starts over at the nearest store."
+  },
+  {
+   "id": "speed change: applyMinutes",
+   "refs": [
+    "§4.6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "speed",
+      20
+     ],
+     "returns": true
+    },
+    {
+     "call": "applyMinutes",
+     "args": []
+    }
+   ],
+   "expect": {
+    "minutes": 16
+   },
+   "work": "5.2 / 20 x 60."
+  },
+  {
+   "id": "toggleCard: credits with their tiers",
+   "refs": [
+    "§5.1",
+    "§9.1"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ],
+     "returns": true
+    }
+   ],
+   "expect": {
+    "cards": [
+     "c_gold"
+    ],
+    "credits": [
+     {
+      "key": "c_gold.dining",
+      "cardId": "c_gold",
+      "name": "Dining",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [
+       "gh"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": true,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.resy",
+      "cardId": "c_gold",
+      "name": "Resy",
+      "amount": 50,
+      "cadence": "semiannual",
+      "plats": [],
+      "restricted": true,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.ride",
+      "cardId": "c_gold",
+      "name": "Rides",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [],
+      "restricted": false,
+      "locked": true,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     }
+    ],
+    "plats.dd.member": false
+   },
+   "work": "resy is restricted and not opted in -> plats []; ride is locked -> []. No card has a membership."
+  },
+  {
+   "id": "toggleCard: credits follow D.CARDS order, not toggle order; a card membership turns the app's on",
+   "refs": [
+    "§5.1",
+    "§5.4"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_dd",
+      true
+     ]
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    }
+   ],
+   "expect": {
+    "cards": [
+     "c_dd",
+     "c_gold"
+    ],
+    "credits": [
+     {
+      "key": "c_gold.dining",
+      "cardId": "c_gold",
+      "name": "Dining",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [
+       "gh"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": true,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.resy",
+      "cardId": "c_gold",
+      "name": "Resy",
+      "amount": 50,
+      "cadence": "semiannual",
+      "plats": [],
+      "restricted": true,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.ride",
+      "cardId": "c_gold",
+      "name": "Rides",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [],
+      "restricted": false,
+      "locked": true,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_dd.promo",
+      "cardId": "c_dd",
+      "name": "DD promo",
+      "amount": 5,
+      "cadence": "quarterly",
+      "plats": [
+       "dd"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": false,
+      "modes": [
+       "d"
+      ]
+     }
+    ],
+    "plats.dd.member": true,
+    "plats.ue.member": false
+   },
+   "work": ""
+  },
+  {
+   "id": "cardMember off, memberOwn on",
+   "refs": [
+    "§5.4"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_dd",
+      true
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.cardMember",
+      false
+     ],
+     "returns": true
+    },
+    {
+     "call": "syncCredits",
+     "args": []
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.ue.memberOwn",
+      true
+     ],
+     "returns": true
+    },
+    {
+     "call": "syncCredits",
+     "args": []
+    }
+   ],
+   "expect": {
+    "plats.dd.member": false,
+    "plats.ue.member": true,
+    "plats.gh.member": false
+   },
+   "work": ""
+  },
+  {
+   "id": "setOptIn: a restricted credit applies only after opt-in",
+   "refs": [
+    "§5.1",
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "setOptIn",
+     "args": [
+      "c_gold.resy",
+      true
+     ],
+     "returns": true
+    }
+   ],
+   "expect": {
+    "creditOptIn": {
+     "c_gold.resy": true
+    },
+    "credits": [
+     {
+      "key": "c_gold.dining",
+      "cardId": "c_gold",
+      "name": "Dining",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [
+       "gh"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": true,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.resy",
+      "cardId": "c_gold",
+      "name": "Resy",
+      "amount": 50,
+      "cadence": "semiannual",
+      "plats": [
+       "direct"
+      ],
+      "restricted": true,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.ride",
+      "cardId": "c_gold",
+      "name": "Rides",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [],
+      "restricted": false,
+      "locked": true,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
+   "id": "setOptIn off deletes the key",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "setOptIn",
+     "args": [
+      "c_gold.resy",
+      true
+     ]
+    },
+    {
+     "call": "setOptIn",
+     "args": [
+      "c_gold.resy",
+      false
+     ]
+    }
+   ],
+   "expect": {
+    "creditOptIn": {},
+    "credits": [
+     {
+      "key": "c_gold.dining",
+      "cardId": "c_gold",
+      "name": "Dining",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [
+       "gh"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": true,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.resy",
+      "cardId": "c_gold",
+      "name": "Resy",
+      "amount": 50,
+      "cadence": "semiannual",
+      "plats": [],
+      "restricted": true,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.ride",
+      "cardId": "c_gold",
+      "name": "Rides",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [],
+      "restricted": false,
+      "locked": true,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
+   "id": "setOptIn never un-locks a locked credit",
+   "refs": [
+    "§5.1"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "setOptIn",
+     "args": [
+      "c_gold.ride",
+      true
+     ]
+    }
+   ],
+   "expect": {
+    "credits.2.plats": []
+   },
+   "work": ""
+  },
+  {
+   "id": "markUsed: used this month, reset next month",
+   "refs": [
+    "§5.2",
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_gold.dining",
+      true
+     ],
+     "returns": true
+    },
+    {
+     "call": "syncCredits",
+     "args": [],
+     "now": "2026-12-01T12:00:00"
+    }
+   ],
+   "expect": {
+    "usedIn": {
+     "c_gold.dining": "2026-11"
+    },
+    "credits.0.used": false
+   },
+   "work": "Marked in 2026-11; on 2026-12-01 the period is 2026-12, so it reads unused (usedIn keeps the old entry)."
+  },
+  {
+   "id": "markUsed: still used later in the same month",
+   "refs": [
+    "§5.2"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_gold.dining",
+      true
+     ]
+    },
+    {
+     "call": "syncCredits",
+     "args": [],
+     "now": "2026-11-30T12:00:00"
+    }
+   ],
+   "expect": {
+    "credits.0.used": true
+   },
+   "work": ""
+  },
+  {
+   "id": "markUsed: quarterly and semiannual periods",
+   "refs": [
+    "§5.2"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_dd",
+      true
+     ]
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_dd.promo",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_gold.resy",
+      true
+     ]
+    },
+    {
+     "call": "syncCredits",
+     "args": [],
+     "now": "2026-12-31T12:00:00"
+    }
+   ],
+   "expect": {
+    "usedIn": {
+     "c_dd.promo": "2026-Q4",
+     "c_gold.resy": "2026-H2"
+    },
+    "credits.3.used": true,
+    "credits.1.used": true
+   },
+   "work": "Nov is in Q4 and H2; Dec 31 is still both."
+  },
+  {
+   "id": "markUsed: a new quarter resets it",
+   "refs": [
+    "§5.2"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_dd",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_dd.promo",
+      true
+     ]
+    },
+    {
+     "call": "syncCredits",
+     "args": [],
+     "now": "2027-01-02T12:00:00"
+    }
+   ],
+   "expect": {
+    "credits.0.used": false
+   },
+   "work": ""
+  },
+  {
+   "id": "markUsed off; an unknown key is refused",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_gold.dining",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_gold.dining",
+      false
+     ],
+     "returns": true
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_gold.nope",
+      true
+     ],
+     "returns": false
+    }
+   ],
+   "expect": {
+    "usedIn": {},
+    "credits.0.used": false
+   },
+   "work": ""
+  },
+  {
+   "id": "syncCredits keeps opt-ins and used flags across a card toggle",
+   "refs": [
+    "§5.1"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "setOptIn",
+     "args": [
+      "c_gold.resy",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_gold.dining",
+      true
+     ]
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      false
+     ],
+     "returns": true
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    }
+   ],
+   "expect": {
+    "cards": [
+     "c_gold"
+    ],
+    "credits": [
+     {
+      "key": "c_gold.dining",
+      "cardId": "c_gold",
+      "name": "Dining",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [
+       "gh"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": true,
+      "used": true,
+      "manual": false
+     },
+     {
+      "key": "c_gold.resy",
+      "cardId": "c_gold",
+      "name": "Resy",
+      "amount": 50,
+      "cadence": "semiannual",
+      "plats": [
+       "direct"
+      ],
+      "restricted": true,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.ride",
+      "cardId": "c_gold",
+      "name": "Rides",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [],
+      "restricted": false,
+      "locked": true,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     }
+    ],
+    "creditOptIn": {
+     "c_gold.resy": true
+    },
+    "usedIn": {
+     "c_gold.dining": "2026-11"
+    }
+   },
+   "work": "Off then on: the credits come back with the same opt-in and used flag."
+  },
+  {
+   "id": "toggleCard: an unknown card is refused; on twice doesn't duplicate",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_zz",
+      true
+     ],
+     "returns": false
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    }
+   ],
+   "expect": {
+    "cards": [
+     "c_gold"
+    ]
+   },
+   "work": ""
+  },
+  {
+   "id": "addManualCredit: kept through card toggles, last in the list",
+   "refs": [
+    "§5.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "Gift card",
+       "amount": 20,
+       "plats": [
+        "direct"
+       ]
+      }
+     ],
+     "returns": "manual.1"
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    }
+   ],
+   "expect": {
+    "manualCredits": [
+     {
+      "key": "manual.1",
+      "name": "Gift card",
+      "amount": 20,
+      "cadence": "once",
+      "plats": [
+       "direct"
+      ]
+     }
+    ],
+    "credits": [
+     {
+      "key": "c_gold.dining",
+      "cardId": "c_gold",
+      "name": "Dining",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [
+       "gh"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": true,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.resy",
+      "cardId": "c_gold",
+      "name": "Resy",
+      "amount": 50,
+      "cadence": "semiannual",
+      "plats": [],
+      "restricted": true,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.ride",
+      "cardId": "c_gold",
+      "name": "Rides",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [],
+      "restricted": false,
+      "locked": true,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "manual.1",
+      "cardId": null,
+      "name": "Gift card",
+      "amount": 20,
+      "cadence": "once",
+      "plats": [
+       "direct"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": true
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
+   "id": "addManualCredit: keys count up; a removed key isn't reused",
+   "refs": [
+    "§5.3",
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "A",
+       "amount": 5,
+       "plats": [
+        "dd"
+       ]
+      }
+     ]
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "B",
+       "amount": 6,
+       "plats": [
+        "ue"
+       ],
+       "modes": [
+        "p"
+       ],
+       "cadence": "monthly"
+      }
+     ],
+     "returns": "manual.2"
+    },
+    {
+     "call": "removeManualCredit",
+     "args": [
+      "manual.1"
+     ],
+     "returns": true
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "C",
+       "amount": 7,
+       "plats": [
+        "gh"
+       ]
+      }
+     ],
+     "returns": "manual.3"
+    },
+    {
+     "call": "removeManualCredit",
+     "args": [
+      "manual.9"
+     ],
+     "returns": false
+    }
+   ],
+   "expect": {
+    "manualCredits": [
+     {
+      "key": "manual.2",
+      "name": "B",
+      "amount": 6,
+      "cadence": "monthly",
+      "plats": [
+       "ue"
+      ],
+      "modes": [
+       "p"
+      ]
+     },
+     {
+      "key": "manual.3",
+      "name": "C",
+      "amount": 7,
+      "cadence": "once",
+      "plats": [
+       "gh"
+      ]
+     }
+    ],
+    "credits.0.modes": [
+     "p"
+    ],
+    "credits.0.used": false
+   },
+   "work": "After removing manual.1, the largest is 2, so the next is manual.3."
+  },
+  {
+   "id": "addManualCredit rejects bad credits",
+   "refs": [
+    "§5.3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "",
+       "amount": 5,
+       "plats": [
+        "dd"
+       ]
+      }
+     ],
+     "returns": null
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "X",
+       "amount": 0,
+       "plats": [
+        "dd"
+       ]
+      }
+     ],
+     "returns": null
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "X",
+       "amount": 5,
+       "plats": [
+        "doordash"
+       ]
+      }
+     ],
+     "returns": null
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "X",
+       "amount": 5,
+       "plats": [
+        "dd"
+       ],
+       "cadence": "weekly"
+      }
+     ],
+     "returns": null
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "X",
+       "amount": 5,
+       "plats": [
+        "dd"
+       ],
+       "modes": [
+        "x"
+       ]
+      }
+     ],
+     "returns": null
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      "gift"
+     ],
+     "returns": null
+    }
+   ],
+   "expect": {
+    "manualCredits": [],
+    "credits": []
+   },
+   "work": ""
+  },
+  {
+   "id": "a once-credit stays used until unmarked",
+   "refs": [
+    "§5.2"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "Gift card",
+       "amount": 20,
+       "plats": [
+        "direct"
+       ]
+      }
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "manual.1",
+      true
+     ],
+     "returns": true
+    },
+    {
+     "call": "syncCredits",
+     "args": [],
+     "now": "2030-01-01T12:00:00"
+    }
+   ],
+   "expect": {
+    "usedIn": {
+     "manual.1": "once"
+    },
+    "credits.0.used": true
+   },
+   "work": ""
+  },
+  {
+   "id": "ready: missing is empty, gh is switched off for the engine",
+   "refs": [
+    "§7",
+    "D-032"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    }
+   ],
+   "expect": {
+    "$missing": [],
+    "$appMissing.dd": [],
+    "$appMissing.ue": [],
+    "$appMissing.gh": [
+     "plats.gh.markup",
+     "plats.gh.delFee",
+     "plats.gh.svc",
+     "plats.gh.svcMin",
+     "plats.gh.memberSvc",
+     "plats.gh.memberMin"
+    ],
+    "$forEngine.plats.gh.on": false,
+    "$forEngine.plats.dd.on": true,
+    "plats.gh.on": true,
+    "$calc.direct-p.net": 33.94,
+    "$calc.direct-d.net": 53.55,
+    "$calc.dd-d.net": 69.65,
+    "$calc.dd-p.net": 53.54,
+    "$calc.ue-p.net": 55.72,
+    "$calc.ue-d.net": 71.43,
+    "$allResults.ids": [
+     "direct-p",
+     "dd-p",
+     "direct-d",
+     "ue-p",
+     "dd-d",
+     "ue-d"
+    ]
+   },
+   "work": "pz, cart {0: 2}: menuSub 40; the pickup deal (2 flagged items) makes direct-p 2 x 15 = 30. Trip 5.2 mi: gas round2(5.2/30 x 4.10) = 0.71, wear round2(5.2 x 0.11) = 0.57, drive 1.28. direct-p: 30 + tax round2(2.6625)=2.66 + drive = 33.94. direct-d: 40 + fee 4 + tax 3.55 + tip 6 = 53.55. dd: food 48 (20%). dd-d: 48 + (2.99 + max(7.2, 3)) + tax 4.26 + tip 7.2 = 69.65. dd-p: 48 + 4.26 + drive = 53.54. ue: food 50 (25%). ue-p: 50 + tax round2(4.4375)=4.44 + drive = 55.72. ue-d: 50 + (1.99 + 7.5) + 4.44 + 7.5 = 71.43. gh: not in pz's platforms, and switched off anyway."
+  },
+  {
+   "id": "ready: a card's membership and credit reach the engine",
+   "refs": [
+    "§5.4",
+    "§5.1",
+    "§7"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_dd",
+      true
+     ]
+    }
+   ],
+   "expect": {
+    "$calc.dd-d.net": 57.46,
+    "$calc.dd-d.member": "DashPass",
+    "$calc.dd-p.net": 53.54
+   },
+   "work": "DashPass via c_dd: food 48 >= 12, delivery 0, service max(48 x 5% = 2.4, 3) = 3; gross 48 + 3 + 4.26 + 7.2 = 62.46; the DD promo ($5, dd, delivery only) -> 57.46. Pickup unchanged."
+  },
+  {
+   "id": "ready: an EV needs miPerKwh and kwh, not mpg and gas",
+   "refs": [
+    "§7"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Volt"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    }
+   ],
+   "expect": {
+    "$missing": []
+   },
+   "work": ""
+  },
+  {
+   "id": "ready: an unprofiled brand needs a valid manualSubtotal",
+   "refs": [
+    "§7"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "bg"
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "manualSubtotal",
+      -1
+     ]
+    }
+   ],
+   "expect": {
+    "$missing": [
+     "manualSubtotal"
+    ],
+    "$forEngine": null,
+    "$appMissing.gh": [
+     "plats.gh.delFee",
+     "plats.gh.svc",
+     "plats.gh.svcMin",
+     "plats.gh.memberSvc",
+     "plats.gh.memberMin"
+    ]
+   },
+   "work": "bg has gh in its platforms and a gh markup (15), so only gh's fees are missing."
+  },
+  {
+   "id": "ready: a null tip blocks everything",
+   "refs": [
+    "§7",
+    "D-032"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "tipDel",
+      null
+     ]
+    }
+   ],
+   "expect": {
+    "$missing": [
+     "tipDel"
+    ]
+   },
+   "work": ""
+  },
+  {
+   "id": "ready: a null shared app fee switches every app off, not the page",
+   "refs": [
+    "§7"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "smallFee",
+      null
+     ]
+    }
+   ],
+   "expect": {
+    "$missing": [],
+    "$appMissing.dd": [
+     "smallFee"
+    ],
+    "$forEngine.plats.dd.on": false,
+    "$forEngine.plats.ue.on": false,
+    "$forEngine.plats.direct.on": true,
+    "$allResults.ids": [
+     "direct-p",
+     "direct-d"
+    ]
+   },
+   "work": ""
+  },
+  {
+   "id": "ready: the user's own switch stays off",
+   "refs": [
+    "§7"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.ue.on",
+      false
+     ]
+    }
+   ],
+   "expect": {
+    "$forEngine.plats.ue.on": false,
+    "$appMissing.ue": []
+   },
+   "work": ""
+  },
+  {
+   "id": "setPath writes only existing paths",
+   "refs": [
+    "§3"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.delFee",
+      3.49
+     ],
+     "returns": true
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.nope",
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.zz.on",
+      false
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "cart.0",
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "__proto__.polluted",
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.constructor",
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "",
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "tipDel.x",
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      5,
+      1
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "tipDel",
+      20
+     ],
+     "returns": true
+    }
+   ],
+   "expect": {
+    "plats.dd.delFee": 3.49,
+    "tipDel": 20,
+    "cart": {},
+    "$getPath.plats.dd.svc": 15,
+    "$getPath.nope.x": "$undefined",
+    "$getPath.tipDel.x": "$undefined",
+    "$protoClean": true
+   },
+   "work": ""
+  },
+  {
+   "id": "save then load: user fields come back, derived ones are rebuilt",
+   "refs": [
+    "§8",
+    "§4.7"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7
+     ]
+    },
+    {
+     "call": "toggleCard",
+     "args": [
+      "c_gold",
+      true
+     ]
+    },
+    {
+     "call": "setOptIn",
+     "args": [
+      "c_gold.resy",
+      true
+     ]
+    },
+    {
+     "call": "markUsed",
+     "args": [
+      "c_gold.dining",
+      true
+     ]
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "Gift card",
+       "amount": 20,
+       "plats": [
+        "direct"
+       ]
+      }
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "tipDel",
+      20
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.memberOwn",
+      true
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.ue.type",
+      "percent"
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.ue.value",
+      20
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.gh.delFee",
+      3.49
+     ]
+    },
+    {
+     "call": "save",
+     "args": [],
+     "returns": true
+    },
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "address": "10001",
+    "state": "NY",
+    "tax": 8.875,
+    "fuel": "regular",
+    "mpg": 30,
+    "brand": "pz",
+    "rest.id": "pz",
+    "plats.dd.markup": 20,
+    "cart": {
+     "0": 2
+    },
+    "miles": 7,
+    "minutes": 14,
+    "milesAuto": false,
+    "milesBy": {
+     "pz": 7
+    },
+    "cards": [
+     "c_gold"
+    ],
+    "creditOptIn": {
+     "c_gold.resy": true
+    },
+    "usedIn": {
+     "c_gold.dining": "2026-11"
+    },
+    "credits": [
+     {
+      "key": "c_gold.dining",
+      "cardId": "c_gold",
+      "name": "Dining",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [
+       "gh"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": true,
+      "used": true,
+      "manual": false
+     },
+     {
+      "key": "c_gold.resy",
+      "cardId": "c_gold",
+      "name": "Resy",
+      "amount": 50,
+      "cadence": "semiannual",
+      "plats": [
+       "direct"
+      ],
+      "restricted": true,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "c_gold.ride",
+      "cardId": "c_gold",
+      "name": "Rides",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [],
+      "restricted": false,
+      "locked": true,
+      "goldPartner": false,
+      "used": false,
+      "manual": false
+     },
+     {
+      "key": "manual.1",
+      "cardId": null,
+      "name": "Gift card",
+      "amount": 20,
+      "cadence": "once",
+      "plats": [
+       "direct"
+      ],
+      "restricted": false,
+      "locked": false,
+      "goldPartner": false,
+      "used": false,
+      "manual": true
+     }
+    ],
+    "tipDel": 20,
+    "plats.dd.member": true,
+    "promos.ue": {
+     "type": "percent",
+     "value": 20,
+     "cap": 0,
+     "min": 0
+    },
+    "plats.gh.delFee": 3.49,
+    "$savedKeys": [
+     "address",
+     "brand",
+     "cards",
+     "cart",
+     "creditOptIn",
+     "dealOn",
+     "fuel",
+     "hourly",
+     "kwh",
+     "make",
+     "manualCredits",
+     "manualSubtotal",
+     "miPerKwh",
+     "miles",
+     "milesAuto",
+     "milesBy",
+     "model",
+     "mpg",
+     "plats",
+     "promos",
+     "regFee",
+     "smallFee",
+     "smallMin",
+     "speed",
+     "store",
+     "storePicked",
+     "tipDel",
+     "tipPick",
+     "usedIn",
+     "wear"
+    ],
+    "$saved.plats.dd": {
+     "on": true,
+     "delFee": 2.99,
+     "svc": 15,
+     "svcMin": 3,
+     "memberSvc": 5,
+     "memberMin": 12,
+     "pickDisc": 0,
+     "memberOwn": true,
+     "cardMember": true
+    },
+    "$saved.pos": "$absent"
+   },
+   "work": "save writes only the user fields (no rest, tax, credits, member, markup; pos only when GPS); load merges them over fresh and runs derive.",
+   "storage": {
+    "kind": "memory"
+   }
+  },
+  {
+   "id": "save keeps a GPS position",
+   "refs": [
+    "§8"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setPosition",
+     "args": [
+      40.0,
+      -74.0
+     ]
+    },
+    {
+     "call": "save",
+     "args": [],
+     "returns": true
+    },
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "pos": {
+     "lat": 40,
+     "lon": -74,
+     "src": "gps"
+    },
+    "zip": "10001",
+    "$saved.pos": {
+     "lat": 40,
+     "lon": -74,
+     "src": "gps"
+    }
+   },
+   "work": "",
+   "storage": {
+    "kind": "memory"
+   }
+  },
+  {
+   "id": "load: a storage that throws gives the derived fresh state",
+   "refs": [
+    "§8"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    },
+    {
+     "call": "save",
+     "args": [],
+     "returns": false
+    }
+   ],
+   "expect": {
+    "address": "",
+    "tipDel": 15,
+    "credits": [],
+    "$missing": [
+     "rest",
+     "tax",
+     "mpg",
+     "gas",
+     "miles",
+     "minutes"
+    ]
+   },
+   "work": "",
+   "storage": {
+    "kind": "throwing"
+   }
+  },
+  {
+   "id": "load: no storage at all",
+   "refs": [
+    "§8"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    },
+    {
+     "call": "save",
+     "args": [],
+     "returns": false
+    }
+   ],
+   "expect": {
+    "address": "",
+    "tipDel": 15
+   },
+   "work": "",
+   "storage": {
+    "kind": "none"
+   }
+  },
+  {
+   "id": "load: corrupt JSON gives fresh",
+   "refs": [
+    "§8"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "address": "",
+    "tipDel": 15,
+    "cards": []
+   },
+   "work": "",
+   "storage": {
+    "kind": "memory",
+    "value": "{not json"
+   }
+  },
+  {
+   "id": "load: an array gives fresh",
+   "refs": [
+    "§8"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "address": "",
+    "tipDel": 15,
+    "cards": []
+   },
+   "work": "",
+   "storage": {
+    "kind": "memory",
+    "value": "[1,2]"
+   }
+  },
+  {
+   "id": "load: null gives fresh",
+   "refs": [
+    "§8"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "address": "",
+    "tipDel": 15,
+    "cards": []
+   },
+   "work": "",
+   "storage": {
+    "kind": "memory",
+    "value": "null"
+   }
+  },
+  {
+   "id": "load: a number gives fresh",
+   "refs": [
+    "§8"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "address": "",
+    "tipDel": 15,
+    "cards": []
+   },
+   "work": "",
+   "storage": {
+    "kind": "memory",
+    "value": "42"
+   }
+  },
+  {
+   "id": "load: each saved field is checked on its own",
+   "refs": [
+    "§8"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "tipDel": 15,
+    "tipPick": 0,
+    "cards": [
+     "c_gold"
+    ],
+    "speed": 30,
+    "fuel": "regular",
+    "brand": null,
+    "plats.dd.svc": 15,
+    "plats.dd.delFee": 4.49,
+    "plats.dd.member": false,
+    "plats.dd.markup": null,
+    "plats.dd.memberOwn": false,
+    "cart": {
+     "0": 2
+    },
+    "milesBy": {
+     "pz": 7
+    },
+    "creditOptIn": {
+     "c_gold.resy": true
+    },
+    "usedIn": {
+     "c_gold.dining": "2026-11"
+    },
+    "pos": {
+     "lat": 40,
+     "lon": -74,
+     "src": "zip"
+    },
+    "store": null,
+    "promos.ue": {
+     "type": "none",
+     "value": 5,
+     "cap": 0,
+     "min": 0
+    },
+    "promos.dd": {
+     "type": "dollar",
+     "value": 5,
+     "cap": 0,
+     "min": 15
+    },
+    "manualCredits": [
+     {
+      "key": "manual.1",
+      "name": "Gift",
+      "amount": 20,
+      "cadence": "once",
+      "plats": [
+       "direct"
+      ]
+     }
+    ],
+    "address": "10001",
+    "state": "NY",
+    "mpg": null,
+    "$has.unknownField": false,
+    "$has.plats.zz": false,
+    "$storageWrites": 0
+   },
+   "work": "Bad types fall back to fresh: tipDel string, tipPick < 0, speed 0, fuel jet, brand 42, dd.svc < 0, memberOwn 'yes', store lat string, ue promo type bogo (the type alone falls back; value 5 is a valid number and stays). member and markup are derived, never loaded. cards keeps the strings, then syncCredits prunes c_zz and the duplicate. cart keeps only canonical keys with integer qty >= 0. The saved pos is a ZIP position (not GPS), so it's ignored, and derive re-derives pos from the address. manualCredits keeps the first valid manual.1. mpg and miles may be null. Unknown fields and apps are dropped. load never writes to storage.",
+   "storage": {
+    "kind": "memory",
+    "value": "{\"tipDel\": \"abc\", \"tipPick\": -1, \"cards\": [\"c_gold\", 5, \"c_zz\", \"c_gold\"], \"speed\": 0, \"fuel\": \"jet\", \"brand\": 42, \"plats\": {\"dd\": {\"svc\": -3, \"delFee\": 4.49, \"member\": true, \"markup\": 99, \"memberOwn\": \"yes\"}, \"zz\": {\"on\": true}}, \"cart\": {\"0\": 2, \"x\": 1, \"01\": 3, \"1\": 1.5, \"2\": -1}, \"milesBy\": {\"pz\": 7, \"bg\": \"far\"}, \"creditOptIn\": {\"c_gold.resy\": true, \"c_gold.dining\": \"yes\"}, \"usedIn\": {\"c_gold.dining\": \"2026-11\", \"x\": 5}, \"pos\": {\"lat\": 40, \"lon\": -74, \"src\": \"zip\"}, \"store\": {\"id\": \"pz@40030,-74000\", \"lat\": \"40.03\", \"lon\": -74}, \"promos\": {\"ue\": {\"type\": \"bogo\", \"value\": 5, \"cap\": 0, \"min\": 0}, \"dd\": {\"type\": \"dollar\", \"value\": 5, \"cap\": 0, \"min\": 15}}, \"manualCredits\": [{\"key\": \"manual.1\", \"name\": \"Gift\", \"amount\": 20, \"plats\": [\"direct\"]}, {\"key\": \"manual.1\", \"name\": \"Dup\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"bad\", \"name\": \"Bad key\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"manual.2\", \"name\": \"No amount\", \"plats\": [\"dd\"]}], \"mpg\": null, \"miles\": null, \"address\": \"10001\", \"unknownField\": 1}"
+   }
+  }
+ ]
+}
