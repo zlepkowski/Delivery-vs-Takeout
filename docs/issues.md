@@ -2,7 +2,13 @@
 
 Open blockers, bugs and unresolved questions. Workers add entries; the orchestrator closes them.
 
-**Adding an entry:** put it at the **end of the Open section** (just above `## Closed`), never at the end of the file. Its number is the highest `ISS-nnn` anywhere in this file plus one, read at write time (`grep -o '^### ISS-[0-9]*' docs/issues.md | sort -t- -k2 -n | tail -1`), unless your task card reserved one for you. To add to an existing entry, append a dated bullet under it. (ISS-028 was reserved for a task that didn't need it, so it's unused.)
+**Adding an entry:** put it at the **end of the Open section** (just above `### ISS-032 — Thousands of ZIPs share one coordinate in the ZIP source
+- **Opened:** 2026-11-13 by orchestrator · **Phase:** 3 · **Status:** open
+- **What:** in `src/data/zips.js` (midwire/free_zipcode_data), 9,821 of the 42,354 ZIPs share their exact coordinate with at least one other ZIP. 206 points hold 10 or more ZIPs each (6,185 ZIPs). The largest stacks are 452 Los Angeles ZIPs (90004, 90005, 90006, 90007, …) at one point in the South Bay (33.787, −118.299), about 20 miles from 90004's real area; 195 Houston ZIPs; 170 Washington DC ZIPs; 149 Chicago-area ZIPs; 134 Phoenix ZIPs; 130 El Paso ZIPs. Some small stacks are real (PO-box ZIPs at one post office), but 90004–90007 are residential ZIPs. Found with a one-off count over `ZIP_PACKED` while writing the geography contract.
+- **Why it matters:** until the page gets the user's position some other way, the ZIP centroid is the user's location. Someone in 90004 would see the stores near the South Bay point, and the trip distance would be wrong. `zipSpacing` already copes (it counts distinct points, D-030), but the location itself is wrong for these ZIPs. Phase 1's check (42,354 / 18,908) counts rows, so it couldn't catch this.
+- **Next step:** the user decides. Options: (a) take coordinates from the Census ZCTA gazetteer (public domain, `www2.census.gov`, which isn't on the network allowlist), keeping midwire for city, state and PO-box ZIPs; (b) GeoNames postal codes (CC-BY, `download.geonames.org`); (c) make browser geolocation the primary location in Phase 5 and keep the ZIP only as a fallback. (c) is worth doing whatever else is chosen. Add a data test that fails when more than a small number of ZIPs share one point.
+
+## Closed`), never at the end of the file. Its number is the highest `ISS-nnn` anywhere in this file plus one, read at write time (`grep -o '^### ISS-[0-9]*' docs/issues.md | sort -t- -k2 -n | tail -1`), unless your task card reserved one for you. To add to an existing entry, append a dated bullet under it. (ISS-028 was reserved for a task that didn't need it, so it's unused.)
 
 ## Format
 

@@ -159,6 +159,16 @@ Consequence: an unprofiled Five Guys has no `amexGoldDirect`, so the Amex Gold d
 [`docs/engine-contract.md`](engine-contract.md) defines `POD.engine` exactly: the inputs, channel availability, every formula in §4.2 order with its rounding, the credit rules and the receipt lines. Both `src/js/engine.js` and the Python oracle implement it, and **where it differs from BUILD.md §4, the contract wins.** Changes go through a decision, and the oracle and receipts change before the engine. Its §7 lists the judgment calls that fill the spec's gaps: app pickup has no fees; small-order and regulatory fees apply to app delivery only; a membership applies at `food >= memberMin`; promos apply to both modes except `freedel`; EVs pay wear; a deal never raises an item's price; the engine enforces the §9.1 credit tiers itself; and a direct-channel service fee `directSvc` is modeled (ISS-031). `calc` reads `S.rest`, a resolved restaurant built by the pure `restFor(brandId, D)`, so the engine never touches `POD.data`.
 *Why:* the oracle can only match the JS to the cent if both follow one unambiguous definition. Writing the formulas once, with the order of floating-point operations fixed, makes the differential test exact.
 
+**D-030 — The geography contract** · 2026-11-13 · *accepted*
+[`docs/geo-contract.md`](geo-contract.md) defines `POD.geo` exactly, and **where it differs from BUILD.md §8, the contract wins.** `src/js/geo.js` and the Python reference `tests/oracle/geo.py` both implement it, and changes go through a decision, with the reference and fixtures changing before the code. The judgment calls that fill the spec's gaps:
+- **Every function takes the data tables as an argument `D`** and reads nothing global, like `restFor(brandId, D)` (D-029). It never throws: bad input gives `null`.
+- **`zipSpacing` averages the 6 nearest *distinct* centroid points, not records.** Many ZIPs sit stacked on one coordinate (ISS-032), and counting each would make those spots look like the densest in the country.
+- **`storesNear` lists one row per brand (its nearest store)**, sorted by distance then brand id. It widens 5 → 10 → 25 → 50 mi until at least `WANT` = 15 brands are found, and returns every brand within that radius (the UI decides how many to show).
+- **Tile loading stays outside `geo.js`.** `storesNear` and `nearestStore` say which cells they still `need`, and the page loads those (Phase 5) and calls again. A cell that fails to load is passed back in `opts.failed` and makes the result `partial`. A tile from another All The Places run is never read, because its brand indexes would point at the wrong brands.
+- **The cells for a search are the exact bounding box of the circle** (latitude ± δ, longitude ± asin(sin δ / cos φ)), so every cell the circle touches is loaded (D-021).
+- **Distances shown or priced are rounded to 0.1 mi:** a trip is `round1(straight × 2 × 1.25)`, and the estimator's `one` and `round` are rounded the same way. Unrounded distances are kept for sorting.
+*Why:* the same reason as D-029. An independent reference can only check the code if both follow one exact definition, and pure functions with `D` passed in can be tested on small hand-worked tables.
+
 ---
 
 ## Skill updates

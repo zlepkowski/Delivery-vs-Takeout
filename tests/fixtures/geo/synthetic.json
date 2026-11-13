@@ -1,0 +1,2586 @@
+{
+ "about": "Hand-worked geo cases (docs/geo-contract.md). Expected values are closed-form arithmetic shown in `work` (distances on a meridian are R x pi/180 x |dLat|), not output of any implementation. `data` names a dataset (null = the call takes no D); `patch` replaces whole top-level keys of that dataset (null deletes nothing: it sets the key to null). Unrounded numbers compare with a relative tolerance of 1e-9 (or 1e-9 absolute near 0).",
+ "cases": [
+  {
+   "args": [],
+   "call": "zipCount",
+   "data": "Z1",
+   "expect": 10,
+   "id": "Z1 zipCount skips malformed records",
+   "work": "Z1 is 10 usable ZIPs on longitude 0 (lat x1000: 10000 twice, 10010, 10030 twice, 9940, 10100, 9850, 10210, 10280) plus 8 malformed records that must be skipped (bad city index, 4-digit zip, decimal lat, lowercase state, 3 fields, empty, 6 fields, non-digit lat). Along a meridian, distance = R*pi/180*|dLat| = 69.094094427952 mi per degree. 10 usable."
+  },
+  {
+   "args": [
+    "00005"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": {
+    "c": "Beta",
+    "la": 10.03,
+    "lo": 0,
+    "st": "AA",
+    "z": "00005"
+   },
+   "id": "Z1 zipByCode finds a record",
+   "work": "00005,10030,0,1,AA -> la 10.03, lo 0, city 1 = Beta."
+  },
+  {
+   "args": [
+    "00001"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": {
+    "c": "Alpha",
+    "la": 10,
+    "lo": 0,
+    "st": "AA",
+    "z": "00001"
+   },
+   "id": "Z1 zipByCode first of the stacked codes",
+   "work": "first usable record with that code"
+  },
+  {
+   "args": [
+    "00011"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode '00011' -> null (city index 9 out of range)",
+   "work": "city index 9 out of range"
+  },
+  {
+   "args": [
+    "00014"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode '00014' -> null (lowercase state)",
+   "work": "lowercase state"
+  },
+  {
+   "args": [
+    "00013"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode '00013' -> null (decimal lat)",
+   "work": "decimal lat"
+  },
+  {
+   "args": [
+    "00016"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode '00016' -> null (6 fields)",
+   "work": "6 fields"
+  },
+  {
+   "args": [
+    "00017"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode '00017' -> null (non-digit lat)",
+   "work": "non-digit lat"
+  },
+  {
+   "args": [
+    "99999"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode '99999' -> null (not in the table)",
+   "work": "not in the table"
+  },
+  {
+   "args": [
+    "0001"
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode '0001' -> null (4 digits)",
+   "work": "4 digits"
+  },
+  {
+   "args": [
+    "00001 "
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode '00001 ' -> null (trailing space, no trimming)",
+   "work": "trailing space, no trimming"
+  },
+  {
+   "args": [
+    5
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode number -> null",
+   "work": "codes are strings only"
+  },
+  {
+   "args": [
+    null
+   ],
+   "call": "zipByCode",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipByCode null -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    10.031,
+    0
+   ],
+   "call": "nearestZip",
+   "data": "Z1",
+   "expect": {
+    "c": "Beta",
+    "la": 10.03,
+    "lo": 0,
+    "st": "AA",
+    "z": "00004"
+   },
+   "id": "Z1 nearestZip tie at a stacked point -> smaller zip",
+   "work": "00004 and 00005 both sit at 10.030 (0.001 deg away); next is 10.010 (0.021 deg). Tie -> smaller zip 00004."
+  },
+  {
+   "args": [
+    10.0004,
+    0
+   ],
+   "call": "nearestZip",
+   "data": "Z1",
+   "expect": {
+    "c": "Alpha",
+    "la": 10,
+    "lo": 0,
+    "st": "AA",
+    "z": "00001"
+   },
+   "id": "Z1 nearestZip tie at the query point -> smaller zip",
+   "work": "00001/00002 at 0.0004 deg; malformed 00014 at 10.002 and 00016 at 10.001 must not count (00016 would be nearer than nothing, but 00001 is nearer anyway); 00001 wins the tie."
+  },
+  {
+   "args": [
+    10.002,
+    0
+   ],
+   "call": "nearestZip",
+   "data": "Z1",
+   "expect": {
+    "c": "Alpha",
+    "la": 10,
+    "lo": 0,
+    "st": "AA",
+    "z": "00001"
+   },
+   "id": "Z1 nearestZip skips a malformed record at the query point",
+   "work": "Malformed 00014 (lowercase state) sits exactly at 10.002. Usable: 10.000 (0.002 deg) beats 10.010 (0.008); 00001/00002 tie -> 00001."
+  },
+  {
+   "args": [
+    91,
+    0
+   ],
+   "call": "nearestZip",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 nearestZip lat out of range",
+   "work": ""
+  },
+  {
+   "args": [
+    10,
+    181
+   ],
+   "call": "nearestZip",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 nearestZip lon out of range",
+   "work": ""
+  },
+  {
+   "args": [
+    "10",
+    0
+   ],
+   "call": "nearestZip",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 nearestZip string lat",
+   "work": "strings are not converted"
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "Z1",
+   "expect": 6.448782146608809,
+   "id": "Z1 zipSpacing 00001: distinct points, own point excluded",
+   "work": "Distinct points other than 10.000: 10.010 (0.01 deg), 10.030 (0.03; two ZIPs, counted once), 9.940 (0.06), 10.100 (0.10), 9.850 (0.15), 10.210 (0.21), 10.280 (0.28). 00002 at 10.000 is distance 0, dropped. Six nearest: (0.01+0.03+0.06+0.10+0.15+0.21)/6 = 0.56/6 deg x 69.094094428 = 6.448782147 mi. Counting 00002 or the second 10.030 would give 0.33/6 or 0.38/6."
+  },
+  {
+   "args": [
+    {
+     "la": 10.28,
+     "lo": 0,
+     "z": "00010"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "Z1",
+   "expect": 16.006798542475433,
+   "id": "Z1 zipSpacing 00010 (top end)",
+   "work": "From 10.280: 10.210 (0.07), 10.100 (0.18), 10.030 (0.25), 10.010 (0.27), 10.000 (0.28), 9.940 (0.34), 9.850 (0.43). Six: 1.39/6 deg = 16.006798542 mi."
+  },
+  {
+   "args": [
+    {
+     "la": 10.005,
+     "lo": 0
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "Z1",
+   "expect": 4.030488841630505,
+   "id": "Z1 zipSpacing for a point not in the table",
+   "work": "From 10.005: 10.000 (0.005), 10.010 (0.005), 10.030 (0.025), 9.940 (0.065), 10.100 (0.095), 9.850 (0.155). Sum 0.35/6 deg = 4.030488842 mi. Malformed 00011 at 10.005 would be distance 0 and dropped anyway."
+  },
+  {
+   "args": [
+    {
+     "la": "10",
+     "lo": 0
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipSpacing string la -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    {
+     "la": 10
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipSpacing missing lo -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    null
+   ],
+   "call": "zipSpacing",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 zipSpacing null rec -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    },
+    "b10"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": {
+    "one": 1.8,
+    "round": 4.6,
+    "spacing": 6.448782146608809,
+    "zipsPerStore": 1.0
+   },
+   "id": "Z1 estimateMiles, 10 stores, 10 ZIPs",
+   "work": "zipsPerStore = 10/10 = 1. raw = 0.45 x sqrt(1) x 6.448782147^0.75 = 0.45 x 4.046767741 = 1.821045484. one = round1 -> 1.8; round = round1(1.821045484 x 2.5 = 4.552613709) -> 4.6."
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    },
+    "b1"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": {
+    "one": 5.8,
+    "round": 14.4,
+    "spacing": 6.448782146608809,
+    "zipsPerStore": 10.0
+   },
+   "id": "Z1 estimateMiles, 1 store",
+   "work": "zipsPerStore = 10. raw = 0.45 x sqrt(10) x 4.046767741 = 5.758651451 -> one 5.8, round round1(14.396628627) = 14.4."
+  },
+  {
+   "args": [
+    {
+     "la": 10.28,
+     "lo": 0,
+     "z": "00010"
+    },
+    "b_tiny"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": {
+    "one": 30.0,
+    "round": 75.0,
+    "spacing": 16.006798542475433,
+    "zipsPerStore": 1000.0
+   },
+   "id": "Z1 estimateMiles clamps high at 30",
+   "work": "zipsPerStore = 10/0.01 = 1000. raw = 0.45 x sqrt(1000) x 16.006798542^0.75 = 113.878273 > 30 -> one 30, round 75."
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    },
+    "b_huge"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": {
+    "one": 0.4,
+    "round": 1.0,
+    "spacing": 6.448782146608809,
+    "zipsPerStore": 0.01
+   },
+   "id": "Z1 estimateMiles clamps low at 0.4",
+   "work": "zipsPerStore = 0.01. raw = 0.45 x 0.1 x 4.046767741 = 0.182104548 < 0.4 -> one 0.4, round round1(1.0) = 1.0."
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    },
+    "b0"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 estimateMiles b0 -> null (0 stores)",
+   "work": "0 stores"
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    },
+    "bs"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 estimateMiles bs -> null (stores is a string)",
+   "work": "stores is a string"
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    },
+    "bn"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 estimateMiles bn -> null (no stores field)",
+   "work": "no stores field"
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    },
+    "zz"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 estimateMiles zz -> null (unknown brand)",
+   "work": "unknown brand"
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0,
+     "z": "00001"
+    },
+    5
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 estimateMiles non-string brand -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    null,
+    "b10"
+   ],
+   "call": "estimateMiles",
+   "data": "Z1",
+   "expect": null,
+   "id": "Z1 estimateMiles null rec -> null",
+   "work": "spacing is null"
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "Z2",
+   "expect": null,
+   "id": "Z2 zipSpacing with only 5 other points -> null",
+   "work": "7 ZIPs on 6 distinct points; excluding the query's own leaves 5 < 6."
+  },
+  {
+   "args": [
+    {
+     "la": 10,
+     "lo": 0
+    },
+    "b10"
+   ],
+   "call": "estimateMiles",
+   "data": "Z2",
+   "expect": null,
+   "id": "Z2 estimateMiles -> null when spacing is null",
+   "work": ""
+  },
+  {
+   "args": [],
+   "call": "zipCount",
+   "data": "Z2",
+   "expect": 7,
+   "id": "Z2 zipCount",
+   "work": ""
+  },
+  {
+   "args": [],
+   "call": "zipCount",
+   "data": "E",
+   "expect": 0,
+   "id": "empty table zipCount",
+   "work": ""
+  },
+  {
+   "args": [
+    "00001"
+   ],
+   "call": "zipByCode",
+   "data": "E",
+   "expect": null,
+   "id": "empty table zipByCode",
+   "work": ""
+  },
+  {
+   "args": [
+    10,
+    0
+   ],
+   "call": "nearestZip",
+   "data": "E",
+   "expect": null,
+   "id": "empty table nearestZip",
+   "work": ""
+  },
+  {
+   "args": [],
+   "call": "zipCount",
+   "data": "E",
+   "expect": 0,
+   "id": "no ZIP_CITIES zipCount",
+   "patch": {
+    "ZIP_CITIES": null,
+    "ZIP_PACKED": "00001,10000,0,0,AA"
+   },
+   "work": ""
+  },
+  {
+   "args": [],
+   "call": "zipCount",
+   "data": "E",
+   "expect": 0,
+   "id": "ZIP_PACKED not a string",
+   "patch": {
+    "ZIP_PACKED": [
+     "00001,10000,0,0,AA"
+    ]
+   },
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 25,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "s00",
+      "category": "pizza",
+      "id": "s00@10510,500",
+      "lat": 10.51,
+      "lon": 0.5,
+      "mi": 0.6909409442795005,
+      "name": "Brand 00",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "s01",
+      "category": "burger",
+      "id": "s01@10520,500",
+      "lat": 10.52,
+      "lon": 0.5,
+      "mi": 1.381881888559001,
+      "name": "Brand 01",
+      "profiled": true,
+      "trip": 3.5
+     },
+     {
+      "brand": "s02",
+      "category": "coffee",
+      "id": "s02@10470,500",
+      "lat": 10.47,
+      "lon": 0.5,
+      "mi": 2.072822832838501,
+      "name": "Brand 02",
+      "profiled": false,
+      "trip": 5.2
+     },
+     {
+      "brand": "s03",
+      "category": "pizza",
+      "id": "s03@10540,500",
+      "lat": 10.54,
+      "lon": 0.5,
+      "mi": 2.763763777118002,
+      "name": "Brand 03",
+      "profiled": false,
+      "trip": 6.9
+     },
+     {
+      "brand": "s04",
+      "category": "burger",
+      "id": "s04@10450,500",
+      "lat": 10.45,
+      "lon": 0.5,
+      "mi": 3.454704721397625,
+      "name": "Brand 04",
+      "profiled": false,
+      "trip": 8.6
+     },
+     {
+      "brand": "s05",
+      "category": "coffee",
+      "id": "s05@10565,500",
+      "lat": 10.565,
+      "lon": 0.5,
+      "mi": 4.491116137816815,
+      "name": "Brand 05",
+      "profiled": false,
+      "trip": 11.2
+     },
+     {
+      "brand": "s06",
+      "category": "pizza",
+      "id": "s06@10430,500",
+      "lat": 10.43,
+      "lon": 0.5,
+      "mi": 4.836586609956626,
+      "name": "Brand 06",
+      "profiled": false,
+      "trip": 12.1
+     },
+     {
+      "brand": "s07",
+      "category": "burger",
+      "id": "s07@10571,500",
+      "lat": 10.571,
+      "lon": 0.5,
+      "mi": 4.905680704384539,
+      "name": "Brand 07",
+      "profiled": false,
+      "trip": 12.3
+     },
+     {
+      "brand": "s08",
+      "category": "coffee",
+      "id": "s08@10428,500",
+      "lat": 10.428,
+      "lon": 0.5,
+      "mi": 4.974774798812453,
+      "name": "Brand 08",
+      "profiled": false,
+      "trip": 12.4
+     },
+     {
+      "brand": "s09",
+      "category": "pizza",
+      "id": "s09@10573,500",
+      "lat": 10.573,
+      "lon": 0.5,
+      "mi": 5.0438688932404885,
+      "name": "Brand 09",
+      "profiled": false,
+      "trip": 12.6
+     },
+     {
+      "brand": "s10",
+      "category": "burger",
+      "id": "s10@10400,500",
+      "lat": 10.4,
+      "lon": 0.5,
+      "mi": 6.909409442795127,
+      "name": "Brand 10",
+      "profiled": false,
+      "trip": 17.3
+     },
+     {
+      "brand": "s11",
+      "category": "coffee",
+      "id": "s11@10640,500",
+      "lat": 10.64,
+      "lon": 0.5,
+      "mi": 9.673173219913252,
+      "name": "Brand 11",
+      "profiled": false,
+      "trip": 24.2
+     },
+     {
+      "brand": "s13",
+      "category": "burger",
+      "id": "s13@10500,250",
+      "lat": 10.5,
+      "lon": 0.25,
+      "mi": 16.98427641004993,
+      "name": "Brand 13",
+      "profiled": false,
+      "trip": 42.5
+     },
+     {
+      "brand": "s12",
+      "category": "pizza",
+      "id": "s12@10800,500",
+      "lat": 10.8,
+      "lon": 0.5,
+      "mi": 20.728228328385505,
+      "name": "Brand 12",
+      "profiled": false,
+      "trip": 51.8
+     },
+     {
+      "brand": "s14",
+      "category": "coffee",
+      "id": "s14@10200,500",
+      "lat": 10.2,
+      "lon": 0.5,
+      "mi": 20.728228328385505,
+      "name": "Brand 14",
+      "profiled": false,
+      "trip": 51.8
+     }
+    ]
+   },
+   "id": "T1 storesNear widens to 25 and stops at exactly 15 brands",
+   "work": "User at (10.5, 0.5); all stores on longitude 0.5 (distance = 69.094094428 mi/deg x |dLat|) except s13 at (10.5, 0.25) and (10.5, 0.75), 2R asin(cos 10.5 deg x sin 0.125 deg) = 16.984276410 mi, an exact tie broken by smaller lo. Within 5 mi (0.07237 deg): s00 (0.010; its 0.060 store is farther), s01 .020, s02 .030, s03 .040, s04 .050, s05 .065, s06 .070, s07 .071, s08 .072 (4.975 mi) = 9 brands < 15. Within 10: + s09 .073 (5.044 mi, just outside 5), s10 .100, s11 .140 = 12. Within 25: + s13 16.985, s12 .300 (20.728), s14 -.300 (20.728, exact tie with s12 -> brand id order) = 15 -> stop at 25. s15 is in 11_0 at .600 (41.457 mi). Cells: r=5,10,25 -> [10_0]; r=50 -> [10_0, 11_0]."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [
+     "10_0"
+    ],
+    "partial": false,
+    "radius": 5,
+    "status": "need",
+    "stores": []
+   },
+   "id": "T1 storesNear with no tiles loaded -> need 10_0 at r=5",
+   "patch": {
+    "TILES": {}
+   },
+   "work": "D.TILES is empty"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [
+     "10_0"
+    ],
+    "partial": false,
+    "radius": 5,
+    "status": "need",
+    "stores": []
+   },
+   "id": "T1 storesNear with no TILES table -> need",
+   "patch": {
+    "TILES": null
+   },
+   "work": "a missing D.TILES has no tiles"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [
+     "11_0"
+    ],
+    "partial": false,
+    "radius": 50,
+    "status": "need",
+    "stores": []
+   },
+   "id": "T1 storesNear, 14 brands within 25 -> need 11_0 at r=50",
+   "patch": {
+    "TILES": {
+     "10_0": {
+      "run": "run-A",
+      "s": "0,10510,500;0,10560,500;1,10520,500;2,10470,500;3,10540,500;4,10450,500;5,10565,500;6,10430,500;7,10571,500;8,10428,500;9,10573,500;10,10400,500;11,10640,500;12,10800,500;13,10500,250;13,10500,750"
+     }
+    }
+   },
+   "work": "Without s14 only 14 brands are within 25, so the search widens to 50, whose cells are [10_0, 11_0]; 11_0 isn't loaded."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "s00",
+      "category": "pizza",
+      "id": "s00@10510,500",
+      "lat": 10.51,
+      "lon": 0.5,
+      "mi": 0.6909409442795005,
+      "name": "Brand 00",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "s01",
+      "category": "burger",
+      "id": "s01@10520,500",
+      "lat": 10.52,
+      "lon": 0.5,
+      "mi": 1.381881888559001,
+      "name": "Brand 01",
+      "profiled": true,
+      "trip": 3.5
+     },
+     {
+      "brand": "s02",
+      "category": "coffee",
+      "id": "s02@10470,500",
+      "lat": 10.47,
+      "lon": 0.5,
+      "mi": 2.072822832838501,
+      "name": "Brand 02",
+      "profiled": false,
+      "trip": 5.2
+     },
+     {
+      "brand": "s03",
+      "category": "pizza",
+      "id": "s03@10540,500",
+      "lat": 10.54,
+      "lon": 0.5,
+      "mi": 2.763763777118002,
+      "name": "Brand 03",
+      "profiled": false,
+      "trip": 6.9
+     },
+     {
+      "brand": "s04",
+      "category": "burger",
+      "id": "s04@10450,500",
+      "lat": 10.45,
+      "lon": 0.5,
+      "mi": 3.454704721397625,
+      "name": "Brand 04",
+      "profiled": false,
+      "trip": 8.6
+     },
+     {
+      "brand": "s05",
+      "category": "coffee",
+      "id": "s05@10565,500",
+      "lat": 10.565,
+      "lon": 0.5,
+      "mi": 4.491116137816815,
+      "name": "Brand 05",
+      "profiled": false,
+      "trip": 11.2
+     },
+     {
+      "brand": "s06",
+      "category": "pizza",
+      "id": "s06@10430,500",
+      "lat": 10.43,
+      "lon": 0.5,
+      "mi": 4.836586609956626,
+      "name": "Brand 06",
+      "profiled": false,
+      "trip": 12.1
+     },
+     {
+      "brand": "s07",
+      "category": "burger",
+      "id": "s07@10571,500",
+      "lat": 10.571,
+      "lon": 0.5,
+      "mi": 4.905680704384539,
+      "name": "Brand 07",
+      "profiled": false,
+      "trip": 12.3
+     },
+     {
+      "brand": "s08",
+      "category": "coffee",
+      "id": "s08@10428,500",
+      "lat": 10.428,
+      "lon": 0.5,
+      "mi": 4.974774798812453,
+      "name": "Brand 08",
+      "profiled": false,
+      "trip": 12.4
+     },
+     {
+      "brand": "s09",
+      "category": "pizza",
+      "id": "s09@10573,500",
+      "lat": 10.573,
+      "lon": 0.5,
+      "mi": 5.0438688932404885,
+      "name": "Brand 09",
+      "profiled": false,
+      "trip": 12.6
+     },
+     {
+      "brand": "s10",
+      "category": "burger",
+      "id": "s10@10400,500",
+      "lat": 10.4,
+      "lon": 0.5,
+      "mi": 6.909409442795127,
+      "name": "Brand 10",
+      "profiled": false,
+      "trip": 17.3
+     },
+     {
+      "brand": "s11",
+      "category": "coffee",
+      "id": "s11@10640,500",
+      "lat": 10.64,
+      "lon": 0.5,
+      "mi": 9.673173219913252,
+      "name": "Brand 11",
+      "profiled": false,
+      "trip": 24.2
+     },
+     {
+      "brand": "s13",
+      "category": "burger",
+      "id": "s13@10500,250",
+      "lat": 10.5,
+      "lon": 0.25,
+      "mi": 16.98427641004993,
+      "name": "Brand 13",
+      "profiled": false,
+      "trip": 42.5
+     },
+     {
+      "brand": "s12",
+      "category": "pizza",
+      "id": "s12@10800,500",
+      "lat": 10.8,
+      "lon": 0.5,
+      "mi": 20.728228328385505,
+      "name": "Brand 12",
+      "profiled": false,
+      "trip": 51.8
+     },
+     {
+      "brand": "s15",
+      "category": "pizza",
+      "id": "s15@11100,500",
+      "lat": 11.1,
+      "lon": 0.5,
+      "mi": 41.45645665677089,
+      "name": "Brand 15",
+      "profiled": false,
+      "trip": 103.6
+     }
+    ]
+   },
+   "id": "T1 storesNear, 14 brands within 25, 11_0 loaded -> 15 at r=50",
+   "patch": {
+    "TILES": {
+     "10_0": {
+      "run": "run-A",
+      "s": "0,10510,500;0,10560,500;1,10520,500;2,10470,500;3,10540,500;4,10450,500;5,10565,500;6,10430,500;7,10571,500;8,10428,500;9,10573,500;10,10400,500;11,10640,500;12,10800,500;13,10500,250;13,10500,750"
+     },
+     "11_0": {
+      "run": "run-A",
+      "s": "15,11100,500"
+     }
+    }
+   },
+   "work": "s15 at 0.600 deg = 41.456456657 mi joins at r=50."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    {
+     "failed": {
+      "11_0": true
+     }
+    }
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": true,
+    "radius": 50,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "s00",
+      "category": "pizza",
+      "id": "s00@10510,500",
+      "lat": 10.51,
+      "lon": 0.5,
+      "mi": 0.6909409442795005,
+      "name": "Brand 00",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "s01",
+      "category": "burger",
+      "id": "s01@10520,500",
+      "lat": 10.52,
+      "lon": 0.5,
+      "mi": 1.381881888559001,
+      "name": "Brand 01",
+      "profiled": true,
+      "trip": 3.5
+     },
+     {
+      "brand": "s02",
+      "category": "coffee",
+      "id": "s02@10470,500",
+      "lat": 10.47,
+      "lon": 0.5,
+      "mi": 2.072822832838501,
+      "name": "Brand 02",
+      "profiled": false,
+      "trip": 5.2
+     },
+     {
+      "brand": "s03",
+      "category": "pizza",
+      "id": "s03@10540,500",
+      "lat": 10.54,
+      "lon": 0.5,
+      "mi": 2.763763777118002,
+      "name": "Brand 03",
+      "profiled": false,
+      "trip": 6.9
+     },
+     {
+      "brand": "s04",
+      "category": "burger",
+      "id": "s04@10450,500",
+      "lat": 10.45,
+      "lon": 0.5,
+      "mi": 3.454704721397625,
+      "name": "Brand 04",
+      "profiled": false,
+      "trip": 8.6
+     },
+     {
+      "brand": "s05",
+      "category": "coffee",
+      "id": "s05@10565,500",
+      "lat": 10.565,
+      "lon": 0.5,
+      "mi": 4.491116137816815,
+      "name": "Brand 05",
+      "profiled": false,
+      "trip": 11.2
+     },
+     {
+      "brand": "s06",
+      "category": "pizza",
+      "id": "s06@10430,500",
+      "lat": 10.43,
+      "lon": 0.5,
+      "mi": 4.836586609956626,
+      "name": "Brand 06",
+      "profiled": false,
+      "trip": 12.1
+     },
+     {
+      "brand": "s07",
+      "category": "burger",
+      "id": "s07@10571,500",
+      "lat": 10.571,
+      "lon": 0.5,
+      "mi": 4.905680704384539,
+      "name": "Brand 07",
+      "profiled": false,
+      "trip": 12.3
+     },
+     {
+      "brand": "s08",
+      "category": "coffee",
+      "id": "s08@10428,500",
+      "lat": 10.428,
+      "lon": 0.5,
+      "mi": 4.974774798812453,
+      "name": "Brand 08",
+      "profiled": false,
+      "trip": 12.4
+     },
+     {
+      "brand": "s09",
+      "category": "pizza",
+      "id": "s09@10573,500",
+      "lat": 10.573,
+      "lon": 0.5,
+      "mi": 5.0438688932404885,
+      "name": "Brand 09",
+      "profiled": false,
+      "trip": 12.6
+     },
+     {
+      "brand": "s10",
+      "category": "burger",
+      "id": "s10@10400,500",
+      "lat": 10.4,
+      "lon": 0.5,
+      "mi": 6.909409442795127,
+      "name": "Brand 10",
+      "profiled": false,
+      "trip": 17.3
+     },
+     {
+      "brand": "s11",
+      "category": "coffee",
+      "id": "s11@10640,500",
+      "lat": 10.64,
+      "lon": 0.5,
+      "mi": 9.673173219913252,
+      "name": "Brand 11",
+      "profiled": false,
+      "trip": 24.2
+     },
+     {
+      "brand": "s13",
+      "category": "burger",
+      "id": "s13@10500,250",
+      "lat": 10.5,
+      "lon": 0.25,
+      "mi": 16.98427641004993,
+      "name": "Brand 13",
+      "profiled": false,
+      "trip": 42.5
+     },
+     {
+      "brand": "s12",
+      "category": "pizza",
+      "id": "s12@10800,500",
+      "lat": 10.8,
+      "lon": 0.5,
+      "mi": 20.728228328385505,
+      "name": "Brand 12",
+      "profiled": false,
+      "trip": 51.8
+     }
+    ]
+   },
+   "id": "T1 storesNear, 11_0 failed to load -> 14 brands, partial",
+   "patch": {
+    "TILES": {
+     "10_0": {
+      "run": "run-A",
+      "s": "0,10510,500;0,10560,500;1,10520,500;2,10470,500;3,10540,500;4,10450,500;5,10565,500;6,10430,500;7,10571,500;8,10428,500;9,10573,500;10,10400,500;11,10640,500;12,10800,500;13,10500,250;13,10500,750"
+     }
+    }
+   },
+   "work": "a failed cell counts as loaded and empty, and flags partial"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": true,
+    "radius": 50,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "s15",
+      "category": "pizza",
+      "id": "s15@11100,500",
+      "lat": 11.1,
+      "lon": 0.5,
+      "mi": 41.45645665677089,
+      "name": "Brand 15",
+      "profiled": false,
+      "trip": 103.6
+     }
+    ]
+   },
+   "id": "T1 storesNear, 10_0 from another run is unusable",
+   "patch": {
+    "TILES": {
+     "10_0": {
+      "run": "run-B",
+      "s": "0,10510,500;0,10560,500;1,10520,500;2,10470,500;3,10540,500;4,10450,500;5,10565,500;6,10430,500;7,10571,500;8,10428,500;9,10573,500;10,10400,500;11,10640,500;12,10800,500;13,10500,250;13,10500,750;14,10200,500"
+     },
+     "11_0": {
+      "run": "run-A",
+      "s": "15,11100,500"
+     }
+    }
+   },
+   "work": "10_0's run is run-B but BRANDS_RUN is run-A: no stores from it at any radius, partial. At r=50, 11_0 gives s15."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 25,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "s00",
+      "category": "pizza",
+      "id": "s00@10510,500",
+      "lat": 10.51,
+      "lon": 0.5,
+      "mi": 0.6909409442795005,
+      "name": "Brand 00",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "s01",
+      "category": "burger",
+      "id": "s01@10520,500",
+      "lat": 10.52,
+      "lon": 0.5,
+      "mi": 1.381881888559001,
+      "name": "Brand 01",
+      "profiled": true,
+      "trip": 3.5
+     },
+     {
+      "brand": "s02",
+      "category": "coffee",
+      "id": "s02@10470,500",
+      "lat": 10.47,
+      "lon": 0.5,
+      "mi": 2.072822832838501,
+      "name": "Brand 02",
+      "profiled": false,
+      "trip": 5.2
+     },
+     {
+      "brand": "s03",
+      "category": "pizza",
+      "id": "s03@10540,500",
+      "lat": 10.54,
+      "lon": 0.5,
+      "mi": 2.763763777118002,
+      "name": "Brand 03",
+      "profiled": false,
+      "trip": 6.9
+     },
+     {
+      "brand": "s04",
+      "category": "burger",
+      "id": "s04@10450,500",
+      "lat": 10.45,
+      "lon": 0.5,
+      "mi": 3.454704721397625,
+      "name": "Brand 04",
+      "profiled": false,
+      "trip": 8.6
+     },
+     {
+      "brand": "s05",
+      "category": "coffee",
+      "id": "s05@10565,500",
+      "lat": 10.565,
+      "lon": 0.5,
+      "mi": 4.491116137816815,
+      "name": "Brand 05",
+      "profiled": false,
+      "trip": 11.2
+     },
+     {
+      "brand": "s06",
+      "category": "pizza",
+      "id": "s06@10430,500",
+      "lat": 10.43,
+      "lon": 0.5,
+      "mi": 4.836586609956626,
+      "name": "Brand 06",
+      "profiled": false,
+      "trip": 12.1
+     },
+     {
+      "brand": "s07",
+      "category": "burger",
+      "id": "s07@10571,500",
+      "lat": 10.571,
+      "lon": 0.5,
+      "mi": 4.905680704384539,
+      "name": "Brand 07",
+      "profiled": false,
+      "trip": 12.3
+     },
+     {
+      "brand": "s08",
+      "category": "coffee",
+      "id": "s08@10428,500",
+      "lat": 10.428,
+      "lon": 0.5,
+      "mi": 4.974774798812453,
+      "name": "Brand 08",
+      "profiled": false,
+      "trip": 12.4
+     },
+     {
+      "brand": "s09",
+      "category": "pizza",
+      "id": "s09@10573,500",
+      "lat": 10.573,
+      "lon": 0.5,
+      "mi": 5.0438688932404885,
+      "name": "Brand 09",
+      "profiled": false,
+      "trip": 12.6
+     },
+     {
+      "brand": "s10",
+      "category": "burger",
+      "id": "s10@10400,500",
+      "lat": 10.4,
+      "lon": 0.5,
+      "mi": 6.909409442795127,
+      "name": "Brand 10",
+      "profiled": false,
+      "trip": 17.3
+     },
+     {
+      "brand": "s11",
+      "category": "coffee",
+      "id": "s11@10640,500",
+      "lat": 10.64,
+      "lon": 0.5,
+      "mi": 9.673173219913252,
+      "name": "Brand 11",
+      "profiled": false,
+      "trip": 24.2
+     },
+     {
+      "brand": "s13",
+      "category": "burger",
+      "id": "s13@10500,250",
+      "lat": 10.5,
+      "lon": 0.25,
+      "mi": 16.98427641004993,
+      "name": "Brand 13",
+      "profiled": false,
+      "trip": 42.5
+     },
+     {
+      "brand": "s12",
+      "category": "pizza",
+      "id": "s12@10800,500",
+      "lat": 10.8,
+      "lon": 0.5,
+      "mi": 20.728228328385505,
+      "name": "Brand 12",
+      "profiled": false,
+      "trip": 51.8
+     },
+     {
+      "brand": "s14",
+      "category": "coffee",
+      "id": "s14@10200,500",
+      "lat": 10.2,
+      "lon": 0.5,
+      "mi": 20.728228328385505,
+      "name": "Brand 14",
+      "profiled": false,
+      "trip": 51.8
+     }
+    ]
+   },
+   "id": "T1 storesNear skips malformed tile records",
+   "patch": {
+    "TILES": {
+     "10_0": {
+      "run": "run-A",
+      "s": "0,10510,500;0,10560,500;1,10520,500;2,10470,500;3,10540,500;4,10450,500;5,10565,500;6,10430,500;7,10571,500;8,10428,500;9,10573,500;10,10400,500;11,10640,500;12,10800,500;13,10500,250;13,10500,750;14,10200,500;17,10500,500;18,10500,500;-1,10500,500;x,1,2;1,10500;3,10.5,500;;4,10500,500,1;2,10500,5e2"
+     },
+     "11_0": {
+      "run": "run-A",
+      "s": "15,11100,500"
+     }
+    }
+   },
+   "work": "Every junk record sits at the user's point (distance 0) and would lead the list: s17 is in BRAND_IDS but not BRANDS; 18 is out of range; -1; non-digits; 2 fields; decimal; empty; 4 fields; exponent."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    {
+     "failed": {
+      "10_0": true
+     }
+    }
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 25,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "s00",
+      "category": "pizza",
+      "id": "s00@10510,500",
+      "lat": 10.51,
+      "lon": 0.5,
+      "mi": 0.6909409442795005,
+      "name": "Brand 00",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "s01",
+      "category": "burger",
+      "id": "s01@10520,500",
+      "lat": 10.52,
+      "lon": 0.5,
+      "mi": 1.381881888559001,
+      "name": "Brand 01",
+      "profiled": true,
+      "trip": 3.5
+     },
+     {
+      "brand": "s02",
+      "category": "coffee",
+      "id": "s02@10470,500",
+      "lat": 10.47,
+      "lon": 0.5,
+      "mi": 2.072822832838501,
+      "name": "Brand 02",
+      "profiled": false,
+      "trip": 5.2
+     },
+     {
+      "brand": "s03",
+      "category": "pizza",
+      "id": "s03@10540,500",
+      "lat": 10.54,
+      "lon": 0.5,
+      "mi": 2.763763777118002,
+      "name": "Brand 03",
+      "profiled": false,
+      "trip": 6.9
+     },
+     {
+      "brand": "s04",
+      "category": "burger",
+      "id": "s04@10450,500",
+      "lat": 10.45,
+      "lon": 0.5,
+      "mi": 3.454704721397625,
+      "name": "Brand 04",
+      "profiled": false,
+      "trip": 8.6
+     },
+     {
+      "brand": "s05",
+      "category": "coffee",
+      "id": "s05@10565,500",
+      "lat": 10.565,
+      "lon": 0.5,
+      "mi": 4.491116137816815,
+      "name": "Brand 05",
+      "profiled": false,
+      "trip": 11.2
+     },
+     {
+      "brand": "s06",
+      "category": "pizza",
+      "id": "s06@10430,500",
+      "lat": 10.43,
+      "lon": 0.5,
+      "mi": 4.836586609956626,
+      "name": "Brand 06",
+      "profiled": false,
+      "trip": 12.1
+     },
+     {
+      "brand": "s07",
+      "category": "burger",
+      "id": "s07@10571,500",
+      "lat": 10.571,
+      "lon": 0.5,
+      "mi": 4.905680704384539,
+      "name": "Brand 07",
+      "profiled": false,
+      "trip": 12.3
+     },
+     {
+      "brand": "s08",
+      "category": "coffee",
+      "id": "s08@10428,500",
+      "lat": 10.428,
+      "lon": 0.5,
+      "mi": 4.974774798812453,
+      "name": "Brand 08",
+      "profiled": false,
+      "trip": 12.4
+     },
+     {
+      "brand": "s09",
+      "category": "pizza",
+      "id": "s09@10573,500",
+      "lat": 10.573,
+      "lon": 0.5,
+      "mi": 5.0438688932404885,
+      "name": "Brand 09",
+      "profiled": false,
+      "trip": 12.6
+     },
+     {
+      "brand": "s10",
+      "category": "burger",
+      "id": "s10@10400,500",
+      "lat": 10.4,
+      "lon": 0.5,
+      "mi": 6.909409442795127,
+      "name": "Brand 10",
+      "profiled": false,
+      "trip": 17.3
+     },
+     {
+      "brand": "s11",
+      "category": "coffee",
+      "id": "s11@10640,500",
+      "lat": 10.64,
+      "lon": 0.5,
+      "mi": 9.673173219913252,
+      "name": "Brand 11",
+      "profiled": false,
+      "trip": 24.2
+     },
+     {
+      "brand": "s13",
+      "category": "burger",
+      "id": "s13@10500,250",
+      "lat": 10.5,
+      "lon": 0.25,
+      "mi": 16.98427641004993,
+      "name": "Brand 13",
+      "profiled": false,
+      "trip": 42.5
+     },
+     {
+      "brand": "s12",
+      "category": "pizza",
+      "id": "s12@10800,500",
+      "lat": 10.8,
+      "lon": 0.5,
+      "mi": 20.728228328385505,
+      "name": "Brand 12",
+      "profiled": false,
+      "trip": 51.8
+     },
+     {
+      "brand": "s14",
+      "category": "coffee",
+      "id": "s14@10200,500",
+      "lat": 10.2,
+      "lon": 0.5,
+      "mi": 20.728228328385505,
+      "name": "Brand 14",
+      "profiled": false,
+      "trip": 51.8
+     }
+    ]
+   },
+   "id": "T1 storesNear, a loaded tile wins over failed",
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    {
+     "failed": "10_0"
+    }
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": {
+    "need": [
+     "10_0"
+    ],
+    "partial": false,
+    "radius": 5,
+    "status": "need",
+    "stores": []
+   },
+   "id": "T1 storesNear ignores a non-object failed",
+   "patch": {
+    "TILES": {}
+   },
+   "work": ""
+  },
+  {
+   "args": [
+    91,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 storesNear -> null (lat out of range)",
+   "work": "lat out of range"
+  },
+  {
+   "args": [
+    10.5,
+    "0.5",
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 storesNear -> null (string lon)",
+   "work": "string lon"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 storesNear -> null (no TILE_INDEX)",
+   "patch": {
+    "TILE_INDEX": null
+   },
+   "work": "no TILE_INDEX"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 storesNear -> null (no BRANDS_RUN)",
+   "patch": {
+    "BRANDS_RUN": null
+   },
+   "work": "no BRANDS_RUN"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 storesNear -> null (BRAND_IDS not an array)",
+   "patch": {
+    "BRAND_IDS": {
+     "0": "s00"
+    }
+   },
+   "work": "BRAND_IDS not an array"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    null
+   ],
+   "call": "storesNear",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 storesNear -> null (no BRANDS)",
+   "patch": {
+    "BRANDS": null
+   },
+   "work": "no BRANDS"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s00",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "store": {
+     "brand": "s00",
+     "category": "pizza",
+     "id": "s00@10510,500",
+     "lat": 10.51,
+     "lon": 0.5,
+     "mi": 0.6909409442795005,
+     "name": "Brand 00",
+     "profiled": false,
+     "trip": 1.7
+    }
+   },
+   "id": "T1 nearestStore s00 picks its nearer store",
+   "work": "s00 has stores at .010 and .060; nearest within 5."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s09",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 10,
+    "status": "ok",
+    "store": {
+     "brand": "s09",
+     "category": "pizza",
+     "id": "s09@10573,500",
+     "lat": 10.573,
+     "lon": 0.5,
+     "mi": 5.0438688932404885,
+     "name": "Brand 09",
+     "profiled": false,
+     "trip": 12.6
+    }
+   },
+   "id": "T1 nearestStore s09 is found at r=10",
+   "work": "5.044 mi is outside 5."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s13",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 25,
+    "status": "ok",
+    "store": {
+     "brand": "s13",
+     "category": "burger",
+     "id": "s13@10500,250",
+     "lat": 10.5,
+     "lon": 0.25,
+     "mi": 16.98427641004993,
+     "name": "Brand 13",
+     "profiled": false,
+     "trip": 42.5
+    }
+   },
+   "id": "T1 nearestStore s13 tie -> smaller lo",
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s01",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "store": {
+     "brand": "s01",
+     "category": "burger",
+     "id": "s01@10520,500",
+     "lat": 10.52,
+     "lon": 0.5,
+     "mi": 1.381881888559001,
+     "name": "Brand 01",
+     "profiled": true,
+     "trip": 3.5
+    }
+   },
+   "id": "T1 nearestStore s01 is profiled",
+   "work": "PROFILES has s01"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s15",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "store": {
+     "brand": "s15",
+     "category": "pizza",
+     "id": "s15@11100,500",
+     "lat": 11.1,
+     "lon": 0.5,
+     "mi": 41.45645665677089,
+     "name": "Brand 15",
+     "profiled": false,
+     "trip": 103.6
+    }
+   },
+   "id": "T1 nearestStore s15 at r=50",
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s15",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [
+     "11_0"
+    ],
+    "partial": false,
+    "radius": 50,
+    "status": "need",
+    "store": null
+   },
+   "id": "T1 nearestStore s15 with 11_0 not loaded -> need",
+   "patch": {
+    "TILES": {
+     "10_0": {
+      "run": "run-A",
+      "s": "0,10510,500;0,10560,500;1,10520,500;2,10470,500;3,10540,500;4,10450,500;5,10565,500;6,10430,500;7,10571,500;8,10428,500;9,10573,500;10,10400,500;11,10640,500;12,10800,500;13,10500,250;13,10500,750;14,10200,500"
+     }
+    }
+   },
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s15",
+    {
+     "failed": {
+      "11_0": true
+     }
+    }
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": true,
+    "radius": 50,
+    "status": "ok",
+    "store": null
+   },
+   "id": "T1 nearestStore s15 with 11_0 failed -> null, partial",
+   "patch": {
+    "TILES": {
+     "10_0": {
+      "run": "run-A",
+      "s": "0,10510,500;0,10560,500;1,10520,500;2,10470,500;3,10540,500;4,10450,500;5,10565,500;6,10430,500;7,10571,500;8,10428,500;9,10573,500;10,10400,500;11,10640,500;12,10800,500;13,10500,250;13,10500,750;14,10200,500"
+     }
+    }
+   },
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s16",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "store": null
+   },
+   "id": "T1 nearestStore s16 has no stores -> null at 50",
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "s17",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "store": null
+   },
+   "id": "T1 nearestStore s17 (not in BRANDS) -> null at 50",
+   "work": "its records are skipped"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "zz",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 nearestStore unknown brand -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    3,
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 nearestStore non-string brand -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    null,
+    0.5,
+    "s00",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 nearestStore bad lat -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    50
+   ],
+   "call": "cellsFor",
+   "data": "T1",
+   "expect": [
+    "9_-1",
+    "9_1",
+    "10_-1",
+    "10_0",
+    "11_0",
+    "11_1"
+   ],
+   "id": "T1 cellsFor sorts numerically",
+   "patch": {
+    "TILE_INDEX": {
+     "10_-1": 1,
+     "10_0": 1,
+     "11_0": 1,
+     "11_1": 1,
+     "12_0": 1,
+     "8_0": 1,
+     "9_-1": 1,
+     "9_1": 1
+    }
+   },
+   "work": "r=50: lat 9.776..11.224 -> 9..11; lon reach asin(sin(50/R)/cos 10.5 deg) = 0.7360 deg -> -0.236..1.236 -> -1..1. 12_0 and 8_0 are outside. String order would put 10_ before 9_."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    5
+   ],
+   "call": "cellsFor",
+   "data": "T1",
+   "expect": [
+    "10_0"
+   ],
+   "id": "T1 cellsFor r=5",
+   "patch": {
+    "TILE_INDEX": {
+     "10_-1": 1,
+     "10_0": 1,
+     "11_0": 1,
+     "11_1": 1,
+     "12_0": 1,
+     "8_0": 1,
+     "9_-1": 1,
+     "9_1": 1
+    }
+   },
+   "work": "lat 10.428..10.572, lon 0.426..0.574"
+  },
+  {
+   "args": [
+    89.9,
+    10,
+    50
+   ],
+   "call": "cellsFor",
+   "data": "T1",
+   "expect": [
+    "89_-180",
+    "89_10",
+    "89_179"
+   ],
+   "id": "T1 cellsFor holding the pole -> every longitude",
+   "patch": {
+    "TILE_INDEX": {
+     "88_0": 1,
+     "89_-180": 1,
+     "89_10": 1,
+     "89_179": 1
+    }
+   },
+   "work": "|lat| + 0.7237 >= 90, so lon -180..180; lat 89.18..90.62 -> 89..90."
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    0
+   ],
+   "call": "cellsFor",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 cellsFor -> null (zero radius)",
+   "work": "zero radius"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    -5
+   ],
+   "call": "cellsFor",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 cellsFor -> null (negative)",
+   "work": "negative"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    "5"
+   ],
+   "call": "cellsFor",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 cellsFor -> null (string)",
+   "work": "string"
+  },
+  {
+   "args": [
+    10.5,
+    0.5,
+    5
+   ],
+   "call": "cellsFor",
+   "data": "T1",
+   "expect": null,
+   "id": "T1 cellsFor -> null (no TILE_INDEX)",
+   "patch": {
+    "TILE_INDEX": null
+   },
+   "work": ""
+  },
+  {
+   "args": [
+    10.5,
+    0.5
+   ],
+   "call": "cellOf",
+   "data": null,
+   "expect": "10_0",
+   "id": "cellOf positive",
+   "work": ""
+  },
+  {
+   "args": [
+    -0.5,
+    -0.5
+   ],
+   "call": "cellOf",
+   "data": null,
+   "expect": "-1_-1",
+   "id": "cellOf negative floors down",
+   "work": "floor(-0.5) = -1"
+  },
+  {
+   "args": [
+    40,
+    -74
+   ],
+   "call": "cellOf",
+   "data": null,
+   "expect": "40_-74",
+   "id": "cellOf on a whole degree",
+   "work": ""
+  },
+  {
+   "args": [
+    91,
+    0
+   ],
+   "call": "cellOf",
+   "data": null,
+   "expect": null,
+   "id": "cellOf bad lat",
+   "work": ""
+  },
+  {
+   "args": [
+    "40_-74"
+   ],
+   "call": "tilePath",
+   "data": null,
+   "expect": "src/data/stores/40_-74.js",
+   "id": "tilePath",
+   "work": ""
+  },
+  {
+   "args": [
+    "../x"
+   ],
+   "call": "tilePath",
+   "data": null,
+   "expect": null,
+   "id": "tilePath rejects a path",
+   "work": ""
+  },
+  {
+   "args": [
+    5
+   ],
+   "call": "tilePath",
+   "data": null,
+   "expect": null,
+   "id": "tilePath rejects a number",
+   "work": ""
+  },
+  {
+   "args": [
+    1
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": 2.5,
+   "id": "tripMiles 1",
+   "work": "1 x 2 x 1.25"
+  },
+  {
+   "args": [
+    0.2
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": 0.5,
+   "id": "tripMiles 0.2",
+   "work": ""
+  },
+  {
+   "args": [
+    1.02
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": 2.6,
+   "id": "tripMiles 1.02",
+   "work": "2.55 -> half up 2.6"
+  },
+  {
+   "args": [
+    0.14
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": 0.4,
+   "id": "tripMiles 0.14",
+   "work": "0.35 -> half up 0.4"
+  },
+  {
+   "args": [
+    0
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": 0,
+   "id": "tripMiles 0",
+   "work": ""
+  },
+  {
+   "args": [
+    1.3
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": 3.3,
+   "id": "tripMiles 1.3",
+   "work": "3.25 -> half up 3.3 (banker's rounding would give 3.2)"
+  },
+  {
+   "args": [
+    0.06
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": 0.2,
+   "id": "tripMiles 0.06",
+   "work": "0.15 -> half up 0.2"
+  },
+  {
+   "args": [
+    -1
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": null,
+   "id": "tripMiles -1 -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    "1"
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": null,
+   "id": "tripMiles '1' -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    null
+   ],
+   "call": "tripMiles",
+   "data": null,
+   "expect": null,
+   "id": "tripMiles None -> null",
+   "work": ""
+  },
+  {
+   "args": [
+    10,
+    0,
+    11,
+    0
+   ],
+   "call": "distMi",
+   "data": null,
+   "expect": 69.09409442795152,
+   "id": "distMi one degree along a meridian",
+   "work": "R x pi/180"
+  },
+  {
+   "args": [
+    0,
+    0,
+    0,
+    1
+   ],
+   "call": "distMi",
+   "data": null,
+   "expect": 69.09409442795152,
+   "id": "distMi one degree along the equator",
+   "work": "R x pi/180"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    40.749,
+    -73.986
+   ],
+   "call": "distMi",
+   "data": null,
+   "expect": 0,
+   "id": "distMi same point",
+   "work": ""
+  },
+  {
+   "args": [
+    null,
+    0,
+    0,
+    1
+   ],
+   "call": "distMi",
+   "data": null,
+   "expect": null,
+   "id": "distMi null arg",
+   "work": ""
+  }
+ ],
+ "datasets": {
+  "E": {
+   "ZIP_CITIES": [
+    "A"
+   ],
+   "ZIP_PACKED": ""
+  },
+  "T1": {
+   "BRANDS": {
+    "s00": {
+     "category": "pizza",
+     "name": "Brand 00",
+     "stores": 100,
+     "wikidata": "Q1"
+    },
+    "s01": {
+     "category": "burger",
+     "name": "Brand 01",
+     "stores": 100,
+     "wikidata": "Q2"
+    },
+    "s02": {
+     "category": "coffee",
+     "name": "Brand 02",
+     "stores": 100,
+     "wikidata": "Q3"
+    },
+    "s03": {
+     "category": "pizza",
+     "name": "Brand 03",
+     "stores": 100,
+     "wikidata": "Q4"
+    },
+    "s04": {
+     "category": "burger",
+     "name": "Brand 04",
+     "stores": 100,
+     "wikidata": "Q5"
+    },
+    "s05": {
+     "category": "coffee",
+     "name": "Brand 05",
+     "stores": 100,
+     "wikidata": "Q6"
+    },
+    "s06": {
+     "category": "pizza",
+     "name": "Brand 06",
+     "stores": 100,
+     "wikidata": "Q7"
+    },
+    "s07": {
+     "category": "burger",
+     "name": "Brand 07",
+     "stores": 100,
+     "wikidata": "Q8"
+    },
+    "s08": {
+     "category": "coffee",
+     "name": "Brand 08",
+     "stores": 100,
+     "wikidata": "Q9"
+    },
+    "s09": {
+     "category": "pizza",
+     "name": "Brand 09",
+     "stores": 100,
+     "wikidata": "Q10"
+    },
+    "s10": {
+     "category": "burger",
+     "name": "Brand 10",
+     "stores": 100,
+     "wikidata": "Q11"
+    },
+    "s11": {
+     "category": "coffee",
+     "name": "Brand 11",
+     "stores": 100,
+     "wikidata": "Q12"
+    },
+    "s12": {
+     "category": "pizza",
+     "name": "Brand 12",
+     "stores": 100,
+     "wikidata": "Q13"
+    },
+    "s13": {
+     "category": "burger",
+     "name": "Brand 13",
+     "stores": 100,
+     "wikidata": "Q14"
+    },
+    "s14": {
+     "category": "coffee",
+     "name": "Brand 14",
+     "stores": 100,
+     "wikidata": "Q15"
+    },
+    "s15": {
+     "category": "pizza",
+     "name": "Brand 15",
+     "stores": 100,
+     "wikidata": "Q16"
+    },
+    "s16": {
+     "category": "burger",
+     "name": "Brand 16",
+     "stores": 100,
+     "wikidata": "Q17"
+    }
+   },
+   "BRANDS_RUN": "run-A",
+   "BRAND_IDS": [
+    "s00",
+    "s01",
+    "s02",
+    "s03",
+    "s04",
+    "s05",
+    "s06",
+    "s07",
+    "s08",
+    "s09",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ],
+   "PROFILES": {
+    "s01": {}
+   },
+   "TILES": {
+    "10_0": {
+     "run": "run-A",
+     "s": "0,10510,500;0,10560,500;1,10520,500;2,10470,500;3,10540,500;4,10450,500;5,10565,500;6,10430,500;7,10571,500;8,10428,500;9,10573,500;10,10400,500;11,10640,500;12,10800,500;13,10500,250;13,10500,750;14,10200,500"
+    },
+    "11_0": {
+     "run": "run-A",
+     "s": "15,11100,500"
+    }
+   },
+   "TILE_INDEX": {
+    "10_0": 17,
+    "11_0": 1
+   }
+  },
+  "Z1": {
+   "BRANDS": {
+    "b0": {
+     "category": "pizza",
+     "name": "Zero",
+     "stores": 0
+    },
+    "b1": {
+     "category": "pizza",
+     "name": "One",
+     "stores": 1
+    },
+    "b10": {
+     "category": "pizza",
+     "name": "Ten",
+     "stores": 10
+    },
+    "b_huge": {
+     "category": "pizza",
+     "name": "Huge",
+     "stores": 1000
+    },
+    "b_tiny": {
+     "category": "pizza",
+     "name": "Tiny",
+     "stores": 0.01
+    },
+    "bn": {
+     "category": "pizza",
+     "name": "None"
+    },
+    "bs": {
+     "category": "pizza",
+     "name": "String",
+     "stores": "10"
+    }
+   },
+   "ZIP_CITIES": [
+    "Alpha",
+    "Beta",
+    "Gamma",
+    "Delta"
+   ],
+   "ZIP_PACKED": "00001,10000,0,0,AA;00002,10000,0,0,AA;00003,10010,0,1,AA;00011,10005,0,9,AA;0012,10003,0,0,AA;00013,10.5,0,0,AA;00014,10002,0,0,aa;00004,10030,0,1,AA;00005,10030,0,1,AA;00006,9940,0,2,AA;00007,10100,0,2,AA;00015,10004,0;;00016,10001,0,0,AA,extra;00017,1000a,0,0,AA;00008,9850,0,2,AA;00009,10210,0,3,AA;00010,10280,0,3,AA"
+  },
+  "Z2": {
+   "BRANDS": {
+    "b10": {
+     "category": "pizza",
+     "name": "Ten",
+     "stores": 10
+    }
+   },
+   "ZIP_CITIES": [
+    "A"
+   ],
+   "ZIP_PACKED": "00001,10000,0,0,AA;00002,10001,0,0,AA;00003,10002,0,0,AA;00004,10003,0,0,AA;00005,10004,0,0,AA;00006,10005,0,0,AA;00007,10005,0,0,AA"
+  }
+ }
+}

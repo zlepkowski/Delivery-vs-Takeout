@@ -1,4 +1,4 @@
-"""Differential oracle runner (D-017, D-029).
+"""Differential oracle runner (D-017, D-029, D-030).
 
 1. Receipts: every case in tests/fixtures/receipts/ is checked against the Python engine
    (tests/oracle/engine.py). The receipts are worked by hand, so this checks the oracle.
@@ -10,6 +10,15 @@
   python3 -I tests/oracle/run.py              # receipts + 500 scenarios
   ORACLE_N=5000 python3 -I tests/oracle/run.py
   ORACLE_SEED=7 python3 -I tests/oracle/run.py
+
+3. Geography (docs/geo-contract.md): the hand-worked cases in tests/fixtures/geo/synthetic.json
+   are checked against the Python reference (tests/oracle/geo.py), and tests/fixtures/geo/real.json
+   must equal what the reference computes now (else: python3 -I tests/oracle/geo.py --write).
+   Once src/js/geo.js is in index.html, both case files and ORACLE_GEO_N seeded random calls
+   (default 60 points and 40 ZIPs) run through the JS too. Unrounded numbers compare with a
+   relative tolerance of 1e-9 (contract §2); everything else compares exactly.
+
+  ORACLE_GEO_N=200 python3 -I tests/oracle/run.py
 
 On a failure it prints the receipt case or the scenario seed, the call, and the first
 differing field, then exits 1. Standard library only.
@@ -24,12 +33,15 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)  # -I leaves the script's own directory off sys.path
 import engine as E  # noqa: E402
+import geo as G  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 RECEIPTS = os.path.join(ROOT, "tests", "fixtures", "receipts")
 N = int(os.environ.get("ORACLE_N", "500"))
 SEED = int(os.environ.get("ORACLE_SEED", "20261112"))
 APPS = ("dd", "ue", "gh")
+GEO_FIX = os.path.join(ROOT, "tests", "fixtures", "geo")
+GEO_N = int(os.environ.get("ORACLE_GEO_N", "60"))
 
 
 # ---------------------------------------------------------------- helpers
@@ -258,6 +270,156 @@ def scenario_requests(i):
     return reqs
 
 
+# ---------------------------------------------------------------- geography (D-030)
+
+def close(exp, act, path=""):
+    """First difference as a string, or None. Numbers: relative tolerance 1e-9 (absolute near 0)."""
+    if isinstance(exp, bool) or isinstance(act, bool):
+        return None if exp is act else "%s: expected %r, got %r" % (path, exp, act)
+    if isinstance(exp, (int, float)) and isinstance(act, (int, float)):
+        ok = abs(float(exp) - float(act)) <= 1e-9 * max(1.0, abs(float(exp)))
+        return None if ok else "%s: expected %r, got %r" % (path, exp, act)
+    if isinstance(exp, dict) and isinstance(act, dict):
+        for k in sorted(set(exp) | set(act)):
+            if k not in act:
+                return "%s.%s: missing in result" % (path, k)
+            if k not in exp:
+                return "%s.%s: unexpected key in result" % (path, k)
+            d = close(exp[k], act[k], "%s.%s" % (path, k))
+            if d:
+                return d
+        return None
+    if isinstance(exp, list) and isinstance(act, list):
+        if len(exp) != len(act):
+            return "%s: expected %d items, got %d" % (path, len(exp), len(act))
+        for i, (x, y) in enumerate(zip(exp, act)):
+            d = close(x, y, "%s[%d]" % (path, i))
+            if d:
+                return d
+        return None
+    return None if exp == act else "%s: expected %r, got %r" % (path, exp, act)
+
+
+def geo_d(c, syn, base, tiles):
+    if c.get("data") is None:
+        return None
+    if c["data"] == "real":
+        return G.real_D(base, tiles, c)
+    return G.synthetic_D(syn["datasets"], c)
+
+
+def geo_random_cases(base, tiles):
+    """Seeded random calls over the fixture regions (NYC, Big Timber) and random real ZIPs."""
+    r = random.Random(SEED + 30)
+    recs = G.zip_records(base)
+    ids = base["BRAND_IDS"]
+    near = sorted(set(ids[int(rec.split(",")[0])] for t in tiles.values() for rec in t["s"].split(";")))
+    cells = sorted(tiles)
+    out = []
+    for i in range(GEO_N):
+        if r.random() < 0.5:
+            lat, lon = round(r.uniform(40.45, 40.98), 4), round(r.uniform(-74.6, -73.7), 4)
+        else:
+            lat, lon = round(r.uniform(45.3, 46.45), 4), round(r.uniform(-110.95, -108.6), 4)
+        case = {"data": "real"}
+        if r.random() < 0.3:
+            case["tiles"] = [c for c in cells if r.random() < 0.6]
+        opts = None
+        if r.random() < 0.3:
+            opts = {"failed": {c: True for c in base["TILE_INDEX"] if r.random() < 0.002 or
+                               (c not in case.get("tiles", cells) and r.random() < 0.7)}}
+        brand = r.choice(near + ["zippys", "dominos", "the_cheesecake_factory"])
+        out.append(dict(case, id="random %d storesNear" % i, call="storesNear", args=[lat, lon, opts]))
+        out.append(dict(case, id="random %d nearestStore %s" % (i, brand), call="nearestStore", args=[lat, lon, brand, opts]))
+        out.append(dict(case, id="random %d cellsFor" % i, call="cellsFor",
+                        args=[lat, lon, r.choice([5, 10, 25, 50, round(r.uniform(0.5, 90), 3)])]))
+        if i % 2 == 0:
+            out.append({"data": "real", "id": "random %d nearestZip" % i, "call": "nearestZip", "args": [lat, lon]})
+    brand_ids = sorted(base["BRANDS"])
+    for i in range(GEO_N * 2 // 3):
+        z = recs[r.randrange(len(recs))]
+        rec = G.rec_obj(z)
+        out.append({"data": "real", "id": "random zip %s zipSpacing" % z[0], "call": "zipSpacing", "args": [rec]})
+        b = r.choice(brand_ids)
+        out.append({"data": "real", "id": "random zip %s estimateMiles %s" % (z[0], b), "call": "estimateMiles", "args": [rec, b]})
+        out.append({"data": "real", "id": "random zip %s zipByCode" % z[0], "call": "zipByCode", "args": [z[0]]})
+    return out
+
+
+def geo_built():
+    with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
+        return 'src="src/js/geo.js"' in fh.read()
+
+
+def run_js_geo(datasets, cases):
+    with tempfile.TemporaryDirectory() as tmp:
+        fin = os.path.join(tmp, "in.json")
+        fout = os.path.join(tmp, "out.json")
+        keep = ("call", "args", "data", "patch", "tiles", "tileRun")
+        with open(fin, "w", encoding="utf-8") as fh:
+            json.dump({"datasets": datasets, "cases": [{k: c[k] for k in keep if k in c} for c in cases]}, fh)
+        subprocess.run(["node", os.path.join("tests", "oracle", "geo_runner.js"), fin, fout], cwd=ROOT, check=True)
+        with open(fout, encoding="utf-8") as fh:
+            return json.load(fh)
+
+
+def geo_checks(failures):
+    with open(os.path.join(GEO_FIX, "synthetic.json"), encoding="utf-8") as fh:
+        syn = json.load(fh)
+    with open(os.path.join(GEO_FIX, "real.json"), encoding="utf-8") as fh:
+        real = json.load(fh)
+    base = G.real_data()
+    tiles = G.fixture_tiles()
+
+    bad = 0
+    for c in syn["cases"]:
+        d = close(c["expect"], G.call(c["call"], c["args"], geo_d(c, syn, base, tiles)))
+        if d:
+            bad += 1
+            failures.append("geo synthetic %r, python reference: %s" % (c["id"], d))
+    print("oracle: geo hand-worked %d/%d cases match the python reference" % (len(syn["cases"]) - bad, len(syn["cases"])))
+
+    bad = 0
+    if real["run"] != base["BRANDS_RUN"]:
+        bad += 1
+        failures.append("geo real.json is for run %s but brands.js is %s: rerun tests/oracle/geo.py --write"
+                        % (real["run"], base["BRANDS_RUN"]))
+    want = [c["id"] for c in G.real_case_inputs()]
+    if [c["id"] for c in real["cases"]] != want:
+        bad += 1
+        failures.append("geo real.json's case list differs from geo.py's: rerun tests/oracle/geo.py --write")
+    for c in real["cases"]:
+        d = close(G.call(c["call"], c["args"], geo_d(c, syn, base, tiles)), c["expect"])
+        if d:
+            bad += 1
+            failures.append("geo real.json %r is stale (rerun tests/oracle/geo.py --write): %s" % (c["id"], d))
+    print("oracle: geo real.json %d/%d cases are current" % (len(real["cases"]) - min(bad, len(real["cases"])), len(real["cases"])))
+
+    if not geo_built():
+        print("oracle: src/js/geo.js is not built yet, so the JS geo comparison is skipped")
+        return
+    rand = geo_random_cases(base, tiles)
+    groups = (("hand-worked", syn["cases"], True), ("real.json", real["cases"], True), ("random", rand, False))
+    allc = [c for _, cs, _ in groups for c in cs]
+    res = run_js_geo(syn["datasets"], allc)
+    i = 0
+    for name, cs, has_expect in groups:
+        bad = 0
+        for c in cs:
+            r_ = res[i]
+            i += 1
+            if not r_["ok"]:
+                d = "JS error: " + r_["err"].splitlines()[0]
+            else:
+                exp = c["expect"] if has_expect else G.call(c["call"], c["args"], geo_d(c, syn, base, tiles))
+                d = close(exp, None if r_["v"] == "__undefined__" else r_["v"]) if r_["v"] != "__undefined__" \
+                    else "returned undefined"
+            if d:
+                bad += 1
+                failures.append("geo %s %r, JS: %s" % (name, c["id"], d))
+        print("oracle: geo %s %d/%d calls match the JS" % (name, len(cs) - bad, len(cs)))
+
+
 # ---------------------------------------------------------------- main
 
 def js_engine_built():
@@ -316,6 +478,8 @@ def main():
                 bad_scen.add(i)
                 failures.append("scenario seed %d (ORACLE_SEED=%d, index %d): %s" % (SEED + i, SEED, i, d))
         print("oracle: %d seeded scenarios x %d calls: %d scenarios differ" % (N, len(fuzz) // max(N, 1), len(bad_scen)))
+
+    geo_checks(failures)
 
     for f in failures[:10]:
         print("FAIL " + f)
