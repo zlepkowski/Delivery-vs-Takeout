@@ -1,23 +1,26 @@
 # Progress
 
-**Current phase:** 3 (Geography + stores near you) is **done**. Next is **Phase 4 (State, derivations, wallet, §5)**, to start in a **fresh session**, with the user's `/goal`
+**Current phase:** 4 (State, derivations, wallet) is **done**. Next is **Phase 5 (UI + 9 insights + "Near you" picker)**, to start in a **fresh session**, with the user's `/goal`
 **Last updated:** 2026-11-13
-**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/exciting-rubin-7evr9n` (Phase 3's session branch, built on `claude/sharp-heisenberg-tbo63x` at `2a84085`; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
+**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/exciting-rubin-7evr9n` (the Phase 3–4 session branch, built on `claude/sharp-heisenberg-tbo63x` at `2a84085`; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
 ## Resume here
 
 1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **Phase 4 (State, derivations, wallet, BUILD.md §5):** `src/js/state.js` with `fresh`, `load`, `save`, `setPath`, `getPath`, the `apply*` cascade and `syncCredits`. Done when: cascade tests pass, `syncCredits` keeps `used`, manual credits and `creditOptIn`, and a throwing storage falls back to defaults. Pure where possible (pass `D`, `Date` and storage in), so the Phase 2/3 pattern applies: write the exact contract and hand-worked cases before the builder.
-4. **What Phase 4 gets from Phases 2 and 3:**
-   - `POD.engine.restFor(brandId, D)` builds `S.rest` (null for an unknown brand or a missing category default). `calc` reads `S.miles`/`S.minutes` (engine contract, D-029).
-   - `POD.geo` (`docs/geo-contract.md`, D-030): `applyAddress` gets `zipRec` from `zipByCode(zip, D)` and the state from `zipRec.st`; `autoMiles` uses `nearestStore(lat, lon, brandId, D, opts).store.trip` when the store is found, else `estimateMiles(zipRec, brandId, D).round`, and only while `S.milesAuto`. `nearestStore` can answer `status: "need"`: state code must handle "tiles not loaded yet" (Phase 5's page does the loading) without inventing a distance. Minutes come from miles at `S.speed`.
-   - Distances are rounded to 0.1 mi already. `S.store` = `{id, lat, lon}` from the store object.
+3. **Phase 5 (UI + 9 insights + "Near you" picker, BUILD.md §7, §10–§13):** `render.js` and `app.js` wire the page to `POD.state`. Done when: the §13 manual checklist is automated in Playwright, 0 console errors, phone and desktop screenshots reviewed. Write the UI contract (what each control calls, what each view reads) and the e2e checklist **before** the builder, as in Phases 2–4.
+4. **What Phase 5 gets from Phase 4** (`docs/state-contract.md`, D-031 + its amendment):
+   - Boot: `S = POD.state.load(localStorage, POD.data, new Date(), opts)`. After **every** change call the matching action (`setAddress`, `setPosition`, `setCar`, `setBrand`, `pickStore`, `setQty`, `pinMiles`, `unpinMiles`, `toggleCard`, `setOptIn`, `markUsed`, `addManualCredit`, `removeManualCredit`), or `setPath` **followed by `derive`** (setPath re-derives nothing), then `save(S, localStorage)`.
+   - A trip status `need` lists tile cells: load each with `POD.geo.tilePath`, add failures to `opts.failed`, then `derive` again. While tiles load the trip is cleared (`miles: null`), so `missing(S)` holds the comparison back. It never shows a stale distance.
+   - Pricing: `F = POD.state.forEngine(S)`; `null` means show `missing(S)` (the shared inputs to ask for). Otherwise `POD.engine.allResults(F)`, and list each app that `forEngine` switched off with `appMissing(S, p)` (the fees to fill in).
+   - **D-032: every app starts switched off.** The apps don't publish their delivery fee, and Uber/Grubhub publish no service fee either: `dd.delFee`, `dd.svcMin`, every `ue` fee but `pickDisc`, every `gh` fee but `pickDisc`, and `regFee`/`smallMin`/`smallFee` are `null`. The first screen must ask for these clearly (ISS-034), or offer labeled estimates if the user changes D-032. Pricing app pickup without delivery fees would need an engine change (state contract §7).
+   - Tips default to 15% delivery / 0% pickup (the user's choice, D-032).
 5. **Open questions carried forward:**
    - **ISS-032 (needs the user):** ~6,200 ZIPs share one coordinate with 9+ others in the ZIP source (452 California ZIPs from 118 cities on one point). Options are in the issue; browser geolocation in Phase 5 helps whatever is chosen.
-   - D-028: whether `amexGoldDirect` becomes brand-level for unprofiled Five Guys (an engine contract change, so decide it before Phase 4's `applyChain` copies flags).
-   - ISS-030 (platform evidence dates) moved to Phase 5. ISS-031 (direct service fee data per chain). No profiled chain has a confirmed direct-only deal (all 9 `deal: null`). Research that before Phase 5's insights.
-6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 16 hosts in ISS-001. Phase 4 needs none.
+   - **ISS-034:** app fees aren't published (D-032 nulls). Phase 5 decides how the page asks for them; the user may later allow labeled estimates.
+   - D-028: whether `amexGoldDirect` becomes brand-level for unprofiled Five Guys (an engine contract change; `restFor` sets it `false` for every unprofiled brand today).
+   - ISS-030 (platform evidence dates) is a Phase 5 item. ISS-031 (direct service fee data per chain). No profiled chain has a confirmed direct-only deal (all 9 `deal: null`). Research that before Phase 5's insights.
+6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 20 hosts in ISS-001 (at the cap). Phase 5 needs none.
 7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
@@ -34,7 +37,7 @@
 | 1 | Data rebuild | researcher + Opus (cards) | ✅ done (`32dae9b`) | Schema tests pass. ZIPs = 42,354 / 18,908. Every credit has a tier, source URL and date. Store tiles build; fixtures committed |
 | 2 | Engine (§4) | Opus (oracle) → builder | ✅ done | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
 | 3 | Geography + stores near you | Opus (contract) → builder | ✅ done | 59011 vs 10118 estimates differ ≥10× (10.4 vs 0.4 mi, 26×); `storesNear` passes fixture tests (129 hand-worked + 71 real-data cases); an uncached ZIP takes <10 ms (mean ≈ 4 ms) |
-| 4 | State, derivations, wallet (§5) | builder | ⬜ | Cascade tests pass; `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
+| 4 | State, derivations, wallet (§5) | Opus (contract) → builder | ✅ done | Cascade tests pass (80 hand-worked scenarios + named tests); `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
 | 5 | UI + 9 insights + "Near you" picker | builder | ⬜ | The §13 manual checklist is automated in Playwright; 0 console errors; phone and desktop screenshots reviewed |
 | — | **v4 parity milestone** | | | |
 | 6 | Phase B: per-item markup | Opus (oracle) → builder | ⬜ | Oracle updated first; BOGO cases pass; profiles migrated |
@@ -62,6 +65,34 @@
 - Workers are dispatched as `general-purpose` Haiku agents that read their agent file and skill first, until a fresh session loads them by name (D-019).
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
+
+### Phase 4: State, derivations, wallet (2026-11-13, done)
+
+Same branch as Phase 3 (`claude/exciting-rubin-7evr9n`).
+
+| Task | Status | Commit |
+|---|---|---|
+| 4.1 Sourced defaults (D-032: official numbers only; tips 15/0 by the user): `tools/data/defaults-*.json` evidence, `tools/build-defaults.py` → `src/data/defaults.js`; state contract draft (D-031) | ✅ researcher + orchestrator corrections (speed 30 → 27; Uber fees from a grocery guide withdrawn); network swap approved by the user (ISS-001) | `7d3d496` |
+| 4.2 Hand-worked scenarios `tests/fixtures/state/` (`build.py` → `scenarios.json`, 74 + 12 period cases; priced cases agree with `tests/oracle/engine.py`), contract wording made exact | ✅ | `9f5f449` |
+| 4.3 Scenario runner (contract §0 checked on every step), builder `src/js/state.js`, review fix round (D-031 amendment: `need` clears the trip; `setPath` plain values; `pickStore` id check; 9-digit manual keys; 6 new scenarios) | ✅ 93/93 scenarios; 7 orchestrator mutants caught; reviewer CHANGES-REQUESTED → fixed | `cc1da6a`, `a5b725d`, `fc052cb`, `5cbada0`, `9a17357`, `36c734b` |
+| 4.4 Tester: `tests/unit/state.test.js` (22: the three done-when conditions by name, round-trip property, junk input, pollution, forEngine, realms) and `tests/unit/data-defaults.test.js` (11: schema, evidence, header, byte-for-byte rebuild); 16 + 5 tester mutants and 3 orchestrator mutants caught; reviewer APPROVE + 4 should-fixes (fixed) | ✅ 590/590 unit | `858890d`, `a7861b6` |
+| 4.5 Close: full suite in a clean worktree at `a7861b6` (es5 13 files, 590 unit, oracle 58/58 receipts + 0 of 500 scenarios + geo 129/71/330, 2 e2e); no UI change, so the screenshots show the same placeholder page, fine at phone and desktop | ✅ | latest |
+
+**Phase 4 notes for a resuming session.**
+- `docs/state-contract.md` is the spec for `POD.state`. Change it only by a decision: scenarios first (`tests/fixtures/state/build.py`, then regenerate), the code after.
+- The real defaults leave all three apps switched off until the user enters their fees (D-032, ISS-034). That's deliberate, not a bug.
+
+**Review evidence for the Phase 4 reflector** (all fixed unless noted):
+- **The orchestrator's runner repeated ISS-008 a third time.** `plain()` copied arrays with `v.map(plain)`, and `map` builds its result with the VM array's own constructor, so 37 of 87 scenarios failed on prototypes. The builder diagnosed it and reported BLOCKED without touching the test (`a5b725d`). Lesson: realm-neutral means `Array.from(v, f)`, a `for` loop into `[]`, or JSON. Never `map`/`filter`/`slice` on a VM array.
+- **"Change nothing while tiles load" kept a stale distance** (contract flaw, reviewer blocker). Switching brands, moving, or unpinning while tiles loaded left the previous trip in `S`, which then priced the new brand. Lesson: when an input changes, a derived field whose new value isn't known yet must be cleared, not kept. "Don't invent a number" includes "don't keep an old one" (`9a17357`).
+- **A derived field that isn't saved has to be re-derived on every path.** `milesSrc` came back `null` after a reload of a pinned trip. The orchestrator caught it while drafting tests, not the scenarios (`5cbada0`). Lesson: for each unsaved field, check that `derive` sets it in every branch.
+- **`setPath` deep-copied any value**, so a cyclic object overflowed the stack. Restricting it to plain values removed the copy and the bug (`9a17357`). `pickStore` trusted `id` and `brand` separately, and a mismatch silently dropped the pick.
+- **The orchestrator's hand-worked expectation was wrong once:** it listed `gas` as missing for a state with no car, but `gas` comes from the state's row. The builder reported BLOCKED with the contract line instead of bending the code (`36c734b`). The rule "report, don't edit the fixture" worked as intended.
+- **The test review found 4 holes the hand-worked scenarios happened to cover.** The new file alone missed a save without `cart`/`dealOn`, a `syncCredits` that ignores opt-ins, `setPath` accepting objects, and a regex that only matched 2-segment paths. Lesson: each test file should bite on its own; check it against mutants with the other files absent.
+- **Scope slip:** the builder appended an issue to `docs/issues.md` (outside SCOPE) under an ID already in use (ISS-031). Reverted. Lesson from Phase 1 again: workers report and the orchestrator logs, at max+1.
+- **Research (4.1):** the researcher computed an average speed as mean length ÷ mean time (30 mph) where the report gives the mean of per-trip speeds (26.59 → 27), and took Uber fees from a grocery-delivery guide (the wrong product). Both were caught by the orchestrator reading the sources. Lesson: a derived number needs the source's own figure if one exists, and fee evidence must be for restaurant delivery.
+- **The orchestrator's question to the user understated an option's effect** ("Grubhub would start excluded"). In fact all three apps start excluded. Corrected in the next message. Lesson: before asking, compute what each option does to the first screen.
+- **Stop hook vs review:** the hook forced commits of verified-but-unreviewed work twice (`fc052cb`, `858890d`). The orchestrator committed only what had passed every DONE WHEN, said so in the message, and landed the review fixes as follow-ups. It never committed a worker's half-finished edit.
 
 ### Phase 3: Geography + stores near you (2026-11-13, done)
 
