@@ -1,17 +1,23 @@
 # Progress
 
-**Current phase:** 2 (Engine, §4) is **done**. Next is **Phase 3 (Geography + stores near you)**, to start in a **fresh session** (the user's plan), with the user's `/goal`
-**Last updated:** 2026-11-12
-**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/sharp-heisenberg-tbo63x` (base: `main`)
+**Current phase:** 3 (Geography + stores near you) is **done**. Next is **Phase 4 (State, derivations, wallet, §5)**, to start in a **fresh session**, with the user's `/goal`
+**Last updated:** 2026-11-13
+**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/exciting-rubin-7evr9n` (Phase 3's session branch, built on `claude/sharp-heisenberg-tbo63x` at `2a84085`; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
 ## Resume here
 
 1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **Phase 3 (Geography + stores near you, D-005):** `src/js/geo.js` with ZIP unpacking, `zipByCode`, `nearestZip`, `zipSpacing`, `estimateMiles` (BUILD.md §8, the fallback) and the store-tile lookup `storesNear` (D-021: load **every** 1° cell the search circle touches; cell = floor of the ×1000 ints; radius 5 → 10 → 25 → 50 mi until about 15 results). Done when: 59011 vs 10118 estimates differ ≥10×, `storesNear` passes fixture tests (`tests/fixtures/stores/`), and an uncached ZIP takes <10 ms. Pure functions, so the same pattern applies: hand-worked expected values before the builder, then builder → tester → reviewer.
-4. **Engine facts Phase 3 needs:** `POD.engine.restFor(brandId, POD.data)` builds `S.rest` (null for an unknown brand or a missing category default); `calc` reads `S.miles`/`S.minutes`, which Phase 3's store pick sets (straight line × 2 × 1.25, D-005). The contract is `docs/engine-contract.md` (D-029).
-5. **Open questions carried forward:** ISS-030 (platform evidence dates; Phase 3 decides whether to surface them), D-028 (whether `amexGoldDirect` becomes brand-level for unprofiled Five Guys), ISS-031 (direct service fee data per chain), and no profiled chain has a confirmed direct-only deal (all 9 `deal: null`). Research that before Phase 5's insights.
-6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 16 hosts in ISS-001. Phase 3 needs none (the tiles are built by `tools/build-stores.py`; fixtures are committed).
+3. **Phase 4 (State, derivations, wallet, BUILD.md §5):** `src/js/state.js` with `fresh`, `load`, `save`, `setPath`, `getPath`, the `apply*` cascade and `syncCredits`. Done when: cascade tests pass, `syncCredits` keeps `used`, manual credits and `creditOptIn`, and a throwing storage falls back to defaults. Pure where possible (pass `D`, `Date` and storage in), so the Phase 2/3 pattern applies: write the exact contract and hand-worked cases before the builder.
+4. **What Phase 4 gets from Phases 2 and 3:**
+   - `POD.engine.restFor(brandId, D)` builds `S.rest` (null for an unknown brand or a missing category default). `calc` reads `S.miles`/`S.minutes` (engine contract, D-029).
+   - `POD.geo` (`docs/geo-contract.md`, D-030): `applyAddress` gets `zipRec` from `zipByCode(zip, D)` and the state from `zipRec.st`; `autoMiles` uses `nearestStore(lat, lon, brandId, D, opts).store.trip` when the store is found, else `estimateMiles(zipRec, brandId, D).round`, and only while `S.milesAuto`. `nearestStore` can answer `status: "need"`: state code must handle "tiles not loaded yet" (Phase 5's page does the loading) without inventing a distance. Minutes come from miles at `S.speed`.
+   - Distances are rounded to 0.1 mi already. `S.store` = `{id, lat, lon}` from the store object.
+5. **Open questions carried forward:**
+   - **ISS-032 (needs the user):** ~6,200 ZIPs share one coordinate with 9+ others in the ZIP source (452 California ZIPs from 118 cities on one point). Options are in the issue; browser geolocation in Phase 5 helps whatever is chosen.
+   - D-028: whether `amexGoldDirect` becomes brand-level for unprofiled Five Guys (an engine contract change, so decide it before Phase 4's `applyChain` copies flags).
+   - ISS-030 (platform evidence dates) moved to Phase 5. ISS-031 (direct service fee data per chain). No profiled chain has a confirmed direct-only deal (all 9 `deal: null`). Research that before Phase 5's insights.
+6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 16 hosts in ISS-001. Phase 4 needs none.
 7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
@@ -27,7 +33,7 @@
 | 0 | Scaffold | Opus | ✅ done | `npm test` green; the empty page loads from file:// with 0 console errors; agents and skills in place |
 | 1 | Data rebuild | researcher + Opus (cards) | ✅ done (`32dae9b`) | Schema tests pass. ZIPs = 42,354 / 18,908. Every credit has a tier, source URL and date. Store tiles build; fixtures committed |
 | 2 | Engine (§4) | Opus (oracle) → builder | ✅ done | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
-| 3 | Geography + stores near you | builder | ⬜ | 59011 vs 10118 estimates differ ≥10×; `storesNear` passes fixture tests; an uncached ZIP takes <10 ms |
+| 3 | Geography + stores near you | Opus (contract) → builder | ✅ done | 59011 vs 10118 estimates differ ≥10× (10.4 vs 0.4 mi, 26×); `storesNear` passes fixture tests (129 hand-worked + 71 real-data cases); an uncached ZIP takes <10 ms (mean ≈ 4 ms) |
 | 4 | State, derivations, wallet (§5) | builder | ⬜ | Cascade tests pass; `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
 | 5 | UI + 9 insights + "Near you" picker | builder | ⬜ | The §13 manual checklist is automated in Playwright; 0 console errors; phone and desktop screenshots reviewed |
 | — | **v4 parity milestone** | | | |
@@ -57,7 +63,7 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
-### Phase 3: Geography + stores near you (2026-11-13, in progress)
+### Phase 3: Geography + stores near you (2026-11-13, done)
 
 Work is on branch `claude/exciting-rubin-7evr9n` (this session's branch; it started from `2a84085`, the tip of `claude/sharp-heisenberg-tbo63x`).
 
@@ -66,7 +72,7 @@ Work is on branch `claude/exciting-rubin-7evr9n` (this session's branch; it star
 | 3.1 Geo contract `docs/geo-contract.md` (D-030), Python reference `tests/oracle/geo.py`, hand-worked `tests/fixtures/geo/synthetic.json` + reference-generated `real.json`, geo checks in `run.py` via `geo_runner.js` | ✅ reviewer CHANGES-REQUESTED → fixed (contract amended) | `f5f37f4`, `5829c9d`, `197acd1` |
 | 3.2 Builder: `src/js/geo.js` + review fix round | ✅ hand-worked 129/129, real 71/71, random 330/330 (1,650/1,650 on a second seed); uncached zipSpacing mean ≈ 4 ms; 59011 vs 10118 Domino's 10.4 vs 0.4 mi (26×); reviewer APPROVE + one should-fix (fixed) | `8215c29`, `197acd1` |
 | 3.3 Tester: `tests/unit/geo.test.js`, 224 tests (every fixture case with a purity check, a count guard, the done-when tests, malformed and non-finite input, cache isolation and bounds); 17 of 17 mutations caught; reviewer CHANGES-REQUESTED → fixed, the three review mutants verified caught by the orchestrator | ✅ 464/464 unit | `97ce6fe`, `c8e1e5c` |
-| 3.4 Close: full suite in a clean worktree, reflector, progress | ⬜ | |
+| 3.4 Close: full suite in a clean worktree at `97ce6fe` (es5 OK, 463 unit, oracle 58/58 + 0 of 500 scenarios + geo 129/71/330, 2 e2e) and again after the test fix round (464 unit); no UI change, so the e2e screenshots show the same placeholder page, fine at phone and desktop; reflector approved with two fixes | ✅ | latest |
 
 **Phase 3 notes for a resuming session.**
 - `docs/geo-contract.md` is the spec for `POD.geo`. Every function takes the data tables as `D`. `storesNear`/`nearestStore` return `status: "need"` with the cells to load; Phase 5's page loads them (`tilePath`) and calls again, passing cells that failed in `opts.failed`.

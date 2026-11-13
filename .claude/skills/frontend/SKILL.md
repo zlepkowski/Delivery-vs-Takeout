@@ -14,7 +14,7 @@ The spec is `docs/BUILD.md`. Where this skill and the spec differ, this skill wi
 | `src/js/pod.js` | `POD`, `POD.util` | namespace, `round2`, `money`, `clamp` |
 | `src/data/*.js` | `POD.data.*` | reference tables (written by researcher or orchestrator, not by you) |
 | `src/js/engine.js` | `POD.engine` | `calc`, `allResults`, `cartInfo`, `perMile`, `CHANNELS`. **Pure** |
-| `src/js/geo.js` | `POD.geo` | ZIP unpacking, `zipByCode`, `nearestZip`, `zipSpacing`, `estimateMiles`, store tiles, `storesNear` |
+| `src/js/geo.js` | `POD.geo` | ZIP unpacking, `zipByCode`, `nearestZip`, `zipSpacing`, `estimateMiles`, `tripMiles`, tile cells and paths, `storesNear`, `nearestStore`. Pure. The spec is `docs/geo-contract.md` (D-030), which overrides BUILD.md §8 |
 | `src/js/state.js` | `POD.state` | `fresh`, `load`, `save`, `setPath`, `getPath`, `apply*`, `syncCredits` |
 | `src/js/render.js` | `POD.ui` | `render`, `renderAll`, `syncStatic`, the `render*` functions |
 | `src/js/insights.js` | `POD.insights` | `build(S, results)` → `[[label, html, className]]` |
@@ -85,7 +85,9 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 
 ## Restaurant model (v5: decisions D-005 and D-006)
 
-- Restaurants come **from the user's location**, not a fixed list. State holds `S.brand` (a brand id) and `S.store` (`{id, lat, lon}`). The trip distance comes from the picked store: straight line × 2 × 1.25. `estimateMiles()` is only the fallback.
+- Restaurants come **from the user's location**, not a fixed list. State holds `S.brand` (a brand id) and `S.store` (`{id, lat, lon}`). The trip distance comes from the picked store: straight line × 2 × 1.25, rounded to 0.1 mi (`tripMiles`, geo-contract §6). `estimateMiles()` is only the fallback.
+- **Every `POD.geo` function takes the data tables as `D`** (`POD.data` in the app), reads nothing global, and returns `null` on bad input (D-030).
+- **Tile loading is the page's job (Phase 5).** `storesNear`/`nearestStore` return `status: "need"` with the cells to load. `app.js` loads each with `tilePath(cell)`, puts a failed load in `opts.failed[cell] = true`, and calls again. A tile from another `BRANDS_RUN` is never reloaded: the result stays `partial`. Make tile URLs depend on `BRANDS_RUN` (e.g. `?v=<BRANDS_RUN>`) so a cached tile can't pair with a newer `brands.js`, but first check that a query string loads over `file://` (geo-contract §9).
 - **Profiled brands** (`POD.data.PROFILES[brandId]`) have a menu, deal, per-platform markup, `directFee`, the `amexGoldDirect` flag and an optional `directSvc`.
 - **Unprofiled brands** use `POD.data.CATEGORY_DEFAULTS[category]`, and the user's `manualSubtotal` as the cart. **Their direct-delivery channel is removed, not priced at $0** (§9.3). Label the numbers as estimates.
 - A channel a brand doesn't offer is **left out** of `allResults`, never priced at zero.
@@ -102,13 +104,14 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 
 - Always: `npm run test:es5 && npm run test:unit`
 - UI or `app.js` changes: also `npm run test:e2e`
-- Engine changes (Phase 2 on): also `npm run test:oracle`
+- Engine or geo changes (Phase 2 and 3 on): also `npm run test:oracle`
 
 ## Learned rules
 
 <!-- The reflector adds rules here. Each one cites its evidence. -->
 - **Never put a neutral number in a code fallback.** A missing table value makes the brand unpriceable (`null`). `restFor` gave `markup {}` (0%) for a missing category, so the apps looked cheaper (ba25e38, c4e21c4).
 - **A malformed optional input has no effect; it never throws.** A `directSvc` with no `modes` took down `allResults`, and a deal with no `scope` silently never applied. Guard each optional field (793577b, c4e21c4).
-- **Return copies of table data, never references.** `restFor` shared `directSvc.modes` with `D` until it deep-copied (c4e21c4).
+- **Return copies, never references, and key every memo cache by the table it came from.** `restFor` shared `directSvc.modes` with `D` until it deep-copied (c4e21c4). A global spacing cache would answer from another table: a reviewer mutant that only a file-order test caught (97ce6fe, c8e1e5c). The harness also had to scribble over results to catch shared cache objects (197acd1).
+- **Work in the stored ×1000 integers: identify a point by its integer key, and range-check every parsed coordinate.** A 400-digit field parsed to `Infinity` and became a phantom store at `mi: null` that displaced the real nearest store. Own-point detection by a float distance of 0 was also wrong (197acd1, the geo.js should-fix and contract review). Bad coordinates are skipped or give `null`, never a result.
 - **Implement the engine from `docs/engine-contract.md` alone; don't open `tests/oracle/`.** The differential test only means something if the engine wasn't written from the oracle. The Phase 2 builder didn't read it and all 500 scenarios matched (be9e129).
 - **Realm-sensitive compares: `JSON.stringify` or `structuredClone`, never `deepStrictEqual` on `loadApp()`/`loadData()` output (ISS-008).** If a card's DONE WHEN does this, report BLOCKED with that diagnosis and don't edit the test (c4e21c4, where the builder's check 4 failed on the card, not the engine).
