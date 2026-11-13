@@ -65,7 +65,7 @@ Work is on branch `claude/exciting-rubin-7evr9n` (this session's branch; it star
 |---|---|---|
 | 3.1 Geo contract `docs/geo-contract.md` (D-030), Python reference `tests/oracle/geo.py`, hand-worked `tests/fixtures/geo/synthetic.json` + reference-generated `real.json`, geo checks in `run.py` via `geo_runner.js` | ✅ reviewer CHANGES-REQUESTED → fixed (contract amended) | `f5f37f4`, `5829c9d`, `197acd1` |
 | 3.2 Builder: `src/js/geo.js` + review fix round | ✅ hand-worked 129/129, real 71/71, random 330/330 (1,650/1,650 on a second seed); uncached zipSpacing mean ≈ 4 ms; 59011 vs 10118 Domino's 10.4 vs 0.4 mi (26×); reviewer APPROVE + one should-fix (fixed) | `8215c29`, `197acd1` |
-| 3.3 Tester: `tests/unit/geo.test.js` (fixture cases, done-when tests, malformed input, purity, cache isolation, 17 mutations) | ⏳ | |
+| 3.3 Tester: `tests/unit/geo.test.js`, 224 tests (every fixture case with a purity check, a count guard, the done-when tests, malformed and non-finite input, cache isolation and bounds); 17 of 17 mutations caught; reviewer CHANGES-REQUESTED → fixed, the three review mutants verified caught by the orchestrator | ✅ 464/464 unit | `97ce6fe`, `c8e1e5c` |
 | 3.4 Close: full suite in a clean worktree, reflector, progress | ⬜ | |
 
 **Phase 3 notes for a resuming session.**
@@ -84,6 +84,10 @@ Work is on branch `claude/exciting-rubin-7evr9n` (this session's branch; it star
 - **The orchestrator's own doc edit landed in the wrong place:** a string replace on `## Closed` hit the same words in the "Adding an entry" prose, so ISS-032 was committed inside that sentence (`f5f37f4`, fixed `5829c9d`). Anchor doc inserts on the whole heading line (`\n## Closed\n`).
 - **The contract's first bounding box (`dLat / cos(poleward lat)`) overshot by 0.002°** and made the Big Timber 50-mile search ask for two non-fixture cells. The exact reach `asin(sin δ / cos φ)` fixed it. The cheaper `dLat / cos(lat)` undershoots by 0.0002° at Fairbanks, so a real-data case pins that edge.
 - **A data defect surfaced only while designing a function:** stacked ZIP coordinates (ISS-032). Phase 1's row-count checks couldn't see it.
+- **A type-confusion gap in a test:** the "non-string BRAND_IDS entry is skipped" test couldn't fail for `['s00']`. An array coerces to `'s00'` as a property key, and `brand !== 's00'` was true for the array (test review blocker, `c8e1e5c`). Lesson: when a test feeds a wrong-typed value, assert the output's type too, not just inequality with the right value.
+- **Cache tests passed only because of file order.** The cross-table test never queried one point on two tables. A global spacing cache was caught only incidentally by a later fixture case, and passed when the test ran alone (`c8e1e5c`). Lesson: an isolation test must create the collision itself, and must pass or fail the same way under `--test-name-pattern`.
+- **"Uncached" in a timing test was an assumption.** One of the 50 points was already cached by an earlier test in the same sandbox (`c8e1e5c`). Timing tests get their own sandbox.
+- **The orchestrator's own mutant was broken once.** It referenced an undefined variable, so the 37 "catches" were ReferenceErrors. A mutant has to run cleanly and be wrong only in the intended way.
 
 ### Phase 2: Engine (2026-11-12, done)
 
