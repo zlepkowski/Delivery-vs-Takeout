@@ -23,7 +23,7 @@ A finding needs a **concrete failure scenario**: specific inputs, and then the w
 10. **Data problems:** a missing provenance header, a number with no source, an estimate without `est: true`, or `cards.js` edited by anyone but the orchestrator.
 11. **A secret or API key** anywhere in the diff, including fixtures and URLs.
 12. **Test integrity:** a skipped, loosened or deleted test; an expected value that's evidently copied from the code's output; an assertion that can't fail.
-13. **Scope:** a file outside the card's SCOPE was changed.
+13. **Scope:** a file outside the card's SCOPE was changed. Docs count too: an entry appended to `docs/issues.md` or `docs/decisions.md` outside SCOPE is a blocker (Phase 4 builder's ISS-031 append).
 
 ## Should-fix (they don't block alone; several together do)
 
@@ -61,4 +61,6 @@ CHECKED: the checklist items that apply to this diff and passed, e.g. 1, 4, 5, 8
 - **Profile diffs: spot-check every item name (size, piece count, spelling) against the cited page, and open one URL per platform.** The 1.7 medians re-fetched correctly; the errors were in names and citations (ec5e627, 7af787d, 0a4262b).
 - **Blocker, credits: each `cards.js` row's "included" claim must match the issuer sentence.** Amex Platinum was marked as including Uber One, which the card only reimburses (83f24d7).
 - **Should-fix, issue log: a new `ISS-nnn` must be unused and sit under `## Open`.** Check `grep -o '^### ISS-[0-9]*' docs/issues.md | sort | uniq -d` prints nothing. Duplicate IDs (2fbdac1, c5f8b19, e1bc046) and open issues filed under Closed (3f44708) each needed a renumber.
+- **Blocker, stale derived value: when an input changes, check that every derived field it feeds is recomputed or cleared, never kept.** Switching brand while tiles loaded kept the previous trip and priced the new brand. The 4.3 code review found it; the contract was amended (9a17357).
+- **Should-fix, test integrity: a new test file must catch its own mutants.** A hole covered only by another file's tests is still a hole. The Phase 4 state tests missed four such holes (a7861b6).
 - **Should-fix, optional inputs: review a missing and a malformed value for each optional field, not only the fuzzer's shapes.** The first engine passed 10,000 scenarios, yet a `directSvc` with no `modes` threw and a deal with no `scope` never applied (793577b, c4e21c4). A throw inside `calc` or `allResults` is a blocker, because it takes the page down.

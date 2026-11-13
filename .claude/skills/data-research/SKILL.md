@@ -9,7 +9,7 @@ The whole product is only as right as these tables. A wrong number here produces
 
 ## The core rules
 
-1. **Never invent a number.** Use a primary source. If you can't reach one, write `null`, say so in the header and add an entry to `docs/issues.md`.
+1. **Never invent a number.** Use a primary source. If you can't reach one, write `null`, say so in the header and report the gap. Add the entry to `docs/issues.md` only if your card's SCOPE lists it; otherwise the orchestrator logs it.
 2. **Estimates only where this skill allows them** (category defaults, platform markups with no published figure). Mark them `est: true` with a one-line reasoning comment.
 3. **Every file starts with a provenance header.**
 4. **Generate, don't type.** Anything derived from a downloadable dataset comes from a script in `tools/`, and re-running the script must give byte-identical output.
@@ -91,3 +91,5 @@ There are three tiers (§9.1): **universal** (applies where `plats` matches), **
 - **Record every fee line on the bag or checkout in notes:** name, amount or range, percent, and whether it's a tax or a restaurant service fee. A range stays a range. Wingstop's $2.00 service fee and Subway's 12% were lost because no field held them (ISS-031, ISS-027, ISS-014).
 - **Check reachability with the tool's default user agent only.** A browser-like user agent that gets 200 doesn't count, and a refusal to the default agent is BLOCKED, not worked around (ISS-013, D-027).
 - **New issues: ID = highest `ISS-nnn` + 1 at write time, added under `## Open` (above `## Closed`).** Workers reused IDs five times (2fbdac1, c5f8b19, e1bc046), and about 15 open issues were filed under Closed (3f44708).
+- **Use the source's own figure when it publishes one; don't derive it.** Mean length ÷ mean time gave 30 mph, but the FHWA table publishes the mean of per-trip speeds, 26.59 mph (rounded to 27). Check a formula against the source's definition before using it (7d3d496, D-032).
+- **Fee and platform evidence must be for restaurant delivery, not a grocery or retail guide.** Uber Eats' only readable fee page was a grocery guide, so its figures were withdrawn and every Uber fee stays `null` (7d3d496, D-032, ISS-034).
