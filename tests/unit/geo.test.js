@@ -284,34 +284,70 @@ test('BUILD.md §13.5 59011 vs 10118 Domino\'s estimates differ by ≥10×', () 
 });
 
 test('D-030 §4 an uncached zipSpacing averages under 10 ms', () => {
-  const G = realSb.POD.geo;
-  const D = realD({});
-  // Warm up: the table is unpacked, and one spacing is computed.
-  assert.equal(G.zipCount(D), caseById(REAL, 'zipCount').expect);
-  const warm = G.zipByCode('10118', D);
-  assert.ok(typeof G.zipSpacing(warm, D) === 'number', 'warm-up spacing must be a number');
+  // A fresh sandbox, so no other test has filled its caches.
+  const sb = loadApp({ extra: TILE_FILES });
+  const G = sb.POD.geo;
+  const data = sb.POD.data;
+  const D = {};
+  for (const k of Object.keys(data)) if (k !== 'TILES') D[k] = data[k];
+  D.TILES = data.TILES;
 
-  // Fifty records: every 847th raw record of ZIP_PACKED, starting at index 5.
-  const raws = D.ZIP_PACKED.split(';');
-  const recs = [];
-  for (let k = 0; k < 50; k++) {
-    const f = raws[5 + 847 * k].split(',');
-    recs.push({ zip: f[0], la: Number(f[1]) / 1000, lo: Number(f[2]) / 1000 });
+  // The ZIPs that real.json's zipSpacing and estimateMiles cases use. The timed set must avoid them.
+  const fixtureZips = new Set();
+  for (const c of REAL.cases) {
+    if ((c.call === 'zipSpacing' || c.call === 'estimateMiles') && c.args[0] && c.args[0].z) {
+      fixtureZips.add(c.args[0].z);
+    }
   }
-  const points = new Set(recs.map((r) => r.la + ',' + r.lo));
-  points.add(warm.la + ',' + warm.lo);
-  assert.equal(points.size, 51, 'the 50 query points must be distinct and uncached');
-  assert.equal(new Set(recs.map((r) => r.zip)).size, 50, 'the 50 ZIPs must be distinct');
+
+  assert.equal(G.zipCount(D), caseById(REAL, 'zipCount').expect);
+  const raws = D.ZIP_PACKED.split(';');
+  // Every 847th raw record: the timed set starts at index 5, the warm-up at index 3.
+  // ZIPs stack on one coordinate (ISS-032), so a stride can land on a point already taken. Such a
+  // record, or one of a fixture ZIP, is skipped by moving to the next raw record.
+  const used = new Set();
+  const pointKey = (r) => r.la + ',' + r.lo;
+  const pick = (start) => {
+    const out = [];
+    for (let k = 0; k < 50; k++) {
+      let i = start + 847 * k;
+      let f = raws[i].split(',');
+      let rec = { zip: f[0], la: Number(f[1]) / 1000, lo: Number(f[2]) / 1000 };
+      while (used.has(pointKey(rec)) || fixtureZips.has(rec.zip)) {
+        i++;
+        f = raws[i].split(',');
+        rec = { zip: f[0], la: Number(f[1]) / 1000, lo: Number(f[2]) / 1000 };
+      }
+      used.add(pointKey(rec));
+      out.push(rec);
+    }
+    return out;
+  };
+  const warmRecs = pick(3);
+  const timed = pick(5);
+
+  assert.equal(used.size, 100, 'the 100 warm-up and timed points must be distinct');
+  for (const r of timed) {
+    assert.ok(!fixtureZips.has(r.zip), `timed ZIP ${r.zip} is used by real.json; choose another`);
+  }
+  assert.equal(new Set(timed.map((r) => r.zip)).size, 50, 'the 50 timed ZIPs must be distinct');
+
+  // Warm up: the table is unpacked, and 50 uncached spacings are computed on points not timed.
+  for (const r of warmRecs) {
+    const v = G.zipSpacing(r, D);
+    assert.ok(typeof v === 'number' && Number.isFinite(v), `warm-up ${r.zip} must be a finite number`);
+  }
 
   const t0 = process.hrtime.bigint();
-  const values = recs.map((r) => G.zipSpacing(r, D));
+  const values = timed.map((r) => G.zipSpacing(r, D));
   const ms = Number(process.hrtime.bigint() - t0) / 1e6;
 
   for (let i = 0; i < values.length; i++) {
     assert.ok(typeof values[i] === 'number' && Number.isFinite(values[i]),
-      `spacing ${i} (${recs[i].zip}) must be a finite number, got ${values[i]}`);
+      `spacing ${i} (${timed[i].zip}) must be a finite number, got ${values[i]}`);
   }
   const mean = ms / values.length;
+  console.log(`D-030 §4 uncached zipSpacing mean over 50 points: ${mean.toFixed(3)} ms`);
   assert.ok(mean < 10, `mean uncached zipSpacing ${mean.toFixed(3)} ms, limit 10 ms`);
 });
 
@@ -414,12 +450,22 @@ test('D-030 §8 a BRAND_IDS entry that is not a string is skipped, never a throw
     const ids = SYN.datasets.T1.BRAND_IDS.slice();
     ids[0] = entry;
     const D = synD('T1', { BRAND_IDS: ids });
+    const tag = describe(entry);
     const r = G.storesNear(10.5, 0.5, D);
-    assert.equal(r.status, 'ok', `storesNear with BRAND_IDS[0] = ${describe(entry)}`);
-    assert.ok(r.stores.every((s) => s.brand !== 's00'), 'no store of the skipped brand s00');
-    assert.equal(G.nearestStore(10.5, 0.5, 's00', D), null, 's00 is no longer a brand id');
+    assert.equal(r.status, 'ok', `storesNear with BRAND_IDS[0] = ${tag}`);
+    assert.ok(r.stores.length > 0, `storesNear finds stores with BRAND_IDS[0] = ${tag}`);
+    for (const st of r.stores) {
+      assert.equal(typeof st.brand, 'string', `store brand must be a string (BRAND_IDS[0] = ${tag})`);
+      assert.ok(!st.id.startsWith('s00@'), `no store of s00 (BRAND_IDS[0] = ${tag}), got ${st.id}`);
+    }
+    assert.equal(G.nearestStore(10.5, 0.5, 's00', D), null, `s00 is no longer a brand id (BRAND_IDS[0] = ${tag})`);
+    for (const id of ids) {
+      if (typeof id !== 'string' || id === 's00') continue;
+      const n = G.nearestStore(10.5, 0.5, id, D);
+      assert.equal(n.status, 'ok');
+      if (n.store !== null) assert.equal(typeof n.store.brand, 'string', `nearestStore(${id}) brand is a string`);
+    }
     const other = G.nearestStore(10.5, 0.5, 's01', D);
-    assert.equal(other.status, 'ok');
     assert.equal(other.store.brand, 's01');
   }
 });
@@ -445,6 +491,31 @@ test('D-030 §5 "constructor", "__proto__" and "hasOwnProperty" are not brands a
     assert.equal(G.estimateMiles({ la: 10, lo: 0 }, id, Z1), null, `estimateMiles ${id}`);
     assert.equal(G.nearestStore(10.5, 0.5, id, T1), null, `nearestStore ${id}`);
     assert.equal(G.zipByCode(id, Z1), null, `zipByCode ${id}`);
+  }
+});
+
+test('D-030 §0 coordinates outside the range give null from every function', () => {
+  // Contract §0: latitude in [-90, 90], longitude in [-180, 180]. Each value below is out of range.
+  const G = synSb.POD.geo;
+  const Z1 = synD('Z1');
+  const T1 = synD('T1');
+  for (const la of [95, -90.001, 90.0001]) {
+    assert.equal(G.zipSpacing({ la, lo: 0 }, Z1), null, `zipSpacing la=${la}`);
+    assert.equal(G.estimateMiles({ la, lo: 0 }, 'b10', Z1), null, `estimateMiles la=${la}`);
+    assert.equal(G.nearestZip(la, 0, Z1), null, `nearestZip lat=${la}`);
+    assert.equal(G.cellOf(la, 0), null, `cellOf lat=${la}`);
+    assert.equal(G.cellsFor(la, 0, 5, T1), null, `cellsFor lat=${la}`);
+    assert.equal(G.storesNear(la, 0.5, T1), null, `storesNear lat=${la}`);
+    assert.equal(G.nearestStore(la, 0.5, 's00', T1), null, `nearestStore lat=${la}`);
+  }
+  for (const lo of [181, -180.0001]) {
+    assert.equal(G.zipSpacing({ la: 10, lo }, Z1), null, `zipSpacing lo=${lo}`);
+    assert.equal(G.estimateMiles({ la: 10, lo }, 'b10', Z1), null, `estimateMiles lo=${lo}`);
+    assert.equal(G.nearestZip(0, lo, Z1), null, `nearestZip lon=${lo}`);
+    assert.equal(G.cellOf(0, lo), null, `cellOf lon=${lo}`);
+    assert.equal(G.cellsFor(0, lo, 5, T1), null, `cellsFor lon=${lo}`);
+    assert.equal(G.storesNear(10.5, lo, T1), null, `storesNear lon=${lo}`);
+    assert.equal(G.nearestStore(10.5, lo, 's00', T1), null, `nearestStore lon=${lo}`);
   }
 });
 
@@ -518,6 +589,17 @@ test('D-030 §3 alternating two ZIP tables gives each its own answers', () => {
     'real spacing', true);
   compareValue(G.zipSpacing({ la: 10, lo: 0 }, Z1),
     caseById(SYN, 'Z1 zipSpacing 00001: distinct points, own point excluded').expect, 'Z1 spacing again', true);
+
+  // Spacing caches are per table. Z2 has the point (10, 0) as its own point, and only 5 others
+  // (its six points are 10.000 to 10.005 degrees; the query drops its own point), so the answer is null.
+  const Z2 = synD('Z2');
+  const z1Spacing = caseById(SYN, 'Z1 zipSpacing 00001: distinct points, own point excluded').expect;
+  compareValue(G.zipSpacing({ la: 10, lo: 0 }, Z2), null, 'Z2 spacing after Z1 cached (10, 0)');
+  compareValue(G.zipSpacing({ la: 10, lo: 0 }, Z1), z1Spacing, 'Z1 spacing after Z2', true);
+  // Reverse order on a fresh sandbox: Z2 first, then Z1.
+  const fresh = loadApp({ only: ['pod.js', 'geo.js'] }).POD.geo;
+  compareValue(fresh.zipSpacing({ la: 10, lo: 0 }, Z2), null, 'fresh: Z2 first');
+  compareValue(fresh.zipSpacing({ la: 10, lo: 0 }, Z1), z1Spacing, 'fresh: Z1 after Z2', true);
 });
 
 test('D-030 §3 the same ZIP_PACKED with other ZIP_CITIES gives the new city', () => {
