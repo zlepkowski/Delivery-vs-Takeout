@@ -396,13 +396,13 @@ USER_KEYS = sorted(["address", "make", "model", "fuel", "mpg", "miPerKwh", "kwh"
     "smallMin", "smallFee", "cards", "creditOptIn", "usedIn", "manualCredits", "plats", "promos"])
 sc("save then load: user fields come back, derived ones are rebuilt", ["§8", "§4.7"], round_trip, {
     "address": "10001", "state": "NY", "tax": 8.875, "fuel": "regular", "mpg": 30, "brand": "pz", "rest.id": "pz",
-    "plats.dd.markup": 20, "cart": {"0": 2}, "miles": 7, "minutes": 14, "milesAuto": False, "milesBy": {"pz": 7},
+    "plats.dd.markup": 20, "cart": {"0": 2}, "miles": 7, "minutes": 14, "milesAuto": False, "milesSrc": "pinned", "milesBy": {"pz": 7},
     "cards": ["c_gold"], "creditOptIn": {"c_gold.resy": True}, "usedIn": {"c_gold.dining": "2026-11"},
     "credits": gold(used=True, resy=["direct"]) + [man1], "tipDel": 20, "plats.dd.member": True,
     "promos.ue": {"type": "percent", "value": 20, "cap": 0, "min": 0}, "plats.gh.delFee": 3.49,
     "$savedKeys": USER_KEYS, "$saved.plats.dd": {"on": True, "delFee": 2.99, "svc": 15, "svcMin": 3, "memberSvc": 5,
     "memberMin": 12, "pickDisc": 0, "memberOwn": True, "cardMember": True}, "$saved.pos": "$absent"},
-   "save writes only the user fields (no rest, tax, credits, member, markup; pos only when GPS); load merges them over fresh and runs derive.",
+   "save writes only the user fields (no rest, tax, credits, member, markup, milesSrc; pos only when GPS); load merges them over fresh and runs derive, which sets milesSrc back to pinned because milesAuto is false.",
    storage={"kind": "memory"})
 sc("save keeps a GPS position", ["§8"], [FR, st("setPosition", 40.0, -74.0), st("save", returns=True), st("load")],
    {"pos": {"lat": 40, "lon": -74, "src": "gps"}, "zip": "10001", "$saved.pos": {"lat": 40, "lon": -74, "src": "gps"}}, "",

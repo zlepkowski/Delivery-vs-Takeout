@@ -3988,6 +3988,7 @@
     "miles": 7,
     "minutes": 14,
     "milesAuto": false,
+    "milesSrc": "pinned",
     "milesBy": {
      "pz": 7
     },
@@ -4114,7 +4115,7 @@
     },
     "$saved.pos": "$absent"
    },
-   "work": "save writes only the user fields (no rest, tax, credits, member, markup; pos only when GPS); load merges them over fresh and runs derive.",
+   "work": "save writes only the user fields (no rest, tax, credits, member, markup, milesSrc; pos only when GPS); load merges them over fresh and runs derive, which sets milesSrc back to pinned because milesAuto is false.",
    "storage": {
     "kind": "memory"
    }

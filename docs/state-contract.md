@@ -132,7 +132,7 @@ Then `applyState(S, D)`. (An unknown ZIP keeps `zip` so the page can say "ZIP 99
 
 ### 4.7 `derive(S, D, now, opts)`
 
-In this order: `applyCar`, `applyAddress` (which runs `applyState`), `applyBrand`, `syncCredits`, then the trip: if `milesAuto` is `true` run `autoMiles` and return its status; else `applyMinutes` and return `{status: "off", need: [], partial: false}`. `derive` never resets a user field (cart, pins, picked store); that's what makes it safe to run after `load`.
+In this order: `applyCar`, `applyAddress` (which runs `applyState`), `applyBrand`, `syncCredits`, then the trip: if `milesAuto` is `true` run `autoMiles` and return its status; else `milesSrc = "pinned"` (it isn't saved, so a reload needs it back), `applyMinutes`, and return `{status: "off", need: [], partial: false}`. `derive` never resets a user field (cart, pins, picked store); that's what makes it safe to run after `load`.
 
 ## 5. The wallet
 
