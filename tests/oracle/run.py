@@ -26,6 +26,7 @@ differing field, then exits 1. Standard library only.
 import json
 import os
 import random
+import re
 import subprocess
 import sys
 import tempfile
@@ -272,12 +273,22 @@ def scenario_requests(i):
 
 # ---------------------------------------------------------------- geography (D-030)
 
-def close(exp, act, path=""):
-    """First difference as a string, or None. Numbers: relative tolerance 1e-9 (absolute near 0)."""
+# Unrounded distances may differ in the last bits between two sin/asin implementations
+# (contract §2): only these compare with a tolerance. Everything else, including the rounded
+# trip, one and round, compares exactly.
+TOL_KEYS = ("mi", "spacing", "zipsPerStore")
+TOL_CALLS = ("distMi", "zipSpacing")
+
+
+def close(exp, act, path="", tol=False):
+    """First difference as a string, or None. tol: relative tolerance 1e-9 (absolute below 1)."""
     if isinstance(exp, bool) or isinstance(act, bool):
         return None if exp is act else "%s: expected %r, got %r" % (path, exp, act)
     if isinstance(exp, (int, float)) and isinstance(act, (int, float)):
-        ok = abs(float(exp) - float(act)) <= 1e-9 * max(1.0, abs(float(exp)))
+        if tol:
+            ok = abs(float(exp) - float(act)) <= 1e-9 * max(1.0, abs(float(exp)))
+        else:
+            ok = float(exp) == float(act)
         return None if ok else "%s: expected %r, got %r" % (path, exp, act)
     if isinstance(exp, dict) and isinstance(act, dict):
         for k in sorted(set(exp) | set(act)):
@@ -285,7 +296,7 @@ def close(exp, act, path=""):
                 return "%s.%s: missing in result" % (path, k)
             if k not in exp:
                 return "%s.%s: unexpected key in result" % (path, k)
-            d = close(exp[k], act[k], "%s.%s" % (path, k))
+            d = close(exp[k], act[k], "%s.%s" % (path, k), k in TOL_KEYS)
             if d:
                 return d
         return None
@@ -293,11 +304,15 @@ def close(exp, act, path=""):
         if len(exp) != len(act):
             return "%s: expected %d items, got %d" % (path, len(exp), len(act))
         for i, (x, y) in enumerate(zip(exp, act)):
-            d = close(x, y, "%s[%d]" % (path, i))
+            d = close(x, y, "%s[%d]" % (path, i), tol)
             if d:
                 return d
         return None
     return None if exp == act else "%s: expected %r, got %r" % (path, exp, act)
+
+
+def close_call(c, exp, act):
+    return close(exp, act, c["call"], c["call"] in TOL_CALLS)
 
 
 def geo_d(c, syn, base, tiles):
@@ -322,13 +337,23 @@ def geo_random_cases(base, tiles):
         else:
             lat, lon = round(r.uniform(45.3, 46.45), 4), round(r.uniform(-110.95, -108.6), 4)
         case = {"data": "real"}
-        if r.random() < 0.3:
-            case["tiles"] = [c for c in cells if r.random() < 0.6]
         opts = None
-        if r.random() < 0.3:
-            opts = {"failed": {c: True for c in base["TILE_INDEX"] if r.random() < 0.002 or
-                               (c not in case.get("tiles", cells) and r.random() < 0.7)}}
-        brand = r.choice(near + ["zippys", "dominos", "the_cheesecake_factory"])
+        roll = r.random()
+        if roll < 0.2:
+            # one fixture cell missing and reported failed: partial results below r=50
+            gone = r.choice(cells)
+            case["tiles"] = [c for c in cells if c != gone]
+            opts = {"failed": {gone: True}}
+        elif roll < 0.45:
+            case["tiles"] = [c for c in cells if r.random() < 0.6]
+            if r.random() < 0.5:
+                opts = {"failed": {c: True for c in base["TILE_INDEX"] if r.random() < 0.002 or
+                                   (c not in case["tiles"] and r.random() < 0.7)}}
+        elif roll < 0.55:
+            case["tileRun"] = {r.choice(cells): "1999-01-01-00-00-00"}  # a stale tile
+        if r.random() < 0.05:
+            lat = r.choice([95, -91, "__NaN__", "__Infinity__"])  # bad input -> null
+        brand = r.choice(near + ["zippys", "dominos", "the_cheesecake_factory", "not_a_brand"])
         out.append(dict(case, id="random %d storesNear" % i, call="storesNear", args=[lat, lon, opts]))
         out.append(dict(case, id="random %d nearestStore %s" % (i, brand), call="nearestStore", args=[lat, lon, brand, opts]))
         out.append(dict(case, id="random %d cellsFor" % i, call="cellsFor",
@@ -346,9 +371,14 @@ def geo_random_cases(base, tiles):
     return out
 
 
-def geo_built():
+def geo_built(failures):
+    """True once src/js/geo.js exists. It must then be loaded by index.html, or that's a failure."""
+    if not os.path.exists(os.path.join(ROOT, "src", "js", "geo.js")):
+        return False
     with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
-        return 'src="src/js/geo.js"' in fh.read()
+        if not re.search(r"""<script\b[^>]*\bsrc=["']src/js/geo\.js["']""", fh.read()):
+            failures.append("geo: src/js/geo.js exists but index.html doesn't load it")
+    return True
 
 
 def run_js_geo(datasets, cases):
@@ -373,7 +403,7 @@ def geo_checks(failures):
 
     bad = 0
     for c in syn["cases"]:
-        d = close(c["expect"], G.call(c["call"], c["args"], geo_d(c, syn, base, tiles)))
+        d = close_call(c, c["expect"], G.call(c["call"], c["args"], geo_d(c, syn, base, tiles)))
         if d:
             bad += 1
             failures.append("geo synthetic %r, python reference: %s" % (c["id"], d))
@@ -389,19 +419,29 @@ def geo_checks(failures):
         bad += 1
         failures.append("geo real.json's case list differs from geo.py's: rerun tests/oracle/geo.py --write")
     for c in real["cases"]:
-        d = close(G.call(c["call"], c["args"], geo_d(c, syn, base, tiles)), c["expect"])
+        d = close_call(c, G.call(c["call"], c["args"], geo_d(c, syn, base, tiles)), c["expect"])
         if d:
             bad += 1
             failures.append("geo real.json %r is stale (rerun tests/oracle/geo.py --write): %s" % (c["id"], d))
     print("oracle: geo real.json %d/%d cases are current" % (len(real["cases"]) - min(bad, len(real["cases"])), len(real["cases"])))
 
-    if not geo_built():
+    if not geo_built(failures):
         print("oracle: src/js/geo.js is not built yet, so the JS geo comparison is skipped")
         return
     rand = geo_random_cases(base, tiles)
+    tally = {}
+    for c in rand:
+        if c["call"] in ("storesNear", "nearestStore"):
+            v = G.call(c["call"], c["args"], geo_d(c, syn, base, tiles))
+            k = "null" if v is None else v["status"] + (" partial" if v["partial"] else "") + " r=%d" % v["radius"]
+            tally[k] = tally.get(k, 0) + 1
+    print("oracle: geo random store searches by outcome: " + ", ".join("%s %d" % kv for kv in sorted(tally.items())))
     groups = (("hand-worked", syn["cases"], True), ("real.json", real["cases"], True), ("random", rand, False))
     allc = [c for _, cs, _ in groups for c in cs]
     res = run_js_geo(syn["datasets"], allc)
+    if len(res) != len(allc):
+        failures.append("geo: the JS runner returned %d results for %d calls" % (len(res), len(allc)))
+        return
     i = 0
     for name, cs, has_expect in groups:
         bad = 0
@@ -412,8 +452,7 @@ def geo_checks(failures):
                 d = "JS error: " + r_["err"].splitlines()[0]
             else:
                 exp = c["expect"] if has_expect else G.call(c["call"], c["args"], geo_d(c, syn, base, tiles))
-                d = close(exp, None if r_["v"] == "__undefined__" else r_["v"]) if r_["v"] != "__undefined__" \
-                    else "returned undefined"
+                d = close_call(c, exp, r_["v"]) if r_["v"] != "__undefined__" else "returned undefined"
             if d:
                 bad += 1
                 failures.append("geo %s %r, JS: %s" % (name, c["id"], d))
@@ -423,8 +462,9 @@ def geo_checks(failures):
 # ---------------------------------------------------------------- main
 
 def js_engine_built():
-    with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
-        return 'src="src/js/engine.js"' in fh.read()
+    """True once src/js/engine.js exists. js_runner.js loads it through index.html's script list,
+    which throws when the tag is missing, so a file that index.html doesn't load fails the run."""
+    return os.path.exists(os.path.join(ROOT, "src", "js", "engine.js"))
 
 
 def run_js(requests):

@@ -25,11 +25,15 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 STORE_FIXTURES = os.path.join(ROOT, "tests", "fixtures", "stores")
 GEO_FIXTURES = os.path.join(ROOT, "tests", "fixtures", "geo")
 
-INT_RE = re.compile(r"^-?\d+$")
-ZIP_RE = re.compile(r"^\d{5}$")
-ST_RE = re.compile(r"^[A-Z]{2}$")
-CITY_RE = re.compile(r"^\d+$")
-CELL_RE = re.compile(r"^-?\d+_-?\d+$")
+# JS patterns without flags (contract §0): ASCII digits only, and the whole field must match.
+# Python's \d also matches other scripts' digits and `$` matches before a final newline, so
+# these use [0-9] and fullmatch.
+INT_RE = re.compile(r"-?[0-9]+")
+ZIP_RE = re.compile(r"[0-9]{5}")
+ST_RE = re.compile(r"[A-Z]{2}")
+CITY_RE = re.compile(r"[0-9]+")
+CELL_RE = re.compile(r"-?[0-9]+_-?[0-9]+")
+TAGS = {"__NaN__": float("nan"), "__Infinity__": float("inf"), "__-Infinity__": float("-inf")}
 
 
 # ---------------------------------------------------------------- input checks (§0)
@@ -48,6 +52,11 @@ def is_obj(x):
 
 def own(o, k):
     return is_obj(o) and isinstance(k, str) and k in o
+
+
+def in_range(la, lo):
+    """§3: integer coordinates within ±90000 / ±180000 (checked before any float division)."""
+    return -90000 <= la <= 90000 and -180000 <= lo <= 180000
 
 
 # ---------------------------------------------------------------- §2 distance
@@ -101,12 +110,12 @@ def _parse_zips(packed, cities):
         if len(f) != 5:
             continue
         z, la, lo, ci, st = f
-        if not (ZIP_RE.match(z) and INT_RE.match(la) and INT_RE.match(lo) and CITY_RE.match(ci) and ST_RE.match(st)):
+        if not (ZIP_RE.fullmatch(z) and INT_RE.fullmatch(la) and INT_RE.fullmatch(lo) and CITY_RE.fullmatch(ci) and ST_RE.fullmatch(st)):
             continue
-        ci = int(ci)
-        if ci >= len(cities) or not isinstance(cities[ci], str):
+        ci, la, lo = int(ci), int(la), int(lo)
+        if ci >= len(cities) or not isinstance(cities[ci], str) or not in_range(la, lo):
             continue
-        out.append((z, int(la), int(lo), cities[ci], st))
+        out.append((z, la, lo, cities[ci], st))
     return out
 
 
@@ -119,7 +128,7 @@ def zip_count(D):
 
 
 def zip_by_code(code, D):
-    if not isinstance(code, str) or not ZIP_RE.match(code):
+    if not isinstance(code, str) or not ZIP_RE.fullmatch(code):
         return None
     for r in zip_records(D):
         if r[0] == code:
@@ -143,9 +152,9 @@ def nearest_zip(lat, lon, D):
 def zip_spacing(rec, D):
     if not is_obj(rec) or not ok_point(rec.get("la"), rec.get("lo")):
         return None
-    points = sorted(set((r[1], r[2]) for r in zip_records(D)))
-    ds = [dist_mi(rec["la"], rec["lo"], la / 1000, lo / 1000) for la, lo in points]
-    ds = sorted(d for d in ds if d != 0)
+    own_pt = (math.floor(rec["la"] * 1000 + 0.5), math.floor(rec["lo"] * 1000 + 0.5))
+    points = sorted(set((r[1], r[2]) for r in zip_records(D)) - {own_pt})
+    ds = sorted(dist_mi(rec["la"], rec["lo"], la / 1000, lo / 1000) for la, lo in points)
     if len(ds) < NEIGHBORS:
         return None
     total = 0.0
@@ -203,8 +212,8 @@ def cells_for(lat, lon, r, D):
         d_lon = math.asin(x) * 180 / math.pi + eps
         lon_lo, lon_hi = lon - d_lon, lon + d_lon
     out = []
-    for a in range(math.floor(lat_lo), math.floor(lat_hi) + 1):
-        for o in range(math.floor(lon_lo), math.floor(lon_hi) + 1):
+    for a in range(max(-90, math.floor(lat_lo)), min(90, math.floor(lat_hi)) + 1):
+        for o in range(max(-180, math.floor(lon_lo)), min(180, math.floor(lon_hi)) + 1):
             key = "%d_%d" % (a, o)
             if key in D["TILE_INDEX"]:
                 out.append(key)
@@ -212,7 +221,7 @@ def cells_for(lat, lon, r, D):
 
 
 def tile_path(cell):
-    if not isinstance(cell, str) or not CELL_RE.match(cell):
+    if not isinstance(cell, str) or not CELL_RE.fullmatch(cell):
         return None
     return "src/data/stores/" + cell + ".js"
 
@@ -232,10 +241,12 @@ def tile_records(D, cell):
         return out
     for raw in s.split(";"):
         f = raw.split(",")
-        if len(f) != 3 or not all(INT_RE.match(x) for x in f):
+        if len(f) != 3 or not all(INT_RE.fullmatch(x) for x in f):
             continue
         b, la, lo = (int(x) for x in f)
         if b < 0 or b >= len(ids) or not isinstance(ids[b], str) or not own(D["BRANDS"], ids[b]):
+            continue
+        if not is_obj(D["BRANDS"][ids[b]]) or not in_range(la, lo):
             continue
         out.append((ids[b], la, lo))
     return out
@@ -243,7 +254,11 @@ def tile_records(D, cell):
 
 def store_obj(D, lat, lon, brand, la, lo, mi):
     b = D["BRANDS"][brand]
-    return {"id": "%s@%d,%d" % (brand, la, lo), "brand": brand, "name": b.get("name"), "category": b.get("category"),
+
+    def text(v):
+        return v if isinstance(v, str) else None
+    return {"id": "%s@%d,%d" % (brand, la, lo), "brand": brand, "name": text(b.get("name")),
+            "category": text(b.get("category")),
             "profiled": own(D.get("PROFILES"), brand), "lat": la / 1000, "lon": lo / 1000,
             "mi": mi, "trip": trip_miles(mi)}
 
@@ -328,8 +343,19 @@ FUNCS = {"distMi": dist_mi, "zipCount": zip_count, "zipByCode": zip_by_code, "ne
          "cellsFor": cells_for, "tilePath": tile_path, "storesNear": stores_near, "nearestStore": nearest_store}
 
 
+def untag(v):
+    """Fixture arguments carry NaN and ±Infinity as tagged strings (JSON has no literal for them)."""
+    if isinstance(v, str) and v in TAGS:
+        return TAGS[v]
+    if isinstance(v, list):
+        return [untag(x) for x in v]
+    if isinstance(v, dict):
+        return {k: untag(x) for k, x in v.items()}
+    return v
+
+
 def call(name, args, D):
-    a = list(args)
+    a = untag(list(args))
     if name in D_POS:
         a.insert(D_POS[name], D)
     return FUNCS[name](*a)

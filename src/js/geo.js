@@ -27,6 +27,10 @@
   function isLatLon(lat, lon) {
     return isNum(lat) && isNum(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
   }
+  /** Integer coordinates (thousandths of a degree) inside the ranges of contract section 3. */
+  function inRange(laI, loI) {
+    return laI >= -90000 && laI <= 90000 && loI >= -180000 && loI <= 180000;
+  }
   function round1(y) { return Math.round(y * 10) / 10; }
   function rad(x) { return x * Math.PI / 180; }
   function clamp(n, lo, hi) { return n < lo ? lo : (n > hi ? hi : n); }
@@ -71,9 +75,10 @@
       if (!/^\d{5}$/.test(f[0]) || !/^-?\d+$/.test(f[1]) || !/^-?\d+$/.test(f[2]) ||
           !/^\d+$/.test(f[3]) || !/^[A-Z]{2}$/.test(f[4])) continue;
       var ci = Number(f[3]);
-      if (ci >= cities.length) continue;
+      if (ci >= cities.length || typeof cities[ci] !== "string") continue;
       var laI = Number(f[1]);
       var loI = Number(f[2]);
+      if (!inRange(laI, loI)) continue;
       t.zips.push(f[0]);
       t.la.push(laI / 1000);
       t.lo.push(loI / 1000);
@@ -83,7 +88,7 @@
       var key = String(laI) + "," + String(loI);
       if (!hasOwn(seen, key)) {
         seen[key] = true;
-        t.pts.push({ la: laI / 1000, lo: loI / 1000 });
+        t.pts.push({ la: laI / 1000, lo: loI / 1000, ia: laI, io: loI });
       }
     }
     t.pts.sort(function (a, b) {
@@ -195,19 +200,23 @@
     var pts = t.pts;
     var cosP = t.cos;
     var cosA = Math.cos(rad(la));
+    var ownA = Math.floor(la * 1000 + 0.5);
+    var ownO = Math.floor(lo * 1000 + 0.5);
     var top = [];
-    var i, d;
+    var i, d, p;
     var from = lowerBound(t.lats, la - BAND_DEG);
     var to = upperBound(t.lats, la + BAND_DEG);
     for (i = from; i < to; i++) {
-      d = pairMi(la, lo, cosA, pts[i], cosP[i]);
-      if (d !== 0) keepNearest(top, d);
+      p = pts[i];
+      if (p.ia === ownA && p.io === ownO) continue;
+      keepNearest(top, pairMi(la, lo, cosA, p, cosP[i]));
     }
     if (!(top.length === NEIGHBORS && top[NEIGHBORS - 1] <= BAND_REACH)) {
       top = [];
       for (i = 0; i < pts.length; i++) {
-        d = pairMi(la, lo, cosA, pts[i], cosP[i]);
-        if (d !== 0) keepNearest(top, d);
+        p = pts[i];
+        if (p.ia === ownA && p.io === ownO) continue;
+        keepNearest(top, pairMi(la, lo, cosA, p, cosP[i]));
       }
       if (top.length < NEIGHBORS) return null;
     }
@@ -318,6 +327,7 @@
       var f = raws[i].split(",");
       if (f.length !== 3) continue;
       if (!/^-?\d+$/.test(f[0]) || !/^-?\d+$/.test(f[1]) || !/^-?\d+$/.test(f[2])) continue;
+      if (!inRange(Number(f[1]), Number(f[2]))) continue;
       recs.push([Number(f[0]), Number(f[1]), Number(f[2])]);
     }
     if (!hasOwn(TILE_CACHE, cell)) {
@@ -408,8 +418,8 @@
     return {
       id: id + "@" + la + "," + lo,
       brand: id,
-      name: b.name,
-      category: b.category,
+      name: typeof b.name === "string" ? b.name : null,
+      category: typeof b.category === "string" ? b.category : null,
       profiled: isObj(D.PROFILES) && hasOwn(D.PROFILES, id),
       lat: la / 1000,
       lon: lo / 1000,

@@ -7,7 +7,12 @@ The exact definition of `POD.geo` that `src/js/geo.js` and the Python reference 
 - **Pure.** A function reads only its arguments. No `POD.data`, no `POD.S`, no DOM, no `Date`, no network. The data tables come in as the argument `D` (in the app, `POD.data`). Memo caches are allowed (§3, §4), but a cached value is never returned for data it wasn't computed from.
 - **Never mutates its arguments.** Every record or store it returns is a new object that shares nothing with `D`, `opts` or a cache.
 - **Bad input → `null`, never a throw.** A latitude or longitude that isn't a finite number, a latitude outside [−90, 90], a longitude outside [−180, 180], a missing or wrong-typed `D` table, or a malformed field (each section names its cases) makes the function return `null` (`zipCount` returns `0`). A malformed *record* inside a table is skipped, and the rest of the table is used.
-- "Finite number" means `typeof x === "number" && isFinite(x)`. Strings are not converted.
+- "Finite number" means `typeof x === "number" && isFinite(x)`. Strings are not converted. `NaN` and `±Infinity` are bad input.
+- "Object" means a plain object: not `null`, `typeof x === "object"`, and **not an array** (`Array.isArray`). An array where the contract says object is bad input. Never use `instanceof`: tables can come from another realm.
+- "Own key" means `Object.prototype.hasOwnProperty.call(o, k)`, so ids like `"constructor"` or `"__proto__"` are never found by accident.
+- Patterns below are JavaScript regular expressions without flags: `\d` is an ASCII digit `0-9`, and `^…$` must match the **whole** field (a trailing newline doesn't match).
+
+*Amended 2026-11-13 after review of 3.1 (D-030):* the object, own-key and pattern rules above; §3's city must be a string; §4's own point is found by its integer key; §7 clamps the cell range; §3 and §8 skip a record whose coordinates are out of range; §8 skips a brand entry that isn't an object and gives `null` for a missing name or category; §9 says a tile from another run is never reloaded.
 
 ## 1. API (`POD.geo`)
 
@@ -51,7 +56,7 @@ Products are evaluated left to right as written. `distMi` returns `null` if any 
 
 `D.ZIP_PACKED` is a string of records joined by `;`, fields by `,`: `zip,la,lo,cityIndex,ST` (BUILD.md §2). `D.ZIP_CITIES` is an array of city names.
 
-A record is **usable** when it has exactly 5 fields, `zip` matches `/^\d{5}$/`, `la` and `lo` match `/^-?\d+$/`, `cityIndex` matches `/^\d+$/` and is a valid index into `ZIP_CITIES`, and `ST` matches `/^[A-Z]{2}$/`. Unusable records are skipped. An empty string has no records. If `D` isn't an object, `ZIP_PACKED` isn't a string or `ZIP_CITIES` isn't an array, there are no records.
+A record is **usable** when it has exactly 5 fields, `zip` matches `/^\d{5}$/`, `la` and `lo` match `/^-?\d+$/`, `cityIndex` matches `/^\d+$/` and is an index into `ZIP_CITIES` whose entry is a string, `ST` matches `/^[A-Z]{2}$/`, and the coordinates are in range: `-90000 <= la <= 90000` and `-180000 <= lo <= 180000` as numbers (a 400-digit field is out of range, never `Infinity`). Unusable records are skipped. An empty string has no records. If `D` isn't an object, `ZIP_PACKED` isn't a string or `ZIP_CITIES` isn't an array, there are no records.
 
 A **ZIP record** is `{z, la, lo, c, st}`: `z` the 5-digit string, `la = laInt / 1000` and `lo = loInt / 1000` in degrees (numbers), `c` the city name, `st` the state code.
 
@@ -66,13 +71,13 @@ Unpacking may be memoized, keyed by the `ZIP_PACKED` string itself, so a differe
 `rec` is any object with finite numbers `rec.la`, `rec.lo` in range (§0); other fields are ignored.
 
 1. The **points** are the distinct `(laInt, loInt)` pairs among the usable records. Several ZIPs at one point count once.
-2. Drop every point whose distance from `rec` is exactly `0` (that is the query's own point, and any ZIPs stacked on it).
+2. Drop the query's **own point**: the one whose `(laInt, loInt)` equals `(Math.floor(rec.la * 1000 + 0.5), Math.floor(rec.lo * 1000 + 0.5))`, if there is one. (A point is identified by its integers, not by a float distance of exactly 0, so `0.1 * 3` finds the point `300`. A position within about 0.0005° of a centroid counts as that centroid.)
 3. If fewer than `NEIGHBORS` (6) points remain, return `null`.
 4. Take the 6 smallest distances `d1 ≤ … ≤ d6` and return `(d1 + d2 + d3 + d4 + d5 + d6) / 6`, summed left to right in ascending order.
 
 *Why distinct points:* the ZIP source stacks many ZIPs on one coordinate (ISS-032: 452 Los Angeles ZIPs share one point). Counting each stacked ZIP would make any such point look like the densest place in the country.
 
-The result may be memoized by `(rec.la, rec.lo)` for a given `ZIP_PACKED` (§3's rule). **Speed:** after the table is unpacked, an uncached call must average under 10 ms (Phase 3 done-when). A full scan of 42k points is allowed only as the exact fallback: e.g. scan a ±1.2° latitude band of a latitude-sorted point list, and fall back to a full scan when the 6th distance in the band exceeds the band's guaranteed reach (`1.2 × π/180 × R_MI` ≈ 82.9 mi).
+The result may be memoized by `(rec.la, rec.lo)` for a given table (§3's rule). **Speed:** after the table is unpacked, an uncached call must average under 10 ms (Phase 3 done-when). A full scan of 42k points is allowed only as the exact fallback: e.g. scan a ±1.2° latitude band of a latitude-sorted point list, and fall back to a full scan when the 6th distance in the band exceeds the band's guaranteed reach (`1.2 × π/180 × R_MI` ≈ 82.9 mi).
 
 ## 5. `estimateMiles(rec, brandId, D)`: the fallback estimator (BUILD.md §8)
 
@@ -108,7 +113,8 @@ return { one: round1(one), round: round1(one * 2 * ROAD), spacing: spacing, zips
   x      = Math.sin(delta) / Math.cos(lat * Math.PI / 180)
   if Math.abs(lat) + dLat >= 90 or x >= 1:  lonLo = -180, lonHi = 180      (the circle holds a pole)
   else:  dLon = Math.asin(x) * 180 / Math.PI + EPS;  lonLo = lon - dLon,  lonHi = lon + dLon
-  cells  = every a in floor(latLo)..floor(latHi), o in floor(lonLo)..floor(lonHi)
+  cells  = every a in max(-90, floor(latLo))..min(90, floor(latHi)),
+                 o in max(-180, floor(lonLo))..min(180, floor(lonHi))
            whose key a + "_" + o is an own key of D.TILE_INDEX
   ```
 
@@ -119,7 +125,7 @@ return { one: round1(one), round: round1(one * 2 * ROAD), spacing: spacing, zips
 
 `D.TILES[cell]` (if `D.TILES` is an object and has that own key) is the tile. It is **usable** when it's an object, its `run` equals `D.BRANDS_RUN` (a string), and its `s` is a string. A tile from another run is not usable: its brand indexes may point at different brands.
 
-`s` splits on `;` into records, and each record on `,` into fields. A record is used when it has exactly 3 fields, each matching `/^-?\d+$/`, with `b` an index into `D.BRAND_IDS` whose id is an own key of `D.BRANDS`. Other records (including the empty string) are skipped. A store's point is `(la / 1000, lo / 1000)` and its distance from the user is `distMi(lat, lon, la / 1000, lo / 1000)`.
+`s` splits on `;` into records, and each record on `,` into fields. A record is used when it has exactly 3 fields, each matching `/^-?\d+$/`, with `b` an index into `D.BRAND_IDS` whose entry is a string that is an own key of `D.BRANDS`, `D.BRANDS[id]` is an object, and `la`, `lo` are in §3's range. Other records (including the empty string) are skipped. A store's point is `(la / 1000, lo / 1000)` and its distance from the user is `distMi(lat, lon, la / 1000, lo / 1000)`.
 
 Parsing may be memoized per cell, but only while the tile's `s` and `run` are the same strings.
 
@@ -143,11 +149,15 @@ for r in RADII:
 
 `need` keeps the order of `cells`. A tile present in `D.TILES` always wins over `opts.failed`. The page loads every cell in `need` (with `tilePath`), adds cells it couldn't load to `opts.failed`, and calls again.
 
+A tile that is present but not usable (another run, §8) is never in `need`: reloading the same URL would return the same file. It makes the result `partial` for as long as the page is open. To keep a browser from pairing a cached tile with a newer `brands.js`, Phase 5's loader should make the tile URL depend on `BRANDS_RUN` (e.g. a `?v=` query, checked over `file://` then).
+
 A **store** is a new object:
 
 ```
 { id: brandId + "@" + la + "," + lo,        e.g. "dominos@40694,-73990"
-  brand: brandId, name: BRANDS[brandId].name, category: BRANDS[brandId].category,
+  brand: brandId,
+  name: BRANDS[brandId].name if it's a string, else null,
+  category: BRANDS[brandId].category if it's a string, else null,
   profiled: (D.PROFILES is an object and brandId is an own key of it),
   lat: la / 1000, lon: lo / 1000,
   mi: distance (unrounded), trip: tripMiles(mi) }
