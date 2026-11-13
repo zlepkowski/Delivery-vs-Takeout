@@ -57,6 +57,34 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
+### Phase 3: Geography + stores near you (2026-11-13, in progress)
+
+Work is on branch `claude/exciting-rubin-7evr9n` (this session's branch; it started from `2a84085`, the tip of `claude/sharp-heisenberg-tbo63x`).
+
+| Task | Status | Commit |
+|---|---|---|
+| 3.1 Geo contract `docs/geo-contract.md` (D-030), Python reference `tests/oracle/geo.py`, hand-worked `tests/fixtures/geo/synthetic.json` + reference-generated `real.json`, geo checks in `run.py` via `geo_runner.js` | ✅ reviewer CHANGES-REQUESTED → fixed (contract amended) | `f5f37f4`, `5829c9d`, `197acd1` |
+| 3.2 Builder: `src/js/geo.js` + review fix round | ✅ hand-worked 129/129, real 71/71, random 330/330 (1,650/1,650 on a second seed); uncached zipSpacing mean ≈ 4 ms; 59011 vs 10118 Domino's 10.4 vs 0.4 mi (26×); reviewer APPROVE + one should-fix (fixed) | `8215c29`, `197acd1` |
+| 3.3 Tester: `tests/unit/geo.test.js` (fixture cases, done-when tests, malformed input, purity, cache isolation, 17 mutations) | ⏳ | |
+| 3.4 Close: full suite in a clean worktree, reflector, progress | ⬜ | |
+
+**Phase 3 notes for a resuming session.**
+- `docs/geo-contract.md` is the spec for `POD.geo`. Every function takes the data tables as `D`. `storesNear`/`nearestStore` return `status: "need"` with the cells to load; Phase 5's page loads them (`tilePath`) and calls again, passing cells that failed in `opts.failed`.
+- Real-data facts: Big Timber (59011) → nearest Domino's 30.9 mi straight line, trip 77.2 mi, from the fixture tiles (the estimator says 10.4 mi one way). Midtown (10118) → 82 brands within 5 mi.
+- ISS-032 (new, needs the user): ~6,200 ZIPs sit 10+ to one coordinate in the ZIP source.
+- ISS-030 moved to Phase 5 (UI). D-028's brand-level `amexGoldDirect` question is still open (engine/data, not geography).
+
+**Review evidence for the Phase 3 reflector** (all fixed unless noted):
+- **The contract review found two harness holes that would have let a wrong JS pass:** NaN/Infinity results serialized to `null` and matched expected nulls, and the JS comparison switched on only by one exact string in `index.html` (it would have printed "skipped" and exited 0). Lesson: a differential runner must encode non-finite numbers and must fail, not skip, when the code exists.
+- **Python's `\d` and `$` aren't JavaScript's.** `\d` matches other scripts' digits and `$` matches before a final newline, so the reference accepted records the JS rejects. Use `[0-9]` with `fullmatch` when a Python reference mirrors a JS regex.
+- **"Distance exactly 0" is a float test.** The own-point rule depended on how `rec.la` was represented (`0.1 * 3`). Identify points by their integer keys.
+- **Parsed integers need a range check.** A 400-digit coordinate became `Infinity`, then a phantom store at `mi: null` that displaced the real nearest store (the `geo.js` reviewer; no fixture had it).
+- **Rounded values were compared with a tolerance** that would have hidden a `round1` bug. Tolerance applies only to unrounded distances.
+- **The purity check only saw arguments.** It now poisons `POD.data`, `POD.S` and `Date` during calls and calls twice with the first result scribbled over.
+- **The orchestrator's own doc edit landed in the wrong place:** a string replace on `## Closed` hit the same words in the "Adding an entry" prose, so ISS-032 was committed inside that sentence (`f5f37f4`, fixed `5829c9d`). Anchor doc inserts on the whole heading line (`\n## Closed\n`).
+- **The contract's first bounding box (`dLat / cos(poleward lat)`) overshot by 0.002°** and made the Big Timber 50-mile search ask for two non-fixture cells. The exact reach `asin(sin δ / cos φ)` fixed it. The cheaper `dLat / cos(lat)` undershoots by 0.0002° at Fairbanks, so a real-data case pins that edge.
+- **A data defect surfaced only while designing a function:** stacked ZIP coordinates (ISS-032). Phase 1's row-count checks couldn't see it.
+
 ### Phase 2: Engine (2026-11-12, done)
 
 | Task | Status | Commit |
