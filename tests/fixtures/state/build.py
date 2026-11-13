@@ -176,8 +176,8 @@ sc("need after a brand change clears the old brand's distance", ["§4.5", "D-031
    [FR, st("setAddress", "10001"), st("setBrand", "pz", returns=NEED_T), st("pinMiles", 7, returns=True),
     st("setBrand", "bg", returns=NEED_T)],
    {"brand": "bg", "miles": None, "minutes": None, "milesSrc": None, "milesAuto": True, "store": None, "milesBy": {"pz": 7},
-    "$missing": ["mpg", "gas", "miles", "minutes"]},
-   "bg has no pin, so autoMiles asks for tile 40_-74 and clears the trip. (Before the 4.3 review, pz's 7-mile pin stayed in S and bg would have been priced at it.) No car yet: mpg and gas are missing too.",
+    "$missing": ["mpg", "miles", "minutes"]},
+   "bg has no pin, so autoMiles asks for tile 40_-74 and clears the trip. (Before the 4.3 review, pz's 7-mile pin stayed in S and bg would have been priced at it.) No car yet, so mpg is missing too (gas is NY's regular price, 4.1: it comes from the state, not the car).",
    patch={"TILES": {}})
 sc("unpinMiles while tiles load clears the pinned distance", ["§4.5", "§6"],
    [FR, st("setAddress", "10001"), st("setBrand", "pz"), st("pinMiles", 7), st("unpinMiles", returns=NEED_T)],

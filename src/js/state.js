@@ -28,7 +28,7 @@
   var BOOL_SAVED = ["dealOn", "milesAuto", "storePicked"];         // §8
   var STRING_SAVED = ["address", "make", "model"];                 // §8
   var CANON_INT = /^(0|[1-9][0-9]*)$/;                             // §8: cart keys
-  var MANUAL_KEY = /^manual\.[1-9][0-9]*$/;                        // §8
+  var MANUAL_KEY = /^manual\.[1-9][0-9]{0,8}$/;                    // §8 (at most 9 digits)
   var MANUAL_N = /^manual\.([1-9][0-9]*)$/;                        // §5.3
 
   // ---- helpers (§0) ----------------------------------------------------------
@@ -170,16 +170,21 @@
     return cur;
   }
 
-  /** Writes only when every segment but the last is an existing own-key object and the last is an own key. */
+  /** A plain value: null, a boolean, a string or a finite number. */
+  function isPlain(v) {
+    return v === null || typeof v === "boolean" || typeof v === "string" || isNum(v);
+  }
+
+  /** Writes only when every segment but the last is an existing own-key object, the last is an own key, and v is plain. */
   function setPath(S, path, v) {
     var segs = splitPath(path);
-    if (segs === null) { return false; }
+    if (segs === null || !isPlain(v)) { return false; }
     var cur = S;
     for (var i = 0; i < segs.length; i++) {
       if (!isObj(cur) || !hasOwn(cur, segs[i])) { return false; }
       if (i < segs.length - 1) { cur = cur[segs[i]]; }
     }
-    cur[segs[segs.length - 1]] = copyValue(v);
+    cur[segs[segs.length - 1]] = v;
     return true;
   }
 
@@ -357,10 +362,14 @@
   /** Step 4: the nearest store of the brand. */
   function nearestTrip(S, D, pos, opts) {
     var r = geoNearestStore(pos.lat, pos.lon, S.brand, D, opts);
+    S.storePicked = false;
     if (r !== null && r.status === "need") {
+      S.store = null;
+      S.miles = null;
+      S.milesSrc = null;
+      applyMinutes(S);
       return statusOf("need", copyValue(r.need), false);
     }
-    S.storePicked = false;
     if (r !== null && isObj(r.store)) {
       var st = r.store;
       S.store = { id: st.id, lat: st.lat, lon: st.lon };
@@ -662,8 +671,10 @@
     return autoMiles(S, D, opts);
   }
 
+  /** A storesNear row: a brand, an id that starts "brand@", and an in-range point. */
   function isStoreRow(s) {
-    return isObj(s) && isStr(s.id) && isStr(s.brand) && isNum(s.lat) && isNum(s.lon);
+    return isObj(s) && isStr(s.brand) && isStr(s.id) && s.id.indexOf(s.brand + "@") === 0 &&
+      isLatLon(s.lat, s.lon);
   }
 
   function pickStore(S, D, store, opts) {

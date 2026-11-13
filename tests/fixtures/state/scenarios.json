@@ -1396,12 +1396,11 @@
     },
     "$missing": [
      "mpg",
-     "gas",
      "miles",
      "minutes"
     ]
    },
-   "work": "bg has no pin, so autoMiles asks for tile 40_-74 and clears the trip. (Before the 4.3 review, pz's 7-mile pin stayed in S and bg would have been priced at it.) No car yet: mpg and gas are missing too.",
+   "work": "bg has no pin, so autoMiles asks for tile 40_-74 and clears the trip. (Before the 4.3 review, pz's 7-mile pin stayed in S and bg would have been priced at it.) No car yet, so mpg is missing too (gas is NY's regular price, 4.1: it comes from the state, not the car).",
    "patch": {
     "TILES": {}
    }
