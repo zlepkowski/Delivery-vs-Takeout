@@ -180,9 +180,23 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** until the page gets the user's position some other way, the ZIP centroid is the user's location. Someone in Pasadena (or 90004) would see the stores around that one point, and the trip distance would be wrong. `zipSpacing` already copes (it counts distinct points, D-030), but the location itself is wrong for these ZIPs. Phase 1's check (42,354 / 18,908) counts rows, so it couldn't catch this.
 - **Next step:** the user decides. Options: (a) take coordinates from the Census ZCTA gazetteer (public domain, `www2.census.gov`, which isn't on the network allowlist), keeping midwire for city, state and PO-box ZIPs; (b) GeoNames postal codes (CC-BY, `download.geonames.org`); (c) make browser geolocation the primary location in Phase 5 and keep the ZIP only as a fallback. (c) is worth doing whatever else is chosen. Add a data test that fails when more than a small number of ZIPs share one point.
 
+### ISS-034 — platform default fees not sourced (task 4.1A, defaults-platforms.json)
+- **Opened:** 2026-11-13 by researcher · **Phase:** 4 · **Status:** open
+- **What:** `tools/data/defaults-platforms.json` has no numeric value for: `dd.delFee` (DoorDash help says "A fixed fee per order that varies by merchant", no amount), `dd.svcMin` ("A flat, minimum service fee may apply", no amount), `smallMin` and `smallFee` (no threshold or amount on the DoorDash help page or DoorDash terms), `regFee` (no amount, no city list). Left out, per the card. Grubhub: no value sourced for any of its six keys (`gh.delFee`, `gh.svc`, `gh.svcMin`, `gh.memberMin`, `gh.memberSvc`, `gh.pickDisc`). `grubhub.com/plus` is a JS-only shell and the Grubhub terms have no fee numbers; `get.grubhub.com`, `lp.grubhub.com`, `about.grubhub.com` and `about.doordash.com` refused the connection, and `help.uber.com` article URLs returned 404 to curl. `uber.com/us/en/ubereats/` returned 406 to curl's default user agent, so it is BLOCKED. Uber's US grocery guide gives no pickup discount, small-order or regulatory figure. Search snippets were not used.
+- **Why it matters:** DONE WHEN check 1 fails (`missing` lists the keys above). The app would start without defaults for these, or with wrong ones if a snippet figure were used.
+- **Next step:** the orchestrator decides. Options: open Uber's "What fees may apply to my order" help article and Grubhub's fee pages from an allowed network, or set these values from a checkout screen the user captures. `ue.pickDisc` is also unsourced.
+- **Update 2026-11-13 (orchestrator, D-032):** the user chose **official numbers only**. Every value above stays `null` in `src/data/defaults.js`: the page asks the user for it, and an app with an empty fee is left out of the comparison until it is filled. The Uber grocery-guide values were withdrawn (not restaurant figures). Pickup discounts are 0 by product rule. Stays open: a later decision may switch an app to labeled estimates, or a readable official page may appear.
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
+
+### ISS-033 — tipDel and tipPick have no sourced default tip (task 4.1B, defaults-trip)
+- **Opened:** 2026-11-13 by researcher · **Phase:** 4 · **Status:** closed (2026-11-13, D-032: user decision)
+- **What:** `tools/data/defaults-trip.json` has `tipDel` and `tipPick` as `value: null` (est true). No allowed page I opened states a default tip percentage. DoorDash consumer fee page and DoorDash Dasher tipping page state tips are optional, with no figure. Uber help pages (help.uber.com) returned 404 for the URLs search found. www.uber.com returned 406 to the default user agent, so it was not used. The only Uber figures are presets in a Seattle policy blog, not a default. Grubhub has no default delivery or pickup tip in the pages opened. The DoorDash merchant staff-tip page refused the connection.
+- **Why it matters:** the card's DONE WHEN check 1 requires a numeric value for every key, so it fails for these two keys (`missing []`, `bad ['tipDel', 'tipPick']`). The app can't show a default tip until these are set.
+- **Next step:** the orchestrator picks a source or sets the values. Options: a DoorDash or Uber checkout screen captured in the app by the user, or a published etiquette source the allowlist permits. Then re-run the researcher. Do not guess a figure.
+- **Resolved 2026-11-13 (orchestrator):** the user chose 15% delivery and 0% pickup as the product defaults (D-032), recorded as a decision rather than a sourced figure. Closed.
 
 ### ISS-002 — Confirm the All The Places license allows redistributing the tiles
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 1 · **Status:** closed (2026-11-12, D-020)
