@@ -30,7 +30,8 @@ const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)
 
 /** A host-realm copy that keeps undefined and non-finite numbers, so deepStrictEqual can compare across realms. */
 function plain(v) {
-  if (Array.isArray(v)) return v.map(plain);
+  // Not v.map(): map builds its result with the VM array's own constructor, so it would stay in the VM realm.
+  if (Array.isArray(v)) return Array.from(v, plain);
   if (v !== null && typeof v === 'object') {
     if (Object.prototype.toString.call(v) === '[object Date]') return 'Date(' + v.getTime() + ')';
     const o = {};
