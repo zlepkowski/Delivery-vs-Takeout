@@ -171,6 +171,23 @@ sc("setBrand: a tile failed -> the estimator, partial", ["§4.5"],
    {"miles": 1.0, "minutes": 2, "milesSrc": "estimate", "store": None},
    "No store data, so estimateMiles: spacing from 40.000 = mean of 0.01..0.06 deg = %.6f mi; zipsPerStore 14/100; raw 0.45 x sqrt(0.14) x spacing^0.75 = %.6f -> clamped to 0.4; round 1.0; minutes 1.0/30 x 60 = 2." % (spacing, raw),
    patch={"TILES": {}})
+NEED_T = {"status": "need", "need": ["40_-74"], "partial": False}
+sc("need after a brand change clears the old brand's distance", ["§4.5", "D-031"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz", returns=NEED_T), st("pinMiles", 7, returns=True),
+    st("setBrand", "bg", returns=NEED_T)],
+   {"brand": "bg", "miles": None, "minutes": None, "milesSrc": None, "milesAuto": True, "store": None, "milesBy": {"pz": 7},
+    "$missing": ["mpg", "gas", "miles", "minutes"]},
+   "bg has no pin, so autoMiles asks for tile 40_-74 and clears the trip. (Before the 4.3 review, pz's 7-mile pin stayed in S and bg would have been priced at it.) No car yet: mpg and gas are missing too.",
+   patch={"TILES": {}})
+sc("unpinMiles while tiles load clears the pinned distance", ["§4.5", "§6"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz"), st("pinMiles", 7), st("unpinMiles", returns=NEED_T)],
+   {"miles": None, "minutes": None, "milesSrc": None, "milesAuto": True, "milesBy": {}}, "", patch={"TILES": {}})
+sc("a move while tiles load clears the old address's distance", ["§4.5", "§6"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz", returns=ok()),
+    st("setAddress", "20003", returns={"status": "need", "need": ["45_-110"], "partial": False})],
+   {"state": "MT", "miles": None, "minutes": None, "milesSrc": None, "store": None},
+   "At 10001 the pz store gives 5.2. From 20003 (45.020, -110) the 5-mile circle touches cells 44/45 x -111/-110, and only 45_-110 is in the index, with no tile loaded: need [45_-110], and the 5.2 from New York is cleared.",
+   patch={"TILE_INDEX": {"40_-74": 3, "45_-110": 1}})
 sc("pinMiles, then a pin is per brand", ["§6", "§4.5"],
    [FR, st("setAddress", "10001"), st("setBrand", "pz"), st("pinMiles", 7, returns=True),
     st("setBrand", "bg", returns=ok())], {
@@ -234,6 +251,12 @@ sc("pickStore rejects a malformed store", ["§6"],
    [FR, st("setAddress", "10001"), st("setBrand", "pz"), st("pickStore", {"brand": "pz", "lat": 40.05, "lon": -74}, returns=None),
     st("pickStore", {"id": "pz@1,1", "brand": "pz", "lat": "40.05", "lon": -74}, returns=None)],
    {"store": pz_store, "storePicked": False}, "No id; then a string lat.")
+sc("pickStore refuses a store id from another brand, or out of range", ["§6", "D-031"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz"),
+    st("pickStore", {"id": "bg@40100,-74000", "brand": "pz", "lat": 40.1, "lon": -74}, returns=None),
+    st("pickStore", {"id": "pz@40050,-74000", "brand": "pz", "lat": 91, "lon": -74}, returns=None)],
+   {"brand": "pz", "store": pz_store, "storePicked": False, "miles": m_pz, "milesSrc": "store"},
+   "The id says bg but the brand says pz; then a latitude of 91. Both are refused and nothing changes.")
 sc("setBrand clears a picked store", ["§6"],
    [FR, st("setAddress", "10001"), st("setBrand", "pz"), st("pickStore", pick), st("setBrand", "pz")],
    {"storePicked": False, "store": pz_store, "miles": m_pz}, "Re-selecting the brand starts over at the nearest store.")
@@ -386,6 +409,14 @@ sc("setPath writes only existing paths", ["§3"],
    {"plats.dd.delFee": 3.49, "tipDel": 20, "cart": {}, "$getPath.plats.dd.svc": 15, "$getPath.nope.x": "$undefined",
     "$getPath.tipDel.x": "$undefined", "$protoClean": True}, "")
 
+sc("setPath writes only plain values", ["§3", "D-031"],
+   [FR, st("setPath", "promos.ue", {"type": "percent", "value": 20, "cap": 0, "min": 0}, returns=False),
+    st("setPath", "cards", ["c_gold"], returns=False), st("setPath", "tipDel", [1], returns=False),
+    st("setPath", "tipDel", {"v": 1}, returns=False), st("setPath", "address", "x", returns=True),
+    st("setPath", "tipDel", None, returns=True), st("setPath", "dealOn", False, returns=True)],
+   {"promos.ue": PROMO0, "cards": [], "tipDel": None, "address": "x", "zip": None, "dealOn": False},
+   "Objects and arrays are refused. A string, null or a boolean is written as is, and nothing is re-derived (the address changed but zip is still null).")
+
 # ---------------------------------------------------------------- persistence
 round_trip = setup + [st("pinMiles", 7), st("toggleCard", "c_gold", True), st("setOptIn", "c_gold.resy", True),
     st("markUsed", "c_gold.dining", True), st("addManualCredit", {"name": "Gift card", "amount": 20, "plats": ["direct"]}),
@@ -441,6 +472,16 @@ sc("load: each saved field is checked on its own", ["§8"], [st("load")], {
     "mpg and miles may be null. Unknown fields and apps are dropped. load never writes to storage."),
    storage={"kind": "memory", "value": json.dumps(bad)})
 SC[-1]["expect"]["pos"] = {"lat": 40, "lon": -74, "src": "zip"}   # derived from address 10001 = 40.000, -74.000
+
+big = {"manualCredits": [{"key": "manual.1234567890", "name": "Big", "amount": 5, "plats": ["dd"]},
+                         {"key": "manual.123456789", "name": "Ok", "amount": 6, "plats": ["ue"]}]}
+sc("load: a manual key over 9 digits is dropped; the next key counts on exactly", ["§8", "§5.3", "D-031"],
+   [st("load"), st("addManualCredit", {"name": "Next", "amount": 1, "plats": ["gh"]}, returns="manual.123456790")],
+   {"manualCredits": [{"key": "manual.123456789", "name": "Ok", "amount": 6, "cadence": "once", "plats": ["ue"]},
+                      {"key": "manual.123456790", "name": "Next", "amount": 1, "cadence": "once", "plats": ["gh"]}],
+    "$storageWrites": 0},
+   "manual.1234567890 has 10 digits: dropped. 123456789 + 1 = 123456790.",
+   storage={"kind": "memory", "value": json.dumps(big)})
 
 PERIODS = [["monthly", "2026-01-15T12:00:00", "2026-01"], ["monthly", "2026-12-31T12:00:00", "2026-12"],
            ["quarterly", "2026-03-31T12:00:00", "2026-Q1"], ["quarterly", "2026-04-01T12:00:00", "2026-Q2"],

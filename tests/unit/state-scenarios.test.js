@@ -19,7 +19,7 @@ const vm = require('node:vm');
 const { loadApp, APP_ROOT } = require('../helpers/load');
 
 const FX = JSON.parse(fs.readFileSync(path.join(APP_ROOT, 'tests', 'fixtures', 'state', 'scenarios.json'), 'utf8'));
-const MIN_SCENARIOS = 74;
+const MIN_SCENARIOS = 80;
 const MIN_PERIODS = 12;
 
 const sandbox = loadApp({ only: ['pod.js', 'engine.js', 'geo.js', 'state.js'] });

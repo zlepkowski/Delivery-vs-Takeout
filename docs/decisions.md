@@ -178,7 +178,8 @@ Consequence: an unprofiled Five Guys has no `amexGoldDirect`, so the Amex Gold d
 - **A card's membership turns the app's membership on**, and the user can turn that off (`cardMember`) or say they pay for it (`memberOwn`), per D-024.
 - **The ZIP is the last 5-digit run in the address**, so a 5-digit house number doesn't win.
 - **A picked store survives a reload** (`storePicked`); the trip is then re-measured from wherever the user is.
-- **`autoMiles` never invents a distance while tiles load**: it reports `need` and leaves `miles` alone.
+- **`autoMiles` never invents a distance while tiles load**: it reports `need` and clears the trip (`miles`, `minutes`, `milesSrc`, `store` → `null`), so `missing(S)` holds the page back until the tiles arrive.
+*Amended 2026-11-13 after review of 4.3:* `need` used to "leave `miles` alone". That kept the **previous brand's** distance (or the previous address's, or an unpinned pin), and the page would have priced the new brand at it. Also: `setPath` takes only plain values (null, boolean, string, finite number), so `S` never holds an object the caller still owns and a cyclic value can't overflow the copy. `pickStore` refuses a store whose `id` isn't `brand + "@…"`. Manual-credit keys have at most 9 digits, so `n + 1` never turns into `1e+21`.
 *Why:* the same reason as D-029 and D-030. Hand-worked scenarios can only test the cascade if every rule is written down once.
 
 **D-032 — Default values: official numbers only** · 2026-11-13 · *accepted (user decision)*

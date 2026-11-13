@@ -1333,6 +1333,192 @@
    }
   },
   {
+   "id": "need after a brand change clears the old brand's distance",
+   "refs": [
+    "§4.5",
+    "D-031"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ],
+     "returns": {
+      "status": "need",
+      "need": [
+       "40_-74"
+      ],
+      "partial": false
+     }
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7
+     ],
+     "returns": true
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "bg"
+     ],
+     "returns": {
+      "status": "need",
+      "need": [
+       "40_-74"
+      ],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "brand": "bg",
+    "miles": null,
+    "minutes": null,
+    "milesSrc": null,
+    "milesAuto": true,
+    "store": null,
+    "milesBy": {
+     "pz": 7
+    },
+    "$missing": [
+     "mpg",
+     "gas",
+     "miles",
+     "minutes"
+    ]
+   },
+   "work": "bg has no pin, so autoMiles asks for tile 40_-74 and clears the trip. (Before the 4.3 review, pz's 7-mile pin stayed in S and bg would have been priced at it.) No car yet: mpg and gas are missing too.",
+   "patch": {
+    "TILES": {}
+   }
+  },
+  {
+   "id": "unpinMiles while tiles load clears the pinned distance",
+   "refs": [
+    "§4.5",
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pinMiles",
+     "args": [
+      7
+     ]
+    },
+    {
+     "call": "unpinMiles",
+     "args": [],
+     "returns": {
+      "status": "need",
+      "need": [
+       "40_-74"
+      ],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "miles": null,
+    "minutes": null,
+    "milesSrc": null,
+    "milesAuto": true,
+    "milesBy": {}
+   },
+   "work": "",
+   "patch": {
+    "TILES": {}
+   }
+  },
+  {
+   "id": "a move while tiles load clears the old address's distance",
+   "refs": [
+    "§4.5",
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ],
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "20003"
+     ],
+     "returns": {
+      "status": "need",
+      "need": [
+       "45_-110"
+      ],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "state": "MT",
+    "miles": null,
+    "minutes": null,
+    "milesSrc": null,
+    "store": null
+   },
+   "work": "At 10001 the pz store gives 5.2. From 20003 (45.020, -110) the 5-mile circle touches cells 44/45 x -111/-110, and only 45_-110 is in the index, with no tile loaded: need [45_-110], and the 5.2 from New York is cleared.",
+   "patch": {
+    "TILE_INDEX": {
+     "40_-74": 3,
+     "45_-110": 1
+    }
+   }
+  },
+  {
    "id": "pinMiles, then a pin is per brand",
    "refs": [
     "§6",
@@ -2159,6 +2345,68 @@
     "storePicked": false
    },
    "work": "No id; then a string lat."
+  },
+  {
+   "id": "pickStore refuses a store id from another brand, or out of range",
+   "refs": [
+    "§6",
+    "D-031"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "id": "bg@40100,-74000",
+       "brand": "pz",
+       "lat": 40.1,
+       "lon": -74
+      }
+     ],
+     "returns": null
+    },
+    {
+     "call": "pickStore",
+     "args": [
+      {
+       "id": "pz@40050,-74000",
+       "brand": "pz",
+       "lat": 91,
+       "lon": -74
+      }
+     ],
+     "returns": null
+    }
+   ],
+   "expect": {
+    "brand": "pz",
+    "store": {
+     "id": "pz@40030,-74000",
+     "lat": 40.03,
+     "lon": -74
+    },
+    "storePicked": false,
+    "miles": 5.2,
+    "milesSrc": "store"
+   },
+   "work": "The id says bg but the brand says pz; then a latitude of 91. Both are refused and nothing changes."
   },
   {
    "id": "setBrand clears a picked store",
@@ -3852,6 +4100,101 @@
    "work": ""
   },
   {
+   "id": "setPath writes only plain values",
+   "refs": [
+    "§3",
+    "D-031"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.ue",
+      {
+       "type": "percent",
+       "value": 20,
+       "cap": 0,
+       "min": 0
+      }
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "cards",
+      [
+       "c_gold"
+      ]
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "tipDel",
+      [
+       1
+      ]
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "tipDel",
+      {
+       "v": 1
+      }
+     ],
+     "returns": false
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "address",
+      "x"
+     ],
+     "returns": true
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "tipDel",
+      null
+     ],
+     "returns": true
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "dealOn",
+      false
+     ],
+     "returns": true
+    }
+   ],
+   "expect": {
+    "promos.ue": {
+     "type": "none",
+     "value": 0,
+     "cap": 0,
+     "min": 0
+    },
+    "cards": [],
+    "tipDel": null,
+    "address": "x",
+    "zip": null,
+    "dealOn": false
+   },
+   "work": "Objects and arrays are refused. A string, null or a boolean is written as is, and nothing is re-derived (the address changed but zip is still null)."
+  },
+  {
    "id": "save then load: user fields come back, derived ones are rebuilt",
    "refs": [
     "§8",
@@ -4397,6 +4740,62 @@
    "storage": {
     "kind": "memory",
     "value": "{\"tipDel\": \"abc\", \"tipPick\": -1, \"cards\": [\"c_gold\", 5, \"c_zz\", \"c_gold\"], \"speed\": 0, \"fuel\": \"jet\", \"brand\": 42, \"plats\": {\"dd\": {\"svc\": -3, \"delFee\": 4.49, \"member\": true, \"markup\": 99, \"memberOwn\": \"yes\"}, \"zz\": {\"on\": true}}, \"cart\": {\"0\": 2, \"x\": 1, \"01\": 3, \"1\": 1.5, \"2\": -1}, \"milesBy\": {\"pz\": 7, \"bg\": \"far\"}, \"creditOptIn\": {\"c_gold.resy\": true, \"c_gold.dining\": \"yes\"}, \"usedIn\": {\"c_gold.dining\": \"2026-11\", \"x\": 5}, \"pos\": {\"lat\": 40, \"lon\": -74, \"src\": \"zip\"}, \"store\": {\"id\": \"pz@40030,-74000\", \"lat\": \"40.03\", \"lon\": -74}, \"promos\": {\"ue\": {\"type\": \"bogo\", \"value\": 5, \"cap\": 0, \"min\": 0}, \"dd\": {\"type\": \"dollar\", \"value\": 5, \"cap\": 0, \"min\": 15}}, \"manualCredits\": [{\"key\": \"manual.1\", \"name\": \"Gift\", \"amount\": 20, \"plats\": [\"direct\"]}, {\"key\": \"manual.1\", \"name\": \"Dup\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"bad\", \"name\": \"Bad key\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"manual.2\", \"name\": \"No amount\", \"plats\": [\"dd\"]}], \"mpg\": null, \"miles\": null, \"address\": \"10001\", \"unknownField\": 1}"
+   }
+  },
+  {
+   "id": "load: a manual key over 9 digits is dropped; the next key counts on exactly",
+   "refs": [
+    "§8",
+    "§5.3",
+    "D-031"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    },
+    {
+     "call": "addManualCredit",
+     "args": [
+      {
+       "name": "Next",
+       "amount": 1,
+       "plats": [
+        "gh"
+       ]
+      }
+     ],
+     "returns": "manual.123456790"
+    }
+   ],
+   "expect": {
+    "manualCredits": [
+     {
+      "key": "manual.123456789",
+      "name": "Ok",
+      "amount": 6,
+      "cadence": "once",
+      "plats": [
+       "ue"
+      ]
+     },
+     {
+      "key": "manual.123456790",
+      "name": "Next",
+      "amount": 1,
+      "cadence": "once",
+      "plats": [
+       "gh"
+      ]
+     }
+    ],
+    "$storageWrites": 0
+   },
+   "work": "manual.1234567890 has 10 digits: dropped. 123456789 + 1 = 123456790.",
+   "storage": {
+    "kind": "memory",
+    "value": "{\"manualCredits\": [{\"key\": \"manual.1234567890\", \"name\": \"Big\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"manual.123456789\", \"name\": \"Ok\", \"amount\": 6, \"plats\": [\"ue\"]}]}"
    }
   }
  ]

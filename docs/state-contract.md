@@ -80,7 +80,7 @@ Field meanings beyond BUILD.md §5: `pos` = `{lat, lon, src}` with `src` `"zip"`
 A path is a non-empty string of `.`-separated segments, e.g. `"plats.dd.delFee"`. A segment `__proto__`, `constructor` or `prototype` makes the path invalid.
 
 - `getPath(S, path)`: walks own keys; `undefined` when a segment is missing or a non-object is in the way.
-- `setPath(S, path, v)`: writes only when **every segment but the last is an existing own-key object** and **the last segment is an existing own key** of it. It never creates keys. Returns `true` when it wrote. It doesn't validate `v` or re-derive anything: the caller runs the matching `apply*` function (the page does this in Phase 5).
+- `setPath(S, path, v)`: writes only when **every segment but the last is an existing own-key object**, **the last segment is an existing own key** of it, and **`v` is a plain value**: `null`, a boolean, a string or a finite number (an object, array, `undefined`, `NaN` or `±Infinity` → `false`). It never creates keys. Returns `true` when it wrote. Beyond that it doesn't validate `v` (a negative tip is written, and `missing` reports it) or re-derive anything: the caller runs the matching `apply*` function (the page does this in Phase 5).
 
 ## 4. The derivation cascade
 
@@ -121,7 +121,7 @@ Then `applyState(S, D)`. (An unknown ZIP keeps `zip` so the page can say "ZIP 99
 3. **A picked store** (`storePicked` and `store` is `{id, lat, lon}` whose `id` starts with `S.brand + "@"`): `miles = geo.tripMiles(geo.distMi(pos.lat, pos.lon, store.lat, store.lon))`, `milesSrc = "store"`. `applyMinutes`; return `{status: "ok", need: [], partial: false}`.
 4. Otherwise `r = geo.nearestStore(pos.lat, pos.lon, S.brand, D, opts)`, and `storePicked = false`.
    - `r` is `null` (no store index at all): go to step 5 with `partial = false`.
-   - `r.status === "need"`: **change nothing** (never invent a distance while tiles load); return `{status: "need", need: r.need (a copy), partial: false}`.
+   - `r.status === "need"`: **clear the trip**: `store = null`, `miles = null`, `milesSrc = null`, `applyMinutes`; return `{status: "need", need: r.need (a copy), partial: false}`. A distance kept from before (another brand, another address, an unpinned pin) would be a made-up one for this trip, and `missing(S)` now holds the page back until the tiles arrive and `derive` runs again.
    - `r.store` non-null: `store = {id, lat, lon}` of it, `miles = r.store.trip`, `milesSrc = "store"`; `applyMinutes`; return `{status: "ok", need: [], partial: r.partial}`.
    - `r.store` null: go to step 5 with `partial = r.partial`.
 5. **The estimator:** `store = null`; `e = geo.estimateMiles({la: pos.lat, lo: pos.lon}, S.brand, D)`; `miles = e ? e.round : null`; `milesSrc = e ? "estimate" : null`; `applyMinutes`; return `{status: "ok", need: [], partial}`.
@@ -176,7 +176,7 @@ For each app `p`: `plats[p].member = plats[p].memberOwn === true || (cardHas(p) 
 - `setPosition(S, D, lat, lon, opts)`: lat in [−90, 90] and lon in [−180, 180], finite, else return `null` and change nothing. `pos = {lat, lon, src: "gps"}`; `applyAddress`; the trip.
 - `setCar(S, D, make, model)`: `make` and `model` are each the argument if it's a string, else `""`; `applyCar`.
 - `setBrand(S, D, brandId, opts)`: `brand` = the string, or `null`; `cart = {}`; `dealOn = true`; `store = null`; `storePicked = false`; `applyBrand`. Then, if `milesBy` has an own key `brand` with a finite number ≥ 0: `miles` = it, `milesAuto = false`, `milesSrc = "pinned"`, `applyMinutes`, return `{status: "off", …}`. Else `milesAuto = true` and return `autoMiles`. (`manualSubtotal` is kept.)
-- `pickStore(S, D, store, opts)`: `store` must be an object with a string `id`, a string `brand`, finite `lat` and `lon` (a `storesNear` row), else return `null`. If `store.brand !== S.brand`, run `setBrand(S, D, store.brand, opts)` first. Then `S.store = {id, lat, lon}`, `storePicked = true`, `milesAuto = true`, delete `milesBy[brand]`; return `autoMiles` (which takes step 3).
+- `pickStore(S, D, store, opts)`: `store` must be an object with a string `brand`, a string `id` that starts with `brand + "@"`, and finite `lat` and `lon` in range (a `storesNear` row), else return `null` and change nothing. If `store.brand !== S.brand`, run `setBrand(S, D, store.brand, opts)` first. Then `S.store = {id, lat, lon}`, `storePicked = true`, `milesAuto = true`, delete `milesBy[brand]`; return `autoMiles` (which takes step 3).
 - `setQty(S, index, qty)`: `S.rest` must be profiled, `index` an integer with `0 <= index < rest.menu.length`, and `qty` an integer ≥ 0, else `false`. `qty > 0` sets `cart[String(index)] = qty`; `0` deletes the key. `true`. (`setPath` can't do this: it never creates keys.)
 - `pinMiles(S, miles)`: `miles` must be a finite number ≥ 0, else `false`. `S.miles = miles` (as given, not rounded), `milesAuto = false`, `milesSrc = "pinned"`; if `brand` is a string, `milesBy[brand] = miles`; `applyMinutes`; `true`.
 - `unpinMiles(S, D, opts)`: `milesAuto = true`; delete `milesBy[brand]`; return `autoMiles`.
@@ -214,7 +214,7 @@ The key is `POD.STORAGE_KEY` (`"pod.v5"`, D-010). `storage` is any object with `
   - booleans: `dealOn`, `milesAuto`, `storePicked`.
   - `pos`: `{lat, lon, src: "gps"}` with a valid position. `store`: `{id: string, lat, lon}` with finite numbers (or `null`).
   - `cart`: an object; keep each key that is a canonical non-negative integer (`"0"`, `"12"`) with an integer value ≥ 0. `milesBy`: keep string keys with finite numbers ≥ 0. `creditOptIn`: keep keys whose value is `true`. `usedIn`: keep keys whose value is a string.
-  - `cards`: an array; keep the strings. `manualCredits`: an array; keep each entry `addManualCredit` would accept that also has a `key` matching `/^manual\.[1-9][0-9]*$/`, the first one with a given key only, stored as `addManualCredit` stores it (`{key, name, amount, cadence, plats, modes?}`, `cadence` defaulting to `"once"`, nothing else).
+  - `cards`: an array; keep the strings. `manualCredits`: an array; keep each entry `addManualCredit` would accept that also has a `key` matching `/^manual\.[1-9][0-9]{0,8}$/` (at most 9 digits, so the next key stays an exact integer), the first one with a given key only, stored as `addManualCredit` stores it (`{key, name, amount, cadence, plats, modes?}`, `cadence` defaulting to `"once"`, nothing else).
   - `plats`: per app and field as in `fresh`: numbers finite ≥ 0, booleans boolean (`markup` and `member` are derived and never loaded). `promos`: per app **and field**: `type` one of `none`, `percent`, `dollar`, `freedel`; `value`, `cap`, `min` finite ≥ 0. A bad field falls back alone (a bad `type` with a good `value` gives `{type: "none", value: …}`).
   - Unknown fields and unknown apps are dropped.
   Then `derive(S, D, now, opts)`. `load` never throws and never writes to `storage`. A storage that throws on every call gives exactly `derive(fresh(D))`.
