@@ -159,7 +159,7 @@ test('D-032 §2 defaults: every est path appears on the header Est lines, and no
   for (let i = start; i < HEADER_LINES.length; i++) block.push(HEADER_LINES[i]);
   const named = [];
   for (const line of block) {
-    const m = /^ \* (?:Est: +| +)([a-zA-Z]+\.[a-zA-Z]+): /.exec(line);
+    const m = /^ \* (?:Est: +| +)([a-zA-Z]+(?:\.[a-zA-Z]+)+): /.exec(line);
     if (m) named.push(m[1]);
   }
   const ests = LEAVES.filter((p) => DATA.DEFAULT_SOURCES[p].est === true);

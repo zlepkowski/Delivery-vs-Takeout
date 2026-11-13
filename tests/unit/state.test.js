@@ -206,10 +206,21 @@ const ROUND_TRIP = {
     // §3: setPath re-derives nothing (plats.gh.member is stale until the caller runs the apply step).
     // The page runs derive after each edit, so the state the round trip starts from is derived.
     S1ST.derive(S, D, NOW, undefined);
+  },
+  'a profiled brand with a cart, dealOn off and changed numbers': (S, D) => {
+    S1ST.setAddress(S, D, 'Main St, NY 10001', undefined);
+    S1ST.setBrand(S, D, 'pz', undefined);
+    assert.equal(S1ST.setQty(S, 0, 2), true, 'setQty on a profiled brand');
+    assert.equal(S.cart['0'], 2);
+    const edits = [
+      ['dealOn', false], ['wear', 0.2], ['hourly', 12], ['kwh', 0.25], ['speed', 35], ['manualSubtotal', 14.5]
+    ];
+    for (const [p, v] of edits) assert.equal(S1ST.setPath(S, p, v), true, 'setPath ' + p);
+    S1ST.derive(S, D, NOW, undefined);
   }
 };
 
-test('done-when: the cascade: six S1 states built by actions survive save and load unchanged', () => {
+test('done-when: the cascade: seven S1 states built by actions survive save and load unchanged', () => {
   const names = Object.keys(ROUND_TRIP);
   assert.ok(names.length >= 5, 'at least five states');
   for (const name of names) {
@@ -227,10 +238,25 @@ test('done-when: the cascade: six S1 states built by actions survive save and lo
 
 const cardKeys = (pred) => REAL.CARDS.flatMap((c) => c.credits.filter(pred).map((k) => c.id + '.' + k.id));
 
+/** Each card credit's plats: [] when locked, or restricted and not opted in; else the cards.js plats. */
+function checkTiers(S, optedIn) {
+  for (const c of S.credits) {
+    if (c.manual) continue;
+    const card = REAL.CARDS.find((x) => x.id === c.cardId);
+    const src = card.credits.find((k) => card.id + '.' + k.id === c.key);
+    if (src.locked || (src.restricted && !optedIn.has(c.key))) {
+      assert.deepEqual(J(c.plats), [], c.key + ': no plats without the tier it needs');
+    } else {
+      assert.deepEqual(J(c.plats), J(src.plats), c.key + ': plats equal cards.js');
+    }
+  }
+}
+
 test('done-when: syncCredits keeps used, manual credits and opt-ins', () => {
   const S = ST.fresh(REAL);
   const cardIds = REAL.CARDS.map((c) => c.id);
   for (const id of cardIds) assert.equal(ST.toggleCard(S, REAL, id, true, NOW), true);
+  checkTiers(S, new Set());   // before any opt-in: restricted credits have no plats
   for (const k of cardKeys((c) => c.restricted)) assert.equal(ST.setOptIn(S, REAL, k, true, NOW), true, 'opt in ' + k);
   for (const e of J(S.credits)) assert.equal(ST.markUsed(S, REAL, e.key, true, NOW), true, 'used ' + e.key);
   const m1 = ST.addManualCredit(S, REAL, { name: 'Manual one', amount: 20, cadence: 'monthly', plats: ['dd'] }, NOW);
@@ -251,16 +277,7 @@ test('done-when: syncCredits keeps used, manual credits and opt-ins', () => {
   const want = [...cardKeys(() => true), m1, m2];
   assert.deepEqual(J(S.credits.map((c) => c.key)), want, 'credits come back in D.CARDS order, manual last');
   assert.ok(S.credits.every((c) => c.used === true), 'every credit is used after the toggles back on');
-  for (const c of S.credits) {
-    if (c.manual) continue;
-    const card = REAL.CARDS.find((x) => x.id === c.cardId);
-    const src = card.credits.find((k) => card.id + '.' + k.id === c.key);
-    if (src.locked) {
-      assert.deepEqual(J(c.plats), [], c.key + ': a locked credit has no plats');
-    } else {
-      assert.deepEqual(J(c.plats), J(src.plats), c.key + ': plats equal cards.js (opted in when restricted)');
-    }
-  }
+  checkTiers(S, new Set(cardKeys((c) => c.restricted)));   // every restricted credit is opted in now
   assert.deepEqual(J({ creditOptIn: S.creditOptIn, usedIn: S.usedIn, manualCredits: S.manualCredits }), kept);
 });
 
@@ -396,6 +413,20 @@ const CALLS = {
   save: [PH.S, PH.MEM]
 };
 
+test('D-031 §3 setPath refuses an object, an array, undefined, NaN and ±Infinity, and changes nothing', () => {
+  const D = s1Data();
+  const S = S1ST.fresh(D);
+  S1ST.setAddress(S, D, 'Main St, NY 10001', undefined);
+  const before = JSON.stringify(S);
+  const svc = S1ST.getPath(S, 'plats.dd.svc');
+  assert.equal(svc, 15, 'literal: the S1 dd svc default is 15');
+  for (const v of [{}, [], { a: 1 }, undefined, NaN, Infinity, -Infinity]) {
+    assert.equal(S1ST.setPath(S, 'plats.dd.svc', v), false, 'setPath refuses ' + util.inspect(v));
+    assert.ok(Object.is(S1ST.getPath(S, 'plats.dd.svc'), 15), 'the value is still 15 after ' + util.inspect(v));
+  }
+  assert.equal(JSON.stringify(S), before, 'S is unchanged');
+});
+
 function fill(tmpl, S, D, storage) {
   return tmpl.map((v) => (v === PH.S ? S : v === PH.D ? D : v === PH.MEM ? storage : v));
 }
@@ -465,7 +496,6 @@ test('D-031 §3 §6 setOptIn, markUsed, removeManualCredit and setPath refuse __
   }
   assert.deepEqual(protoSnapshot(S1SB), before, 'neither Object.prototype gained a property');
   assert.equal(Object.getPrototypeOf(S.creditOptIn), vmObjectProto(S1SB));
-  assert.equal({}.x, undefined);
 });
 
 test('D-031 §8 load of a saved text with __proto__ keys gains nothing and keeps the VM prototype', () => {
@@ -475,8 +505,6 @@ test('D-031 §8 load of a saved text with __proto__ keys gains nothing and keeps
   const storage = { getItem: () => text, setItem() { throw new Error('load never writes'); } };
   const S = S1ST.load(storage, s1Data(), NOW, undefined);
   assert.deepEqual(protoSnapshot(S1SB), before, 'neither Object.prototype gained a property');
-  assert.equal({}.x, undefined);
-  assert.equal(Object.prototype.x, undefined);
   for (const field of ['cart', 'creditOptIn', 'milesBy', 'usedIn']) {
     assert.equal(Object.getPrototypeOf(S[field]), vmObjectProto(S1SB), 'S.' + field + ' keeps the VM Object.prototype');
     assert.deepEqual(Object.keys(S[field]), [], 'S.' + field + ' has no key from the text');
