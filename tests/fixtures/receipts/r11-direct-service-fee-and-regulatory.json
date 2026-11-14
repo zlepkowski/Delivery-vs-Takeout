@@ -7,14 +7,14 @@
     "rest": {
       "id": "wingstop", "name": "Wingstop", "profiled": true,
       "menu": [
-        ["5 Classic Wings", 6.59, false],
-        ["5 Boneless Wings", 4.59, false],
-        ["10 Boneless Wings", 11.59, false],
-        ["5 pc Crispy Tender Combo", 12.99, false],
-        ["Chicken Sandwich Combo", 8.99, false],
-        ["Chicken Sandwich", 5.99, false],
-        ["Triple Chocolate Chunk Brownie", 2.69, false],
-        ["Dasani Bottled Water", 2.79, false]
+        {"name": "5 Classic Wings", "price": 6.59, "dealItem": false},
+        {"name": "5 Boneless Wings", "price": 4.59, "dealItem": false},
+        {"name": "10 Boneless Wings", "price": 11.59, "dealItem": false},
+        {"name": "5 pc Crispy Tender Combo", "price": 12.99, "dealItem": false},
+        {"name": "Chicken Sandwich Combo", "price": 8.99, "dealItem": false},
+        {"name": "Chicken Sandwich", "price": 5.99, "dealItem": false},
+        {"name": "Triple Chocolate Chunk Brownie", "price": 2.69, "dealItem": false},
+        {"name": "Dasani Bottled Water", "price": 2.79, "dealItem": false}
       ],
       "deal": null, "directDelivery": true, "directFee": 2.99,
       "directSvc": {"flat": 2.00, "pct": 0, "modes": ["d"]},

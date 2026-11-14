@@ -54,8 +54,8 @@ def case(cid, title, patch, hand, now=NOW, refs=()):
 
 DEAL = {"label": "Mix & Match", "price": 5.99, "minItems": 2, "scope": "both"}
 MENU_DEAL = copy.deepcopy(BASE["rest"]["menu"])
-MENU_DEAL[3][2] = True        # Stuffed Cheesy Bread 9.99
-MENU_DEAL[4][2] = True        # Parmesan Bread Bites 6.99
+MENU_DEAL[3]["dealItem"] = True        # Stuffed Cheesy Bread 9.99
+MENU_DEAL[4]["dealItem"] = True        # Parmesan Bread Bites 6.99
 GOLD = [
     {"key": "amex_gold.dining", "name": "Dining credit", "amount": 10, "cadence": "monthly", "plats": ["gh"], "goldPartner": True},
     {"key": "amex_gold.uber_cash", "name": "Uber Cash", "amount": 10, "cadence": "monthly", "plats": ["ue"]},
@@ -277,6 +277,36 @@ case("minimum-unprofiled-second-try", "Rounding to the cent falls short once: th
     "promos": {"gh": {"type": "dollar", "value": 5, "cap": 0, "min": 25.053}}}), {
     "minimum.addAmount": 2.26, "minimum.channel": "gh-p",
 }, refs=["§3.4"])
+# D-036: a BOGO counts as a Minimum candidate at a profiled brand (both modes, like dollar).
+# ue food 31.11 < 35, short 3.89. + 1 Coke: 25.35447 + 4.99 x 2 x 1.153 = 36.86141 -> 36.86 >= 35, but the BOGO pizza (item 0)
+# is still 1 in the cart, so free = 0: no saving. ue-p: tax 36.86 x 8.54% = 3.147844 -> 3.15; 36.86 + 3.15 + 1.42 = 41.43,
+# delta 41.43 - 35.19 = 6.24. ue-d: service 5.529 -> 5.53, fees 7.52, tax 3.15, tip 5.53: 53.06, delta 7.96. ue-p wins.
+BOGO35 = {"type": "bogo", "value": 0, "cap": 0, "min": 35, "item": 0}
+case("minimum-bogo", "A BOGO with a $35 minimum is a candidate; adding a Coke reaches it but one pizza makes nothing free", {
+    "promos": {"ue": BOGO35}}, {
+    "minimum.channel": "ue-p", "minimum.short": 3.89, "minimum.addQty": 1, "minimum.addItem": "Coke® (2 L)",
+    "minimum.addAmount": 4.99, "minimum.net": 41.43, "minimum.was": 35.19, "minimum.delta": 6.24, "minimum.cls": "",
+    "minimum.text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $41.43: $6.24 more than now.",
+}, refs=["§3.4", "D-036"])
+# 2 pizzas: ue food 21.99 x 2 x 1.153 = 50.70894 -> 50.71 < 55 (short 4.29). ue-p now: tax 50.71 x 8.54% = 4.330634 -> 4.33;
+# 50.71 + 4.33 + 1.42 = 56.46. + 1 Coke: food 56.46 >= 55, free 1 pizza 25.35: receipt r15's ue-p, 35.19. delta -21.27.
+# ue-d now: service 7.6065 -> 7.61, fees 9.60, tax 4.33, tip 7.61: 72.25; with the Coke r15's ue-d 52.70: delta -19.55.
+case("minimum-bogo-good", "Two pizzas and a $55 BOGO minimum: one Coke unlocks a free pizza", {
+    "cart": {"0": 2}, "promos": {"ue": dict(BOGO35, min=55)}}, {
+    "minimum.channel": "ue-p", "minimum.short": 4.29, "minimum.addQty": 1, "minimum.addAmount": 4.99,
+    "minimum.net": 35.19, "minimum.was": 56.46, "minimum.delta": -21.27, "minimum.cls": "good",
+    "minimum.text": "Uber Eats · pickup is $4.29 short of its $55.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $35.19: $21.27 less than now.",
+}, refs=["§3.4", "D-036"])
+# An unprofiled brand's BOGO never applies (no menu), so it isn't a candidate: the same state with a dollar promo shows Minimum.
+case("minimum-bogo-unprofiled", "An unprofiled brand's BOGO isn't a Minimum candidate", merge(UNPROF, {
+    "promos": {"gh": {"type": "bogo", "value": 5, "cap": 0, "min": 30, "item": 0}}}), {
+    "#ids": ["distance", "fuel", "spread"],
+}, refs=["§3.4", "D-036"])
+MENU_BAD = copy.deepcopy(BASE["rest"]["menu"])
+MENU_BAD[7] = None            # not in the cart, so the engine prices the order; build returns [] (D-036 guard)
+case("menu-entry-not-object", "A menu entry that isn't an object gives no advice", {
+    "rest": {"menu": MENU_BAD}}, {"#ids": []}, refs=["§1", "D-036"])
+
 PARTNER_R = [{"key": "x.gold", "name": "Partner credit", "amount": 10, "cadence": "monthly", "plats": [], "restricted": True, "goldPartner": True}]
 case("wallet-restricted-partner", "A restricted gold-partner credit not opted in: no Wallet, no Timing; Locked lists it", {
     "rest": {"amexGoldDirect": True}, "credits": PARTNER_R}, {

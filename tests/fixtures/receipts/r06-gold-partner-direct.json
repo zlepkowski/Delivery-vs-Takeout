@@ -7,14 +7,14 @@
     "rest": {
       "id": "buffalo_wild_wings", "name": "Buffalo Wild Wings", "profiled": true,
       "menu": [
-        ["10 Boneless Wings + Fries", 14.79, false],
-        ["10 Bone-In Wings + Fries", 17.39, false],
-        ["Classic Chicken Sandwich + Fries", 9.49, false],
-        ["Buffalo Ranch Chicken Sandwich + Fries", 11.49, false],
-        ["All-American Cheeseburger + Fries", 13.29, false],
-        ["Original Chicken Dippers + Fries", 10.99, false],
-        ["Buffalo Chips", 3.74, false],
-        ["Pepsi® Bottle", 2.99, false]
+        {"name": "10 Boneless Wings + Fries", "price": 14.79, "dealItem": false},
+        {"name": "10 Bone-In Wings + Fries", "price": 17.39, "dealItem": false},
+        {"name": "Classic Chicken Sandwich + Fries", "price": 9.49, "dealItem": false},
+        {"name": "Buffalo Ranch Chicken Sandwich + Fries", "price": 11.49, "dealItem": false},
+        {"name": "All-American Cheeseburger + Fries", "price": 13.29, "dealItem": false},
+        {"name": "Original Chicken Dippers + Fries", "price": 10.99, "dealItem": false},
+        {"name": "Buffalo Chips", "price": 3.74, "dealItem": false},
+        {"name": "Pepsi® Bottle", "price": 2.99, "dealItem": false}
       ],
       "deal": null, "directDelivery": false, "directSvc": null, "amexGoldDirect": true,
       "platforms": [], "markup": {}, "markupEst": true

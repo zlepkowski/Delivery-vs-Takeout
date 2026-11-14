@@ -1,6 +1,8 @@
-# Engine contract (v5, Phase 2)
+# Engine contract (v5, Phase 2; amended by D-033 and D-036)
 
 The exact definition of `POD.engine` that `src/js/engine.js` and the Python oracle (`tests/oracle/engine.py`) both implement. It fills in what BUILD.md §4 leaves open. **Where this file and BUILD.md §4 differ, this file wins** (D-029). Change it only by a decision. The oracle and the receipts change first, the engine after.
+
+*Amended 2026-11-14 (D-036, Phase 6):* menu items are objects with an optional per-item markup (§2.1); app food is a sum over cart lines (§5.2); a `bogo` promo type (§5.4) and its note (§6).
 
 Everything here is pure. The engine reads only its arguments: no `POD.S`, no `POD.data`, no DOM, no `Date`.
 
@@ -39,13 +41,13 @@ S = {
     ue: { … same keys … },
     gh: { … same keys … }
   },
-  promos: { dd: { type, value, cap, min }, ue: {…}, gh: {…} },  // type: "none"|"percent"|"dollar"|"freedel"
+  promos: { dd: { type, value, cap, min, item }, ue: {…}, gh: {…} },  // type: "none"|"percent"|"dollar"|"freedel"|"bogo"; item: a menu index (bogo only)
   credits: [ { key, name, amount, plats, modes, restricted, locked, goldPartner, used } ],
   creditOptIn: { "<key>": true }
 }
 ```
 
-Percent fields (`tax`, `markup`, `svc`, `memberSvc`, `pickDisc`, `tipDel`, `tipPick`, promo `value` for `percent`) are percents: 15 means 15%. **Every numeric field above is required**, because the state layer's `fresh()` supplies defaults. The only optional ones are promo `cap` (≤ 0 or missing means no cap), promo `min` (missing means 0), and `directSvc`'s `flat`, `pct` (missing means 0) and `max`. Missing booleans are false. A missing credit `modes` means both modes. Cart keys must be canonical non-negative integers (`"0"`, `"12"`): any other key (`"x"`, `"01"`) or an index past the menu is ignored.
+Percent fields (`tax`, `markup`, `svc`, `memberSvc`, `pickDisc`, `tipDel`, `tipPick`, promo `value` for `percent`) are percents: 15 means 15%. **Every numeric field above is required**, because the state layer's `fresh()` supplies defaults. The only optional ones are promo `cap` (≤ 0 or missing means no cap), promo `min` (missing means 0), promo `item` (§5.4), a menu item's `markup` (§2.1), and `directSvc`'s `flat`, `pct` (missing means 0) and `max`. Missing booleans are false. A missing credit `modes` means both modes. Cart keys must be canonical non-negative integers (`"0"`, `"12"`): any other key (`"x"`, `"01"`) or an index past the menu is ignored.
 
 ### 2.1 `S.rest` and `restFor(brandId, D)`
 
@@ -54,12 +56,13 @@ rest = { id, name, profiled, menu, deal, directDelivery, directFee, directSvc,
          amexGoldDirect, platforms, markup, markupEst }
 ```
 
+- **A menu item** is `{ name, price, dealItem, markup }` (D-036): `name` a string, `price` a finite number > 0, `dealItem` a boolean (missing means false), and `markup` optional: an object (not null, not an array) `{dd?, ue?, gh?}` of percents, the item's own markup on that app. **The item's markup on app `p`**, `mk(it, p)`, is `it.markup[p]` when `it.markup` is such an object with an own key `p` whose value is a finite number ≥ 0, else `S.plats[p].markup`. A missing or malformed override falls back to the app's markup; it never throws and never becomes 0%.
 - **Profiled** (`D.PROFILES[brandId]` exists): copy (deep, so the result never shares an array or object with `D`) `menu`, `deal`, `directDelivery`, `directFee` (only when `directDelivery`), `amexGoldDirect`, `platforms`, `markup`, `markupEst` from the profile. `directSvc` = the profile's `directSvc` or `null`. `profiled: true`.
 - **Unprofiled** (in `D.BRANDS` but not in `PROFILES`), per D-006: `menu: []`, `deal: null`, `directDelivery: false` (the route is removed, §9.3), `directSvc: null`, `amexGoldDirect: false`, `platforms: ["dd","ue","gh"]`, `markup` = `D.CATEGORY_DEFAULTS[category].markup`, `markupEst: true`, `profiled: false`. **If the brand's category has no default, `restFor` returns `null`:** the brand can't be priced, and a missing markup must never become 0%.
 - `name` is `D.BRANDS[brandId].name`, or the `brandId` itself for a profiled brand missing from `BRANDS`. A brand in neither table gives `null`.
 - `directSvc` (D-029, ISS-031) is `null` or `{ flat, pct, max, modes }`: a restaurant-imposed service fee on direct orders. `flat` and `pct` default to 0, `max` ≤ 0 or missing means no cap, and `modes` (`["d"]`, `["p"]` or `["d","p"]`) says which direct channels pay it. **A `directSvc` without a `modes` array applies to no channel**, never a crash. The generator rejects such an entry when the field is added (ISS-031).
 
-The state layer (Phase 4) copies `rest.markup[p]` into `S.plats[p].markup` and a card's `membership` into `S.plats[p].member`. **The engine reads markup and membership only from `S.plats`.**
+The state layer (Phase 4) copies `rest.markup[p]` into `S.plats[p].markup` and a card's `membership` into `S.plats[p].member`. **The engine reads the app's markup and membership only from `S.plats`**, and a per-item override only from `S.rest.menu[i].markup` (D-036).
 
 ## 3. Channel availability
 
@@ -78,10 +81,11 @@ An unavailable channel is **left out**: `calc` returns `null` and `allResults` s
 
 ## 4. The cart (`cartInfo`)
 
-- Profiled: `menuSub = round2(Σ price * qty)` over cart lines whose index is in the menu, accumulated from 0 in **ascending menu-index order** (the order JS iterates integer-like keys). The same order applies to `dealSub`, `qty` and `eligQty`. `qty` = Σ qty. `eligQty` = Σ qty of lines whose item has `isDealItem`.
+- The **cart lines** are the entries of `cart` whose key is a canonical non-negative integer `i` with `i < menu.length`, in **ascending menu-index order** (the order JS iterates integer-like keys); line `i` has item `menu[i]` and quantity `q = cart[i]`.
+- Profiled: `menuSub = round2(Σ price * q)` over the cart lines, accumulated from 0 in that order. The same order applies to `dealSub`, `qty` and `eligQty` (and to app food, §5.2). `qty` = Σ q. `eligQty` = Σ q of lines whose item has `dealItem === true`.
 - Unprofiled: `menuSub = round2(manualSubtotal)`, `qty = 0`, `eligQty = 0`.
 - `dealReady` = `rest.deal` is non-null **and** `eligQty ≥ deal.minItems`.
-- `dealSub` = when `dealReady`: `round2(Σ (isDealItem ? min(price, deal.price) : price) × qty)` (a deal never raises an item's price); otherwise `menuSub`.
+- `dealSub` = when `dealReady`: `round2(Σ (dealItem ? min(price, deal.price) : price) × q)` (a deal never raises an item's price); otherwise `menuSub`.
 - `shortBy` = `rest.deal ? max(deal.minItems − eligQty, 0) : 0`.
 
 ## 5. `calc`: the steps, in order (BUILD.md §4.2)
@@ -92,7 +96,10 @@ Let `p` = the platform (`direct`, `dd`, `ue`, `gh`), `m` = the mode (`d` or `p`)
 
 **5.1 Deal.** `dealApplied` = `!app` and `S.dealOn` and `dealReady` and `deal.scope` is `"both"`, or `"delivery"` with `m = d`, or `"pickup"` with `m = p`. Any other scope, including a missing one, never applies; `tools/build-profiles.py` rejects such deals. Then `base = dealApplied ? dealSub : menuSub`.
 
-**5.2 Markup.** `food = app ? round2(base * (1 + P.markup / 100)) : base`.
+**5.2 Markup** (D-036).
+- Direct: `food = base`.
+- App, unprofiled: `food = round2(base * (1 + P.markup / 100))`.
+- App, profiled: a sum over the cart lines (§4), in ascending menu-index order: `acc = 0`, then for each line `acc = acc + it.price * q * (1 + mk(it, p) / 100)` (multiplied in that order: `(price * q) * (1 + mk / 100)`), then `food = round2(acc)`. Rounded once, not per item. When no item has an override this equals the old `round2(menuSub * (1 + P.markup / 100))` up to floating-point order (every hand-worked receipt kept its value).
 
 **5.3 Fees.** All are 0 unless listed.
 - App delivery (`app` and `m = d`):
@@ -111,6 +118,7 @@ Let `p` = the platform (`direct`, `dd`, `ue`, `gh`), `m` = the mode (`d` or `p`)
 - `percent`: `promo = round2(cap(food * pr.value / 100))`, with `cap` as in 5.3 using `pr.cap`
 - `dollar`: `promo = round2(pr.value)`
 - `freedel`: `promo = m === "d" ? delivery : 0` (the fee actually charged, so 0 when a membership waived it)
+- `bogo` (D-036): `j = pr.item`. When `rest.profiled`, `j` is an integer (`typeof j === "number"`, finite, `Math.floor(j) === j`) with `0 <= j < menu.length`, and `cart` has an own key `String(j)` with quantity `q`: `free = Math.floor(q / 2)` and `promo = round2(cap(menu[j].price * free * (1 + mk(menu[j], p) / 100), pr.cap))`. Otherwise `promo = 0`. `pr.value` isn't read.
 - `pick = m === "p" ? round2(food * P.pickDisc / 100) : 0`
 - **Joint clamp:** `promo = Math.min(promo, food)`, then `pick = round2(Math.min(pick, food - promo))`, then `disc = round2(promo + pick)`.
 
@@ -149,7 +157,7 @@ Let `p` = the platform (`direct`, `dd`, `ue`, `gh`), `m` = the mode (`d` or `p`)
 - `id` is the channel id. `plat` is `p`. `mode` is `"d"` or `"p"`.
 - `name` = `{direct: "Order direct", dd: "DoorDash", ue: "Uber Eats", gh: "Grubhub"}[p] + " · " + (m === "d" ? "delivery" : "pickup")`.
 - `member` = `{dd: "DashPass", ue: "Uber One", gh: "Grubhub+"}[p]` when `memberOn`, else `null`.
-- `notes`: `"Deal: " + deal.label` when `dealApplied`, then `"Estimate"` when `rest.profiled` is false. Otherwise empty.
+- `notes`: `"Deal: " + deal.label` when `dealApplied`, then `"BOGO: " + menu[pr.item].name` when `pr.type === "bogo"` and `promo > 0` after the clamp (D-036), then `"Estimate"` when `rest.profiled` is false. Otherwise empty.
 - `lines`: `[label, amount]` pairs in exactly this order. A row marked *if > 0* is left out when its amount is 0.
 
 | # | Label | Amount | When |
@@ -183,4 +191,6 @@ These fill gaps in BUILD.md §4. They're product choices, recorded so they can b
 - **A deal never raises an item's price** (`min(price, deal.price)`).
 - **Free delivery isn't a food discount for tax:** a `freedel` promo is still a step-4 discount (it shows as `Promo`), but tax is computed as if it weren't there.
 - **Credits:** the engine enforces the §9.1 tiers itself, as defence in depth behind `syncCredits`. A `goldPartner` credit also counts at `direct` when `rest.amexGoldDirect`. `modes` limits a credit to delivery or pickup.
+- **Per-item markup is a sum, rounded once (D-036).** An app's menu shows each item at a price in cents, so rounding each item first would be the literal receipt. It isn't done: the markups are estimates (every profile uses its category default), and per-item rounding moved 150 of the 190 hand-worked app totals by a cent for no gain in accuracy.
+- **`bogo` (D-036)** is an app promo the user enters from the app's offer: each pair of the chosen item makes one free (`floor(q / 2)`), at that item's own marked-up price. Both modes, like `percent`. It's a food discount, so it lowers the taxed amount (§5.5) and not the tip base (§9.4). How many items an offer makes free isn't modeled; `cap` limits the dollars. A direct-channel BOGO deal isn't modeled: `deal` stays a price per eligible item.
 - **`directSvc` (ISS-031)** is modeled; its data stays `null` until a chain's fee is researched. Until then direct orders are understated for Wingstop, Subway and Little Caesars (ISS-031 stays open for the data).

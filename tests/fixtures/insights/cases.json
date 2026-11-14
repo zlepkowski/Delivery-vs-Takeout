@@ -6,46 +6,46 @@
    "name": "Domino's",
    "profiled": true,
    "menu": [
-    [
-     "Large (14\") ExtravaganZZa",
-     21.99,
-     false
-    ],
-    [
-     "Large (14\") The People's Pizza - Deluxe",
-     21.99,
-     false
-    ],
-    [
-     "Hot Buffalo Wings (8 pc)",
-     11.99,
-     false
-    ],
-    [
-     "Stuffed Cheesy Bread (8 pc)",
-     9.99,
-     false
-    ],
-    [
-     "Parmesan Bread Bites (16 pc)",
-     6.99,
-     false
-    ],
-    [
-     "5-Cheese Mac & Cheese",
-     9.49,
-     false
-    ],
-    [
-     "Coke® (2 L)",
-     4.99,
-     false
-    ],
-    [
-     "Domino's Marbled Cookie Brownie",
-     9.99,
-     false
-    ]
+    {
+     "name": "Large (14\") ExtravaganZZa",
+     "price": 21.99,
+     "dealItem": false
+    },
+    {
+     "name": "Large (14\") The People's Pizza - Deluxe",
+     "price": 21.99,
+     "dealItem": false
+    },
+    {
+     "name": "Hot Buffalo Wings (8 pc)",
+     "price": 11.99,
+     "dealItem": false
+    },
+    {
+     "name": "Stuffed Cheesy Bread (8 pc)",
+     "price": 9.99,
+     "dealItem": false
+    },
+    {
+     "name": "Parmesan Bread Bites (16 pc)",
+     "price": 6.99,
+     "dealItem": false
+    },
+    {
+     "name": "5-Cheese Mac & Cheese",
+     "price": 9.49,
+     "dealItem": false
+    },
+    {
+     "name": "Coke® (2 L)",
+     "price": 4.99,
+     "dealItem": false
+    },
+    {
+     "name": "Domino's Marbled Cookie Brownie",
+     "price": 9.99,
+     "dealItem": false
+    }
    ],
    "deal": null,
    "directDelivery": false,
@@ -275,46 +275,46 @@
       "scope": "both"
      },
      "menu": [
-      [
-       "Large (14\") ExtravaganZZa",
-       21.99,
-       false
-      ],
-      [
-       "Large (14\") The People's Pizza - Deluxe",
-       21.99,
-       false
-      ],
-      [
-       "Hot Buffalo Wings (8 pc)",
-       11.99,
-       false
-      ],
-      [
-       "Stuffed Cheesy Bread (8 pc)",
-       9.99,
-       true
-      ],
-      [
-       "Parmesan Bread Bites (16 pc)",
-       6.99,
-       true
-      ],
-      [
-       "5-Cheese Mac & Cheese",
-       9.49,
-       false
-      ],
-      [
-       "Coke® (2 L)",
-       4.99,
-       false
-      ],
-      [
-       "Domino's Marbled Cookie Brownie",
-       9.99,
-       false
-      ]
+      {
+       "name": "Large (14\") ExtravaganZZa",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Large (14\") The People's Pizza - Deluxe",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Hot Buffalo Wings (8 pc)",
+       "price": 11.99,
+       "dealItem": false
+      },
+      {
+       "name": "Stuffed Cheesy Bread (8 pc)",
+       "price": 9.99,
+       "dealItem": true
+      },
+      {
+       "name": "Parmesan Bread Bites (16 pc)",
+       "price": 6.99,
+       "dealItem": true
+      },
+      {
+       "name": "5-Cheese Mac & Cheese",
+       "price": 9.49,
+       "dealItem": false
+      },
+      {
+       "name": "Coke® (2 L)",
+       "price": 4.99,
+       "dealItem": false
+      },
+      {
+       "name": "Domino's Marbled Cookie Brownie",
+       "price": 9.99,
+       "dealItem": false
+      }
      ]
     },
     "cart": {
@@ -401,46 +401,46 @@
       "scope": "both"
      },
      "menu": [
-      [
-       "Large (14\") ExtravaganZZa",
-       21.99,
-       false
-      ],
-      [
-       "Large (14\") The People's Pizza - Deluxe",
-       21.99,
-       false
-      ],
-      [
-       "Hot Buffalo Wings (8 pc)",
-       11.99,
-       false
-      ],
-      [
-       "Stuffed Cheesy Bread (8 pc)",
-       9.99,
-       true
-      ],
-      [
-       "Parmesan Bread Bites (16 pc)",
-       6.99,
-       true
-      ],
-      [
-       "5-Cheese Mac & Cheese",
-       9.49,
-       false
-      ],
-      [
-       "Coke® (2 L)",
-       4.99,
-       false
-      ],
-      [
-       "Domino's Marbled Cookie Brownie",
-       9.99,
-       false
-      ]
+      {
+       "name": "Large (14\") ExtravaganZZa",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Large (14\") The People's Pizza - Deluxe",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Hot Buffalo Wings (8 pc)",
+       "price": 11.99,
+       "dealItem": false
+      },
+      {
+       "name": "Stuffed Cheesy Bread (8 pc)",
+       "price": 9.99,
+       "dealItem": true
+      },
+      {
+       "name": "Parmesan Bread Bites (16 pc)",
+       "price": 6.99,
+       "dealItem": true
+      },
+      {
+       "name": "5-Cheese Mac & Cheese",
+       "price": 9.49,
+       "dealItem": false
+      },
+      {
+       "name": "Coke® (2 L)",
+       "price": 4.99,
+       "dealItem": false
+      },
+      {
+       "name": "Domino's Marbled Cookie Brownie",
+       "price": 9.99,
+       "dealItem": false
+      }
      ]
     },
     "cart": {
@@ -522,46 +522,46 @@
       "scope": "delivery"
      },
      "menu": [
-      [
-       "Large (14\") ExtravaganZZa",
-       21.99,
-       false
-      ],
-      [
-       "Large (14\") The People's Pizza - Deluxe",
-       21.99,
-       false
-      ],
-      [
-       "Hot Buffalo Wings (8 pc)",
-       11.99,
-       false
-      ],
-      [
-       "Stuffed Cheesy Bread (8 pc)",
-       9.99,
-       true
-      ],
-      [
-       "Parmesan Bread Bites (16 pc)",
-       6.99,
-       true
-      ],
-      [
-       "5-Cheese Mac & Cheese",
-       9.49,
-       false
-      ],
-      [
-       "Coke® (2 L)",
-       4.99,
-       false
-      ],
-      [
-       "Domino's Marbled Cookie Brownie",
-       9.99,
-       false
-      ]
+      {
+       "name": "Large (14\") ExtravaganZZa",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Large (14\") The People's Pizza - Deluxe",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Hot Buffalo Wings (8 pc)",
+       "price": 11.99,
+       "dealItem": false
+      },
+      {
+       "name": "Stuffed Cheesy Bread (8 pc)",
+       "price": 9.99,
+       "dealItem": true
+      },
+      {
+       "name": "Parmesan Bread Bites (16 pc)",
+       "price": 6.99,
+       "dealItem": true
+      },
+      {
+       "name": "5-Cheese Mac & Cheese",
+       "price": 9.49,
+       "dealItem": false
+      },
+      {
+       "name": "Coke® (2 L)",
+       "price": 4.99,
+       "dealItem": false
+      },
+      {
+       "name": "Domino's Marbled Cookie Brownie",
+       "price": 9.99,
+       "dealItem": false
+      }
      ]
     },
     "cart": {
@@ -633,46 +633,46 @@
       "scope": "both"
      },
      "menu": [
-      [
-       "Large (14\") ExtravaganZZa",
-       21.99,
-       false
-      ],
-      [
-       "Large (14\") The People's Pizza - Deluxe",
-       21.99,
-       false
-      ],
-      [
-       "Hot Buffalo Wings (8 pc)",
-       11.99,
-       false
-      ],
-      [
-       "Stuffed Cheesy Bread (8 pc)",
-       9.99,
-       true
-      ],
-      [
-       "Parmesan Bread Bites (16 pc)",
-       6.99,
-       true
-      ],
-      [
-       "5-Cheese Mac & Cheese",
-       9.49,
-       false
-      ],
-      [
-       "Coke® (2 L)",
-       4.99,
-       false
-      ],
-      [
-       "Domino's Marbled Cookie Brownie",
-       9.99,
-       false
-      ]
+      {
+       "name": "Large (14\") ExtravaganZZa",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Large (14\") The People's Pizza - Deluxe",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Hot Buffalo Wings (8 pc)",
+       "price": 11.99,
+       "dealItem": false
+      },
+      {
+       "name": "Stuffed Cheesy Bread (8 pc)",
+       "price": 9.99,
+       "dealItem": true
+      },
+      {
+       "name": "Parmesan Bread Bites (16 pc)",
+       "price": 6.99,
+       "dealItem": true
+      },
+      {
+       "name": "5-Cheese Mac & Cheese",
+       "price": 9.49,
+       "dealItem": false
+      },
+      {
+       "name": "Coke® (2 L)",
+       "price": 4.99,
+       "dealItem": false
+      },
+      {
+       "name": "Domino's Marbled Cookie Brownie",
+       "price": 9.99,
+       "dealItem": false
+      }
      ]
     },
     "cart": {
@@ -745,46 +745,46 @@
       "scope": "both"
      },
      "menu": [
-      [
-       "Large (14\") ExtravaganZZa",
-       21.99,
-       false
-      ],
-      [
-       "Large (14\") The People's Pizza - Deluxe",
-       21.99,
-       false
-      ],
-      [
-       "Hot Buffalo Wings (8 pc)",
-       11.99,
-       false
-      ],
-      [
-       "Stuffed Cheesy Bread (8 pc)",
-       9.99,
-       true
-      ],
-      [
-       "Parmesan Bread Bites (16 pc)",
-       6.99,
-       true
-      ],
-      [
-       "5-Cheese Mac & Cheese",
-       9.49,
-       false
-      ],
-      [
-       "Coke® (2 L)",
-       4.99,
-       false
-      ],
-      [
-       "Domino's Marbled Cookie Brownie",
-       9.99,
-       false
-      ]
+      {
+       "name": "Large (14\") ExtravaganZZa",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Large (14\") The People's Pizza - Deluxe",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Hot Buffalo Wings (8 pc)",
+       "price": 11.99,
+       "dealItem": false
+      },
+      {
+       "name": "Stuffed Cheesy Bread (8 pc)",
+       "price": 9.99,
+       "dealItem": true
+      },
+      {
+       "name": "Parmesan Bread Bites (16 pc)",
+       "price": 6.99,
+       "dealItem": true
+      },
+      {
+       "name": "5-Cheese Mac & Cheese",
+       "price": 9.49,
+       "dealItem": false
+      },
+      {
+       "name": "Coke® (2 L)",
+       "price": 4.99,
+       "dealItem": false
+      },
+      {
+       "name": "Domino's Marbled Cookie Brownie",
+       "price": 9.99,
+       "dealItem": false
+      }
      ]
     },
     "cart": {
@@ -856,46 +856,46 @@
       "scope": "both"
      },
      "menu": [
-      [
-       "Large (14\") ExtravaganZZa",
-       21.99,
-       false
-      ],
-      [
-       "Large (14\") The People's Pizza - Deluxe",
-       21.99,
-       false
-      ],
-      [
-       "Hot Buffalo Wings (8 pc)",
-       11.99,
-       false
-      ],
-      [
-       "Stuffed Cheesy Bread (8 pc)",
-       9.99,
-       false
-      ],
-      [
-       "Parmesan Bread Bites (16 pc)",
-       6.99,
-       false
-      ],
-      [
-       "5-Cheese Mac & Cheese",
-       9.49,
-       false
-      ],
-      [
-       "Coke® (2 L)",
-       4.99,
-       false
-      ],
-      [
-       "Domino's Marbled Cookie Brownie",
-       9.99,
-       false
-      ]
+      {
+       "name": "Large (14\") ExtravaganZZa",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Large (14\") The People's Pizza - Deluxe",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Hot Buffalo Wings (8 pc)",
+       "price": 11.99,
+       "dealItem": false
+      },
+      {
+       "name": "Stuffed Cheesy Bread (8 pc)",
+       "price": 9.99,
+       "dealItem": false
+      },
+      {
+       "name": "Parmesan Bread Bites (16 pc)",
+       "price": 6.99,
+       "dealItem": false
+      },
+      {
+       "name": "5-Cheese Mac & Cheese",
+       "price": 9.49,
+       "dealItem": false
+      },
+      {
+       "name": "Coke® (2 L)",
+       "price": 4.99,
+       "dealItem": false
+      },
+      {
+       "name": "Domino's Marbled Cookie Brownie",
+       "price": 9.99,
+       "dealItem": false
+      }
      ]
     },
     "cart": {
@@ -3784,6 +3784,345 @@
      }
     }
    ]
+  },
+  {
+   "id": "minimum-bogo",
+   "title": "A BOGO with a $35 minimum is a candidate; adding a Coke reaches it but one pizza makes nothing free",
+   "refs": [
+    "§3.4",
+    "D-036"
+   ],
+   "patch": {
+    "promos": {
+     "ue": {
+      "type": "bogo",
+      "value": 0,
+      "cap": 0,
+      "min": 35,
+      "item": 0
+     }
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "minimum.channel": "ue-p",
+    "minimum.short": 3.89,
+    "minimum.addQty": 1,
+    "minimum.addItem": "Coke® (2 L)",
+    "minimum.addAmount": 4.99,
+    "minimum.net": 41.43,
+    "minimum.was": 35.19,
+    "minimum.delta": 6.24,
+    "minimum.cls": "",
+    "minimum.text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $41.43: $6.24 more than now."
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 66.7 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 66.7,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 76.12,
+      "capped": true
+     }
+    },
+    {
+     "id": "minimum",
+     "label": "Minimum",
+     "cls": "",
+     "text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $41.43: $6.24 more than now.",
+     "data": {
+      "channel": "ue-p",
+      "min": 35,
+      "short": 3.89,
+      "addQty": 1,
+      "addItem": "Coke® (2 L)",
+      "addAmount": 4.99,
+      "net": 41.43,
+      "was": 35.19,
+      "delta": 6.24
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $30.70 (Order direct · pickup) to $46.10 (DoorDash · delivery): a $15.40 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 15.4
+     }
+    }
+   ]
+  },
+  {
+   "id": "minimum-bogo-good",
+   "title": "Two pizzas and a $55 BOGO minimum: one Coke unlocks a free pizza",
+   "refs": [
+    "§3.4",
+    "D-036"
+   ],
+   "patch": {
+    "cart": {
+     "0": 2
+    },
+    "promos": {
+     "ue": {
+      "type": "bogo",
+      "value": 0,
+      "cap": 0,
+      "min": 55,
+      "item": 0
+     }
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "minimum.channel": "ue-p",
+    "minimum.short": 4.29,
+    "minimum.addQty": 1,
+    "minimum.addAmount": 4.99,
+    "minimum.net": 35.19,
+    "minimum.was": 56.46,
+    "minimum.delta": -21.27,
+    "minimum.cls": "good",
+    "minimum.text": "Uber Eats · pickup is $4.29 short of its $55.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $35.19: $21.27 less than now."
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 103.3 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 103.3,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 119.57,
+      "capped": true
+     }
+    },
+    {
+     "id": "minimum",
+     "label": "Minimum",
+     "cls": "good",
+     "text": "Uber Eats · pickup is $4.29 short of its $55.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $35.19: $21.27 less than now.",
+     "data": {
+      "channel": "ue-p",
+      "min": 55,
+      "short": 4.29,
+      "addQty": 1,
+      "addItem": "Coke® (2 L)",
+      "addAmount": 4.99,
+      "net": 35.19,
+      "was": 56.46,
+      "delta": -21.27
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $49.16 (Order direct · pickup) to $73.25 (DoorDash · delivery): a $24.09 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 24.09
+     }
+    }
+   ]
+  },
+  {
+   "id": "minimum-bogo-unprofiled",
+   "title": "An unprofiled brand's BOGO isn't a Minimum candidate",
+   "refs": [
+    "§3.4",
+    "D-036"
+   ],
+   "patch": {
+    "rest": {
+     "id": "taco_bell",
+     "name": "Taco Bell",
+     "profiled": false,
+     "menu": [],
+     "deal": null,
+     "directDelivery": false,
+     "directSvc": null,
+     "amexGoldDirect": false,
+     "platforms": [
+      "dd",
+      "ue",
+      "gh"
+     ],
+     "markup": {
+      "dd": 12.6,
+      "ue": 12.6,
+      "gh": 12.6
+     },
+     "markupEst": true
+    },
+    "manualSubtotal": 20,
+    "plats": {
+     "dd": {
+      "markup": 12.6
+     },
+     "ue": {
+      "markup": 12.6
+     },
+     "gh": {
+      "markup": 12.6
+     }
+    },
+    "promos": {
+     "gh": {
+      "type": "bogo",
+      "value": 5,
+      "cap": 0,
+      "min": 30,
+      "item": 0
+     }
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "#ids": [
+     "distance",
+     "fuel",
+     "spread"
+    ]
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 48.4 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 48.4,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 54.42,
+      "capped": true
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $23.13 (Order direct · pickup) to $34.19 (DoorDash · delivery): a $11.06 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 11.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "menu-entry-not-object",
+   "title": "A menu entry that isn't an object gives no advice",
+   "refs": [
+    "§1",
+    "D-036"
+   ],
+   "patch": {
+    "rest": {
+     "menu": [
+      {
+       "name": "Large (14\") ExtravaganZZa",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Large (14\") The People's Pizza - Deluxe",
+       "price": 21.99,
+       "dealItem": false
+      },
+      {
+       "name": "Hot Buffalo Wings (8 pc)",
+       "price": 11.99,
+       "dealItem": false
+      },
+      {
+       "name": "Stuffed Cheesy Bread (8 pc)",
+       "price": 9.99,
+       "dealItem": false
+      },
+      {
+       "name": "Parmesan Bread Bites (16 pc)",
+       "price": 6.99,
+       "dealItem": false
+      },
+      {
+       "name": "5-Cheese Mac & Cheese",
+       "price": 9.49,
+       "dealItem": false
+      },
+      {
+       "name": "Coke® (2 L)",
+       "price": 4.99,
+       "dealItem": false
+      },
+      null
+     ]
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "#ids": []
+   },
+   "expect": []
   },
   {
    "id": "wallet-restricted-partner",

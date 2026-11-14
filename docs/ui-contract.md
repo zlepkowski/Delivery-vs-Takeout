@@ -1,4 +1,4 @@
-# UI contract (v5, Phase 5)
+# UI contract (v5, Phase 5; amended by D-036)
 
 What the page shows and what each control calls: `src/js/render.js` (`POD.ui`), `src/js/app.js` (`POD.boot`, events, tiles, geolocation) and `src/css/app.css`. It fills in BUILD.md §3 and §10 on top of the state contract (D-031, D-033), the geography contract (D-030) and the insights contract (D-034). **Where it differs from BUILD.md, this file wins** (D-035). The e2e tests (`tests/e2e/`) check the hooks named here: ids, `data-testid`, `data-action` and the exact strings in quotes. Change them only by a decision, tests first.
 
@@ -111,7 +111,7 @@ Strings in quotes are exact. `{x}` is a value; `mi1(x)` = `(Math.round(x * 10) /
 ### 5.3 `order`
 
 - No `S.rest`: `"Pick a restaurant first."`
-- Profiled (`S.rest.profiled`): one row `[data-testid="menu-item"]` per menu index `i`: the name, `money(price)`, a tag `"Deal item"` when `isDealItem`, buttons `data-action="qty" data-index="{i}" data-delta="-1"` (label `"−"`, `aria-label="Remove one"`) and `data-delta="1"` (`"+"`, `aria-label="Add one"`), and the quantity in `[data-testid="qty-{i}"]` (`S.cart[i]` or 0). A footer `[data-testid="order-total"]` `"Menu total {money(menuSub)}"` from `POD.engine.cartInfo(S)` (pure; reads only `S`).
+- Profiled (`S.rest.profiled`): one row `[data-testid="menu-item"]` per menu index `i` (an item `{name, price, dealItem}`, D-036): the `name`, `money(price)`, a tag `"Deal item"` when `dealItem === true`, buttons `data-action="qty" data-index="{i}" data-delta="-1"` (label `"−"`, `aria-label="Remove one"`) and `data-delta="1"` (`"+"`, `aria-label="Add one"`), and the quantity in `[data-testid="qty-{i}"]` (`S.cart[i]` or 0). A footer `[data-testid="order-total"]` `"Menu total {money(menuSub)}"` from `POD.engine.cartInfo(S)` (pure; reads only `S`).
 - When `S.rest.deal`: a checkbox `#dealOn` (`data-bind="dealOn"`) labeled `"Use the {deal.label} deal"`, and `[data-testid="deal-status"]`: `"Deal applies"` when `dealReady`, else `"Add {shortBy} more deal item for the deal"` (`items` when `shortBy > 1`).
 - Unprofiled: `input#manualSubtotal` (`data-bind="manualSubtotal"`, `type="number"`, `step="0.01"`, `min="0"`) labeled `"Your order's menu total ($)"`, and the note `"{name} isn't profiled: app prices use a typical {category} markup, so these totals are estimates."` (`category` = `D.BRANDS[brand].category`).
 
@@ -154,7 +154,7 @@ When step 3 of §5.5 showed results: `POD.insights.build(F, R, new Date())`, eac
 
 ### 5.9 `settings`
 
-Each a labeled `input type="number"` with `data-bind` and `id` = the path with `.` → `-`: `tipDel` "Delivery tip (%)", `tipPick` "Pickup tip (%)", `wear` "Wear per mile ($)", `hourly` "Value of your time ($/hour)", `speed` "Average driving speed (mph)", `kwh` "Electricity ($/kWh)". Per app `p` (DoorDash, Uber Eats, Grubhub): a checkbox `id="plats-{p}-on"` (`data-bind="plats.{p}.on"`) "Compare {App}", the inputs for `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `pickDisc` (labels as §5.5), and the promo: `select id="promos-{p}-type"` (`data-bind="promos.{p}.type"`, `data-type="text"`: `none` "No promo", `percent` "% off", `dollar` "$ off", `freedel` "Free delivery") and inputs `promos-{p}-value`, `promos-{p}-cap`, `promos-{p}-min`. Shared: `regFee`, `smallMin`, `smallFee`. `id="plats-direct-on"` "Compare ordering direct". Under DoorDash, the note `"DoorDash publishes 15% service (5% with DashPass, on orders of $12 or more) for markets not yet on its newer fee model; check your own checkout."` (D-032).
+Each a labeled `input type="number"` with `data-bind` and `id` = the path with `.` → `-`: `tipDel` "Delivery tip (%)", `tipPick` "Pickup tip (%)", `wear` "Wear per mile ($)", `hourly` "Value of your time ($/hour)", `speed` "Average driving speed (mph)", `kwh` "Electricity ($/kWh)". Per app `p` (DoorDash, Uber Eats, Grubhub): a checkbox `id="plats-{p}-on"` (`data-bind="plats.{p}.on"`) "Compare {App}", the inputs for `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `pickDisc` (labels as §5.5), and the promo: `select id="promos-{p}-type"` (`data-bind="promos.{p}.type"`, `data-type="text"`: `none` "No promo", `percent` "% off", `dollar` "$ off", `freedel` "Free delivery", `bogo` "Buy one, get one free") and inputs `promos-{p}-value`, `promos-{p}-cap`, `promos-{p}-min`. **When `promos[p].type === "bogo"`** (D-036), right after the promo select: for a profiled `S.rest`, `select id="promos-{p}-item"` (`data-bind="promos.{p}.item"`, no `data-type`, so `""` commits `null` and `"3"` commits `3`) labeled `"Free item"`, with a first option `value=""` `"Pick the item…"` and then one option per menu index `i` (`value="{i}"`, text = the item's `name`), the one equal to `promos[p].item` selected; otherwise (no restaurant, or an unprofiled one) `[data-testid="bogo-note-{p}"]` `"Buy one, get one free needs a restaurant with a menu."`. A result whose BOGO applied shows its `"BOGO: {name}"` note as a tag (§5.5) and a `Promo` receipt line. Shared: `regFee`, `smallMin`, `smallFee`. `id="plats-direct-on"` "Compare ordering direct". Under DoorDash, the note `"DoorDash publishes 15% service (5% with DashPass, on orders of $12 or more) for markets not yet on its newer fee model; check your own checkout."` (D-032).
 
 ### 5.10 `fine`
 
@@ -170,7 +170,7 @@ Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {B
 
 ## 8. What the page leaves to later phases
 
-Deep links on result rows (Phase 9), per-item markup (Phase 6), the Worker (Phase 8), a VIN box (Phase 7).
+Deep links on result rows (Phase 9), the Worker (Phase 8), a VIN box (Phase 7). Per-item markup (Phase 6, D-036) has no control of its own: an override comes from the profile data and shows only through the results; per-item app prices typed by the user are ISS-036.
 
 ## 9. `POD.util.esc`
 

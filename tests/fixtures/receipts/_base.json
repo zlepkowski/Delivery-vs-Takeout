@@ -4,14 +4,14 @@
     "rest": {
       "id": "dominos", "name": "Domino's", "profiled": true,
       "menu": [
-        ["Large (14\") ExtravaganZZa", 21.99, false],
-        ["Large (14\") The People's Pizza - Deluxe", 21.99, false],
-        ["Hot Buffalo Wings (8 pc)", 11.99, false],
-        ["Stuffed Cheesy Bread (8 pc)", 9.99, false],
-        ["Parmesan Bread Bites (16 pc)", 6.99, false],
-        ["5-Cheese Mac & Cheese", 9.49, false],
-        ["Coke® (2 L)", 4.99, false],
-        ["Domino's Marbled Cookie Brownie", 9.99, false]
+        {"name": "Large (14\") ExtravaganZZa", "price": 21.99, "dealItem": false},
+        {"name": "Large (14\") The People's Pizza - Deluxe", "price": 21.99, "dealItem": false},
+        {"name": "Hot Buffalo Wings (8 pc)", "price": 11.99, "dealItem": false},
+        {"name": "Stuffed Cheesy Bread (8 pc)", "price": 9.99, "dealItem": false},
+        {"name": "Parmesan Bread Bites (16 pc)", "price": 6.99, "dealItem": false},
+        {"name": "5-Cheese Mac & Cheese", "price": 9.49, "dealItem": false},
+        {"name": "Coke® (2 L)", "price": 4.99, "dealItem": false},
+        {"name": "Domino's Marbled Cookie Brownie", "price": 9.99, "dealItem": false}
       ],
       "deal": null, "directDelivery": false, "directSvc": null, "amexGoldDirect": false,
       "platforms": ["dd", "ue"], "markup": {"dd": 15.3, "ue": 15.3}, "markupEst": true

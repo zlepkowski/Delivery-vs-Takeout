@@ -60,7 +60,7 @@ def _first(R, pred):
 def _cheapest(menu, idxs):
     best = None
     for i in idxs:
-        if best is None or menu[i][1] < menu[best][1]:
+        if best is None or menu[i]["price"] < menu[best]["price"]:
             best = i
     return best
 
@@ -93,7 +93,7 @@ def unlock(F, R):
     if not ci["shortBy"] > 0:
         return None
     menu = rest.get("menu") or []
-    j = _cheapest(menu, [i for i in range(len(menu)) if menu[i][2] is True])
+    j = _cheapest(menu, [i for i in range(len(menu)) if menu[i].get("dealItem") is True])
     if j is None:
         return None
     cart2 = _cart_plus(F.get("cart"), j, ci["shortBy"])
@@ -106,10 +106,10 @@ def unlock(F, R):
     if best is None:
         return None
     was = _find(R, best["id"])["net"]
-    text = ("Add " + str(ci["shortBy"]) + " × " + menu[j][0] + " and " + deal["label"] + " applies: "
+    text = ("Add " + str(ci["shortBy"]) + " × " + menu[j]["name"] + " and " + deal["label"] + " applies: "
             + best["name"] + " comes to " + money(best["net"]) + " (now " + money(was) + ").")
     return _ins("unlock", "Unlock", "good" if best["net"] <= R[0]["net"] else "", text,
-                {"n": ci["shortBy"], "item": menu[j][0], "channel": best["id"], "net": best["net"], "was": was})
+                {"n": ci["shortBy"], "item": menu[j]["name"], "channel": best["id"], "net": best["net"], "was": was})
 
 
 def distance(F, R):
@@ -160,7 +160,8 @@ def minimum(F, R):
         if r["plat"] == "direct":
             continue
         pr = (F.get("promos") or {}).get(r["plat"])
-        if not _obj(pr) or pr.get("type") not in ("percent", "dollar", "freedel"):
+        types = ("percent", "dollar", "freedel", "bogo") if profiled else ("percent", "dollar", "freedel")
+        if not _obj(pr) or pr.get("type") not in types:   # D-036: bogo needs a menu
             continue
         mn = pr.get("min")
         if not (_num(mn) and mn > 0) or not r["parts"]["food"] < mn:
@@ -179,7 +180,7 @@ def minimum(F, R):
                     break
             if a is None:
                 continue
-            add_qty, add_item, add_amount = k, menu[j][0], E.round2(k * menu[j][1])
+            add_qty, add_item, add_amount = k, menu[j]["name"], E.round2(k * menu[j]["price"])
         else:
             pl = (F.get("plats") if _obj(F.get("plats")) else {}).get(r["plat"])
             mk = pl.get("markup") if _obj(pl) else None
@@ -331,6 +332,8 @@ def build(F, R, now):
         return []
     if F["rest"].get("profiled") is True and not isinstance(F["rest"].get("menu"), list):
         return []
+    if F["rest"].get("profiled") is True and not all(_obj(it) for it in F["rest"]["menu"]):
+        return []   # D-036: every menu item is an object
     ms = E.cart_info(F)["menuSub"]
     if not (_num(ms) and ms > 0):
         return []

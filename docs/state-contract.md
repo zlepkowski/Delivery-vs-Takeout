@@ -1,5 +1,7 @@
 # State contract (v5, Phase 4)
 
+*Amended 2026-11-14 (D-036, Phase 6):* `promos[p].item` (§2, §8), and `setBrand` clears it (§6).
+
 The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, the derivation cascade, the wallet, and persistence. It fills in BUILD.md §3 and §5. **Where this file and BUILD.md §5 differ, this file wins** (D-031). Change it only by a decision; the hand-worked scenarios (`tests/fixtures/state/`) change first, the code after.
 
 ## 0. Rules for every function
@@ -65,7 +67,7 @@ A **trip status** is `{ status, need, partial }`: `status` is `"ok"`, `"need"` (
           member: false, memberOwn: false, cardMember: true },
     ue: { … from P.ue … },  gh: { … from P.gh … }
   },
-  promos: { dd: { type: "none", value: 0, cap: 0, min: 0 }, ue: { … }, gh: { … } }
+  promos: { dd: { type: "none", value: 0, cap: 0, min: 0, item: null }, ue: { … }, gh: { … } }
 }
 ```
 
@@ -73,7 +75,7 @@ A **trip status** is `{ status, need, partial }`: `status` is `"ok"`, `"need"` (
 
 An empty default is expected, not an error: on 2026-11-13 every app's delivery fee is `null` (D-032).
 
-Field meanings beyond BUILD.md §5: `pos` = `{lat, lon, src}` with `src` `"zip"` (a ZIP centroid) or `"gps"`; `storePicked` = the user chose `store` (not the nearest); `milesSrc` = `"store"`, `"estimate"`, `"pinned"` or `null`; `usedIn` = `{creditKey: periodId}`; `manualCredits` = the user's own credits (§5.3); `memberOwn` = "I pay for this membership"; `cardMember` = "use the membership my card includes" (D-024: on by default, the user can turn it off); `member` is derived (§5.4).
+Field meanings beyond BUILD.md §5: `promos[p].item` = the menu index a `bogo` promo is on, or `null` (D-036, engine contract §5.4); `pos` = `{lat, lon, src}` with `src` `"zip"` (a ZIP centroid) or `"gps"`; `storePicked` = the user chose `store` (not the nearest); `milesSrc` = `"store"`, `"estimate"`, `"pinned"` or `null`; `usedIn` = `{creditKey: periodId}`; `manualCredits` = the user's own credits (§5.3); `memberOwn` = "I pay for this membership"; `cardMember` = "use the membership my card includes" (D-024: on by default, the user can turn it off); `member` is derived (§5.4).
 
 ## 3. `getPath` / `setPath`
 
@@ -175,7 +177,7 @@ For each app `p`: `plats[p].member = plats[p].memberOwn === true || (cardHas(p) 
 - `setAddress(S, D, text, opts)`: `address = text` if it's a string, else `""`; `pos = null` (a typed address replaces a GPS position); `applyAddress`; then the trip (as in `derive`'s last step).
 - `setPosition(S, D, lat, lon, opts)`: lat in [−90, 90] and lon in [−180, 180], finite, else return `null` and change nothing. `pos = {lat, lon, src: "gps"}`; `applyAddress`; the trip.
 - `setCar(S, D, make, model)`: `make` and `model` are each the argument if it's a string, else `""`. If the new pair differs from the previous `(S.make, S.model)` and isn't in `D.CAR_DATA` (the §4.1 lookup), `mpg = null` and `miPerKwh = null` (`fuel` is kept): they belonged to the previous car, and the user now enters their own. Then `applyCar`. *(Amended 2026-11-14, review of 5.3: "Other" kept the previous car's 46 mpg, so the page priced the old car without asking. `applyCar` itself is unchanged, so a reload keeps the user's own values.)*
-- `setBrand(S, D, brandId, opts)`: `brand` = the string, or `null`; `cart = {}`; `dealOn = true`; `store = null`; `storePicked = false`; `applyBrand`. Then, if `milesBy` has an own key `brand` with a finite number ≥ 0: `miles` = it, `milesAuto = false`, `milesSrc = "pinned"`, `applyMinutes`, return `{status: "off", …}`. Else `milesAuto = true` and return `autoMiles`. (`manualSubtotal` is kept.)
+- `setBrand(S, D, brandId, opts)`: `brand` = the string, or `null`; `cart = {}`; `dealOn = true`; every app's `promos[p].item = null` (D-036: an index into the old menu would name a different item in the new one; the promo's type and numbers stay); `store = null`; `storePicked = false`; `applyBrand`. Then, if `milesBy` has an own key `brand` with a finite number ≥ 0: `miles` = it, `milesAuto = false`, `milesSrc = "pinned"`, `applyMinutes`, return `{status: "off", …}`. Else `milesAuto = true` and return `autoMiles`. (`manualSubtotal` is kept.)
 - `pickStore(S, D, store, opts)`: `store` must be an object with a string `brand`, a string `id` that starts with `brand + "@"`, and finite `lat` and `lon` in range (a `storesNear` row), else return `null` and change nothing. If `store.brand !== S.brand`, run `setBrand(S, D, store.brand, opts)` first. Then `S.store = {id, lat, lon}`, `storePicked = true`, `milesAuto = true`, delete `milesBy[brand]`; return `autoMiles` (which takes step 3).
 - `setQty(S, index, qty)`: `S.rest` must be profiled, `index` an integer with `0 <= index < rest.menu.length`, and `qty` an integer ≥ 0, else `false`. `qty > 0` sets `cart[String(index)] = qty`; `0` deletes the key. `true`. (`setPath` can't do this: it never creates keys.)
 - `pinMiles(S, miles)`: `miles` must be a finite number ≥ 0, else `false`. `S.miles = miles` (as given, not rounded), `milesAuto = false`, `milesSrc = "pinned"`; if `brand` is a string, `milesBy[brand] = miles`; `applyMinutes`; `true`.
@@ -223,7 +225,7 @@ The key is `POD.STORAGE_KEY` (`"pod.v5"`, D-010). `storage` is any object with `
   - `pos`: `{lat, lon, src: "gps"}` with a valid position. `store`: `{id: string, lat, lon}` with finite numbers (or `null`).
   - `cart`: an object; keep each key that is a canonical non-negative integer (`"0"`, `"12"`) with an integer value ≥ 0. `milesBy`: keep string keys with finite numbers ≥ 0. `creditOptIn`: keep keys whose value is `true`. `usedIn`: keep keys whose value is a string.
   - `cards`: an array; keep the strings. `manualCredits`: an array; keep each entry `addManualCredit` would accept that also has a `key` matching `/^manual\.[1-9][0-9]{0,8}$/` (at most 9 digits, so the next key stays an exact integer), the first one with a given key only, stored as `addManualCredit` stores it (`{key, name, amount, cadence, plats, modes?}`, `cadence` defaulting to `"once"`, nothing else).
-  - `plats`: per app and field as in `fresh`: numbers finite ≥ 0, booleans boolean (`markup` and `member` are derived and never loaded). `promos`: per app **and field**: `type` one of `none`, `percent`, `dollar`, `freedel`; `value`, `cap`, `min` finite ≥ 0. A bad field falls back alone (a bad `type` with a good `value` gives `{type: "none", value: …}`).
+  - `plats`: per app and field as in `fresh`: numbers finite ≥ 0, booleans boolean (`markup` and `member` are derived and never loaded). `promos`: per app **and field**: `type` one of `none`, `percent`, `dollar`, `freedel`, `bogo`; `value`, `cap`, `min` finite ≥ 0; `item` an integer ≥ 0 (a finite number `x` with `Math.floor(x) === x`) or `null` (D-036). `load` doesn't check `item` against the menu: the engine gives no promo for an index past it. A bad field falls back alone (a bad `type` with a good `value` gives `{type: "none", value: …}`).
   - Unknown fields and unknown apps are dropped.
   Then `derive(S, D, now, opts)`. `load` never throws and never writes to `storage`. A storage that throws on every call gives exactly `derive(fresh(D))`.
 
@@ -231,4 +233,4 @@ The key is `POD.STORAGE_KEY` (`"pod.v5"`, D-010). `storage` is any object with `
 
 - Event wiring, `data-bind`, rendering, tile loading and geolocation: Phase 5 (`app.js`, `render.js`). The page calls `save` after each change and runs `derive` again when tiles arrive.
 - Which defaults to show when `missing(S)` isn't empty (and a first-visit example): Phase 5.
-- Per-item markup: Phase 6.
+- Per-item markup (Phase 6, D-036) needs no state field: an override lives on the menu item in `PROFILES` and reaches the engine through `rest`. Per-item app prices typed by the user are not modeled (ISS-036).

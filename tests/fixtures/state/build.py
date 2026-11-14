@@ -38,7 +38,7 @@ S1 = {
     "BRANDS_RUN": "run-S",
     "TILE_INDEX": {"40_-74": 3},
     "TILES": {"40_-74": {"run": "run-S", "s": "0,40100,-74000;1,40030,-74000;1,40050,-74000"}},
-    "PROFILES": {"pz": {"menu": [["Large", 20, True], ["Wings", 10, False]],
+    "PROFILES": {"pz": {"menu": [{"name": "Large", "price": 20, "dealItem": True}, {"name": "Wings", "price": 10, "dealItem": False}],
                         "deal": {"label": "2 large for $15 each", "price": 15, "minItems": 2, "scope": "pickup"},
                         "markup": {"dd": 20, "ue": 25}, "markupEst": False, "directDelivery": True, "directFee": 4,
                         "amexGoldDirect": False, "platforms": ["dd", "ue"]}},
@@ -66,7 +66,7 @@ D_ABOUT = ("S1: fixture values, not claims about the world. NY ZIPs 10001-10007 
 def ok(partial=False): return {"status": "ok", "need": [], "partial": partial}
 OFF = {"status": "off", "need": [], "partial": False}
 APP_DEF = lambda p: dict(S1["DEFAULTS"]["plats"][p], on=True, markup=None, member=False, memberOwn=False, cardMember=True)
-PROMO0 = {"type": "none", "value": 0, "cap": 0, "min": 0}
+PROMO0 = {"type": "none", "value": 0, "cap": 0, "min": 0, "item": None}   # item: D-036
 
 SC = []
 def sc(cid, refs, steps, expect, work, **kw):
@@ -397,6 +397,23 @@ sc("ready: missing is empty, gh is switched off for the engine", ["§7", "D-032"
    % (m_pz, m_pz, energy, m_pz, wearc, drive, dp, dir_d, dd_d, dd_p, ue_p, ue_d))
 dd_food_m = dd_food
 dd_d_m_gross = r2(dd_food + r2(0 + r2(max(dd_food * 5 / 100, 3))) + r2(dd_food * 8.875 / 100) + r2(dd_food * 0.15))
+# D-036: a BOGO set through state reaches the engine. dd: 20%. food = 20 x 2 x 1.2 = 48; promo = 20 x 1 x 1.2 = 24 (one of the
+# two Large free); tax on (48 - 24) x 8.875% = 2.13; dd-p = 48 + 2.13 + drive - 24.
+dd_p_bogo = r2(r2(dd_food + r2((dd_food - 24) * 8.875 / 100) + drive) - 24)
+sc("ready: a BOGO promo set through state reaches the engine", ["§7", "D-036"],
+   setup + [st("setPath", "promos.dd.type", "bogo", returns=True), st("setPath", "promos.dd.item", 0, returns=True)], {
+    "promos.dd": {"type": "bogo", "value": 0, "cap": 0, "min": 0, "item": 0}, "$forEngine.promos.dd.item": 0,
+    "$calc.dd-p.disc": 24, "$calc.dd-p.net": dd_p_bogo, "$calc.dd-p.notes": ["BOGO: Large"], "$calc.ue-p.net": ue_p},
+   "pz cart {0: 2} on DoorDash (20%%): food 48, BOGO 24, tax round2(24 x 8.875%%) = 2.13, so dd-p = round2(48 + 2.13 + %.2f) - 24 = %.2f. Uber Eats has no promo: %.2f as above."
+   % (drive, dd_p_bogo, ue_p))
+sc("setBrand clears every BOGO item: an index into the old menu would name another item", ["§6", "D-036"],
+   setup + [st("setPath", "promos.dd.type", "bogo"), st("setPath", "promos.dd.item", 0, returns=True),
+            st("setPath", "promos.ue.item", 1, returns=True), st("setBrand", "bg")], {
+    "promos.dd": {"type": "bogo", "value": 0, "cap": 0, "min": 0, "item": None}, "promos.ue.item": None, "promos.gh.item": None,
+    "cart": {}}, "setBrand sets every app's promos.item to null and keeps the promo type and numbers.")
+sc("setBrand clears the BOGO item even for the same brand", ["§6", "D-036"],
+   setup + [st("setPath", "promos.dd.item", 1), st("setBrand", "pz")], {"promos.dd.item": None, "cart": {}},
+   "setBrand always empties the cart and clears the items, as it always resets the deal switch.")
 sc("ready: a card's membership and credit reach the engine", ["§5.4", "§5.1", "§7"],
    setup + [st("toggleCard", "c_dd", True)], {
     "$calc.dd-d.net": r2(dd_d_m_gross - 5), "$calc.dd-d.member": "DashPass", "$calc.dd-p.net": dd_p},
@@ -476,7 +493,7 @@ sc("save then load: user fields come back, derived ones are rebuilt", ["§8", "�
     "plats.dd.markup": 20, "cart": {"0": 2}, "miles": 7, "minutes": 14, "milesAuto": False, "milesSrc": "pinned", "milesBy": {"pz": 7},
     "cards": ["c_gold"], "creditOptIn": {"c_gold.resy": True}, "usedIn": {"c_gold.dining": "2026-11"},
     "credits": gold(used=True, resy=["direct"]) + [man1], "tipDel": 20, "plats.dd.member": True,
-    "promos.ue": {"type": "percent", "value": 20, "cap": 0, "min": 0}, "plats.gh.delFee": 3.49,
+    "promos.ue": {"type": "percent", "value": 20, "cap": 0, "min": 0, "item": None}, "plats.gh.delFee": 3.49,
     "$savedKeys": USER_KEYS, "$saved.plats.dd": {"on": True, "delFee": 2.99, "svc": 15, "svcMin": 3, "memberSvc": 5,
     "memberMin": 12, "pickDisc": 0, "memberOwn": True, "cardMember": True}, "$saved.pos": "$absent"},
    "save writes only the user fields (no rest, tax, credits, member, markup, milesSrc; pos only when GPS); load merges them over fresh and runs derive, which sets milesSrc back to pinned because milesAuto is false.",
@@ -497,7 +514,8 @@ bad = {"tipDel": "abc", "tipPick": -1, "cards": ["c_gold", 5, "c_zz", "c_gold"],
        "cart": {"0": 2, "x": 1, "01": 3, "1": 1.5, "2": -1}, "milesBy": {"pz": 7, "bg": "far"},
        "creditOptIn": {"c_gold.resy": True, "c_gold.dining": "yes"}, "usedIn": {"c_gold.dining": "2026-11", "x": 5},
        "pos": {"lat": 40, "lon": -74, "src": "zip"}, "store": {"id": "pz@40030,-74000", "lat": "40.03", "lon": -74},
-       "promos": {"ue": {"type": "bogo", "value": 5, "cap": 0, "min": 0}, "dd": {"type": "dollar", "value": 5, "cap": 0, "min": 15}},
+       "promos": {"ue": {"type": "bxgy", "value": 5, "cap": 0, "min": 0, "item": 1.5}, "dd": {"type": "dollar", "value": 5, "cap": 0, "min": 15},
+                  "gh": {"type": "bogo", "item": 1}},
        "manualCredits": [{"key": "manual.1", "name": "Gift", "amount": 20, "plats": ["direct"]},
                          {"key": "manual.1", "name": "Dup", "amount": 5, "plats": ["dd"]},
                          {"key": "bad", "name": "Bad key", "amount": 5, "plats": ["dd"]},
@@ -508,16 +526,25 @@ sc("load: each saved field is checked on its own", ["§8"], [st("load")], {
     "plats.dd.svc": 15, "plats.dd.delFee": 4.49, "plats.dd.member": False, "plats.dd.markup": None, "plats.dd.memberOwn": False,
     "cart": {"0": 2}, "milesBy": {"pz": 7}, "creditOptIn": {"c_gold.resy": True}, "usedIn": {"c_gold.dining": "2026-11"},
     "pos": {"lat": 40, "lon": -74, "src": "zip"}, "store": None,
-    "promos.ue": {"type": "none", "value": 5, "cap": 0, "min": 0}, "promos.dd": {"type": "dollar", "value": 5, "cap": 0, "min": 15},
+    "promos.ue": {"type": "none", "value": 5, "cap": 0, "min": 0, "item": None}, "promos.dd": {"type": "dollar", "value": 5, "cap": 0, "min": 15, "item": None},
+    "promos.gh": {"type": "bogo", "value": 0, "cap": 0, "min": 0, "item": 1},
     "manualCredits": [{"key": "manual.1", "name": "Gift", "amount": 20, "cadence": "once", "plats": ["direct"]}],
     "address": "10001", "state": "NY", "mpg": None, "$has.unknownField": False, "$has.plats.zz": False,
     "$storageWrites": 0},
-   ("Bad types fall back to fresh: tipDel string, tipPick < 0, speed 0, fuel jet, brand 42, dd.svc < 0, memberOwn 'yes', store lat string, ue promo type bogo (the type alone falls back; value 5 is a valid number and stays). "
+   ("Bad types fall back to fresh: tipDel string, tipPick < 0, speed 0, fuel jet, brand 42, dd.svc < 0, memberOwn 'yes', store lat string, ue promo type bxgy (the type alone falls back; value 5 is a valid number and stays; item 1.5 isn't an integer -> null). gh's bogo type and item 1 are valid (D-036); its missing numbers stay fresh. "
     "member and markup are derived, never loaded. cards keeps the strings, then syncCredits prunes c_zz and the duplicate. cart keeps only canonical keys with integer qty >= 0. "
     "The saved pos is a ZIP position (not GPS), so it's ignored, and derive re-derives pos from the address. manualCredits keeps the first valid manual.1. "
     "mpg and miles may be null. Unknown fields and apps are dropped. load never writes to storage."),
    storage={"kind": "memory", "value": json.dumps(bad)})
 SC[-1]["expect"]["pos"] = {"lat": 40, "lon": -74, "src": "zip"}   # derived from address 10001 = 40.000, -74.000
+
+items = {"brand": "pz", "address": "10001", "promos": {"dd": {"type": "bogo", "item": "0"}, "ue": {"type": "bogo", "item": True},
+                                                  "gh": {"type": "bogo", "item": 7}}}
+sc("load: a BOGO item must be an integer >= 0; one past the menu is kept (load doesn't read the menu)", ["§8", "D-036"],
+   [st("load")], {"promos.dd": {"type": "bogo", "value": 0, "cap": 0, "min": 0, "item": None},
+                  "promos.ue.item": None, "promos.gh.item": 7, "rest.id": "pz", "$storageWrites": 0},
+   "\"0\" is a string and true a boolean: each falls back to null alone, the type bogo stays. 7 is an integer >= 0, kept; the engine gives no promo for an index past the menu (engine contract §5.4).",
+   storage={"kind": "memory", "value": json.dumps(items)})
 
 big = {"manualCredits": [{"key": "manual.1234567890", "name": "Big", "amount": 5, "plats": ["dd"]},
                          {"key": "manual.123456789", "name": "Ok", "amount": 6, "plats": ["ue"]}]}

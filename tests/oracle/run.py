@@ -161,7 +161,19 @@ def gen_scenario(seed):
     profiled = r.random() < 0.8
     if profiled:
         n = r.randint(1, 10)
-        menu = [["Item %d" % i, money(0.5, 30), r.random() < 0.4] for i in range(n)]
+        menu = []
+        for i in range(n):
+            it = {"name": "Item %d" % i, "price": money(0.5, 30), "dealItem": r.random() < 0.4}
+            if r.random() < 0.4:   # D-036: per-item overrides, some malformed (they fall back)
+                mk = {}
+                for p in APPS:
+                    roll = r.random()
+                    if roll < 0.45:
+                        mk[p] = r.choice([0, pct(0, 45), pct(0, 45), r.randint(5, 40)])
+                    elif roll < 0.55:
+                        mk[p] = r.choice([-5, "20", None, True, [10], {"v": 10}])
+                it["markup"] = mk if r.random() < 0.95 else r.choice([None, [12], "x", 7])
+            menu.append(it)
         deal = None if r.random() < 0.35 else {
             "label": "Deal %d" % r.randint(1, 9), "price": money(2, 20),
             "minItems": r.randint(1, 3), "scope": r.choice(["both", "pickup", "delivery"])}
@@ -203,8 +215,17 @@ def gen_scenario(seed):
             "pickDisc": r.choice([0, 0, pct(1, 25)])}
         if r.random() < 0.15:
             plats[p]["noDelivery"] = True   # D-033
-        t = r.choice(["none", "percent", "dollar", "freedel"])
+        t = r.choice(["none", "percent", "dollar", "freedel", "bogo", "bogo"])
         pr = {"type": t, "value": pct(5, 60) if t == "percent" else (money(1, 40) if t == "dollar" else 0)}
+        if t == "bogo" or r.random() < 0.1:   # D-036: a menu index, sometimes invalid (no promo)
+            nm = len(rest["menu"])
+            roll = r.random()
+            if roll < 0.75 and nm:
+                pr["item"] = r.randrange(nm)
+                if r.random() < 0.6:
+                    cart[str(pr["item"])] = r.randint(0, 5)
+            elif roll < 0.95:
+                pr["item"] = r.choice([None, -1, nm, nm + 3, 1.5, "0", True, [0]])
         if r.random() < 0.7:
             pr["cap"] = r.choice([0, money(2, 20)])
         if r.random() < 0.7:
@@ -253,8 +274,7 @@ def gen_scenario(seed):
     # Boundary injection: put a threshold exactly on an app's food, so >= vs > is tested.
     if r.random() < 0.35:
         p = r.choice(APPS)
-        base = E.cart_info(S, ov)["menuSub"]
-        food = E.round2(base * (1 + plats[p]["markup"] / 100))
+        food = app_food(S, p, ov)
         which = r.choice(["memberMin", "promoMin", "smallMin"])
         if which == "memberMin":
             plats[p]["memberMin"] = food
@@ -263,6 +283,17 @@ def gen_scenario(seed):
         else:
             S["smallMin"] = food
     return S, ov
+
+
+def app_food(S, p, ov):
+    """App p's food (contract 5.2, D-036), for the boundary injection."""
+    rest, P = S["rest"], S["plats"][p]
+    if not rest["profiled"]:
+        return E.round2(E.cart_info(S, ov)["menuSub"] * (1 + P["markup"] / 100))
+    acc = 0
+    for i, q in E._cart_lines(rest, E._effective(S, ov)["cart"]):
+        acc = acc + rest["menu"][i]["price"] * q * (1 + E._mk(rest["menu"][i], p, P) / 100)
+    return E.round2(acc)
 
 
 def scenario_requests(i):
@@ -513,8 +544,8 @@ def insights_checks(failures):
             failures.append("insights fixture %s is stale vs the python reference: %s" % (c["id"], d))
         reqs.append({"F": F, "now": c["now"]})
     print("oracle: insights fixtures %d/%d cases match the python reference" % (len(doc["cases"]) - bad, len(doc["cases"])))
-    if len(doc["cases"]) < 41:
-        failures.append("insights: only %d fixture cases (at least 41 expected)" % len(doc["cases"]))
+    if len(doc["cases"]) < 45:
+        failures.append("insights: only %d fixture cases (at least 45 expected)" % len(doc["cases"]))
     if not os.path.exists(os.path.join(ROOT, "src", "js", "insights.js")):
         print("oracle: src/js/insights.js is not built yet, so the JS insights comparison is skipped")
         return
@@ -596,7 +627,17 @@ def main():
         print("oracle: receipts %d/%d cases match the JS engine" % (len(cases) - bad, len(cases)))
 
         bad_scen = set()
+        seen = {"bogo": set(), "itemMarkup": set()}
         for (i, req), res in zip(fuzz, js_fuzz):
+            if req["call"] == "calc":
+                v = py_call(req)
+                if v is not None and any(n.startswith("BOGO: ") for n in v["notes"]):
+                    seen["bogo"].add(i)
+                if v is not None and v["plat"] != "direct" and req["S"]["rest"]["profiled"]:
+                    plain = dict(req["S"], rest=dict(req["S"]["rest"], menu=[
+                        {k: x for k, x in it.items() if k != "markup"} for it in req["S"]["rest"]["menu"]]))
+                    if E.calc(plain, req["channel"], req.get("override"))["parts"]["food"] != v["parts"]["food"]:
+                        seen["itemMarkup"].add(i)
             if not res["ok"]:
                 d = "JS error: " + res["err"]
             else:
@@ -604,7 +645,11 @@ def main():
             if d and i not in bad_scen:
                 bad_scen.add(i)
                 failures.append("scenario seed %d (ORACLE_SEED=%d, index %d): %s" % (SEED + i, SEED, i, d))
-        print("oracle: %d seeded scenarios x %d calls: %d scenarios differ" % (N, len(fuzz) // max(N, 1), len(bad_scen)))
+        print("oracle: %d seeded scenarios x %d calls: %d scenarios differ; a BOGO applied in %d, a per-item markup moved food in %d"
+              % (N, len(fuzz) // max(N, 1), len(bad_scen), len(seen["bogo"]), len(seen["itemMarkup"])))
+        for k, v in seen.items():   # D-036: the fuzzer must keep exercising both features
+            if N >= 200 and len(v) < N // 20:
+                failures.append("scenarios: %s exercised in only %d of %d scenarios" % (k, len(v), N))
 
     geo_checks(failures)
     insights_checks(failures)

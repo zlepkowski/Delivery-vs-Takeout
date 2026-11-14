@@ -37,6 +37,27 @@ def _num(v, default=0):
     return default if v is None else v
 
 
+def _finite(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def _mk(item, p, P):
+    """The item's markup on app p (contract 2.1, D-036): its own override, else the app's."""
+    o = item.get("markup")
+    if isinstance(o, dict) and p in o and _finite(o[p]) and o[p] >= 0:
+        return o[p]
+    return _num(P.get("markup"))
+
+
+def _bogo_index(rest, j):
+    """pr.item when it names a menu item (contract 5.4, D-036), else None."""
+    if not rest.get("profiled") or not _finite(j) or math.floor(j) != j:
+        return None
+    j = int(j)
+    menu = rest.get("menu") or []
+    return j if 0 <= j < len(menu) else None
+
+
 def _effective(S, override):
     """The inputs after override (contract section 1)."""
     o = override or {}
@@ -80,9 +101,9 @@ def cart_info(S, override=None):
         elig = 0
         for i, q in lines:
             item = rest["menu"][i]
-            total = total + item[1] * q
+            total = total + item["price"] * q
             qty = qty + q
-            if item[2]:
+            if item.get("dealItem") is True:
                 elig = elig + q
         menu_sub = round2(total)
     deal_ready = deal is not None and elig >= deal["minItems"]
@@ -90,7 +111,7 @@ def cart_info(S, override=None):
         total = 0
         for i, q in lines:
             item = rest["menu"][i]
-            price = min(item[1], deal["price"]) if item[2] else item[1]
+            price = min(item["price"], deal["price"]) if item.get("dealItem") is True else item["price"]
             total = total + price * q
         deal_sub = round2(total)
     else:
@@ -140,8 +161,17 @@ def calc(S, ch, override=None):
         scope == "both" or (scope == "delivery" and m == "d") or (scope == "pickup" and m == "p"))
     base = ci["dealSub"] if deal_applied else ci["menuSub"]
 
-    # 5.2 markup
-    food = round2(base * (1 + _num(P.get("markup")) / 100)) if app else base
+    # 5.2 markup (D-036: profiled app food is a sum over the cart lines, rounded once)
+    if not app:
+        food = base
+    elif not rest.get("profiled"):
+        food = round2(base * (1 + _num(P.get("markup")) / 100))
+    else:
+        acc = 0
+        for i, q in _cart_lines(rest, eff["cart"]):
+            item = rest["menu"][i]
+            acc = acc + item["price"] * q * (1 + _mk(item, p, P) / 100)
+        food = round2(acc)
 
     # 5.3 fees
     delivery = service = small = reg = dsvc = 0
@@ -164,6 +194,7 @@ def calc(S, ch, override=None):
     # 5.4 discounts (apps only)
     promo = pick = 0
     t = "none"
+    pr = {}
     if app:
         pr = (S.get("promos") or {}).get(p) or {"type": "none"}
         t = pr.get("type") or "none"
@@ -175,6 +206,13 @@ def calc(S, ch, override=None):
                 promo = round2(_num(pr.get("value")))
             elif t == "freedel":
                 promo = delivery if m == "d" else 0
+            elif t == "bogo":
+                j = _bogo_index(rest, pr.get("item"))
+                cart = eff["cart"]
+                if j is not None and str(j) in cart:
+                    item = rest["menu"][j]
+                    free = math.floor(cart[str(j)] / 2)
+                    promo = round2(_cap(item["price"] * free * (1 + _mk(item, p, P) / 100), pr.get("cap")))
         pick = round2(food * _num(P.get("pickDisc")) / 100) if m == "p" else 0
         promo = min(promo, food)
         pick = round2(min(pick, food - promo))
@@ -254,6 +292,8 @@ def calc(S, ch, override=None):
     notes = []
     if deal_applied:
         notes.append("Deal: " + deal["label"])
+    if app and t == "bogo" and promo > 0:
+        notes.append("BOGO: " + rest["menu"][_bogo_index(rest, pr.get("item"))]["name"])
     if not rest.get("profiled"):
         notes.append("Estimate")
 

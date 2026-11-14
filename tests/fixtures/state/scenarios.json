@@ -70,16 +70,16 @@
    "PROFILES": {
     "pz": {
      "menu": [
-      [
-       "Large",
-       20,
-       true
-      ],
-      [
-       "Wings",
-       10,
-       false
-      ]
+      {
+       "name": "Large",
+       "price": 20,
+       "dealItem": true
+      },
+      {
+       "name": "Wings",
+       "price": 10,
+       "dealItem": false
+      }
      ],
      "deal": {
       "label": "2 large for $15 each",
@@ -505,19 +505,22 @@
       "type": "none",
       "value": 0,
       "cap": 0,
-      "min": 0
+      "min": 0,
+      "item": null
      },
      "ue": {
       "type": "none",
       "value": 0,
       "cap": 0,
-      "min": 0
+      "min": 0,
+      "item": null
      },
      "gh": {
       "type": "none",
       "value": 0,
       "cap": 0,
-      "min": 0
+      "min": 0,
+      "item": null
      }
     },
     "$missing": [
@@ -3896,6 +3899,219 @@
    "work": "pz, cart {0: 2}: menuSub 40; the pickup deal (2 flagged items) makes direct-p 2 x 15 = 30. Trip 5.2 mi: gas round2(5.2/30 x 4.10) = 0.71, wear round2(5.2 x 0.11) = 0.57, drive 1.28. direct-p: 30 + tax round2(2.6625)=2.66 + drive = 33.94. direct-d: 40 + fee 4 + tax 3.55 + tip 6 = 53.55. dd: food 48 (20%). dd-d: 48 + (2.99 + max(7.2, 3)) + tax 4.26 + tip 7.2 = 69.65. dd-p: 48 + 4.26 + drive = 53.54. ue: food 50 (25%). ue-p: 50 + tax round2(4.4375)=4.44 + drive = 55.72. ue-d: 50 + (1.99 + 7.5) + 4.44 + 7.5 = 71.43. gh: not in pz's platforms, and switched off anyway."
   },
   {
+   "id": "ready: a BOGO promo set through state reaches the engine",
+   "refs": [
+    "§7",
+    "D-036"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.dd.type",
+      "bogo"
+     ],
+     "returns": true
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.dd.item",
+      0
+     ],
+     "returns": true
+    }
+   ],
+   "expect": {
+    "promos.dd": {
+     "type": "bogo",
+     "value": 0,
+     "cap": 0,
+     "min": 0,
+     "item": 0
+    },
+    "$forEngine.promos.dd.item": 0,
+    "$calc.dd-p.disc": 24,
+    "$calc.dd-p.net": 27.41,
+    "$calc.dd-p.notes": [
+     "BOGO: Large"
+    ],
+    "$calc.ue-p.net": 55.72
+   },
+   "work": "pz cart {0: 2} on DoorDash (20%): food 48, BOGO 24, tax round2(24 x 8.875%) = 2.13, so dd-p = round2(48 + 2.13 + 1.28) - 24 = 27.41. Uber Eats has no promo: 55.72 as above."
+  },
+  {
+   "id": "setBrand clears every BOGO item: an index into the old menu would name another item",
+   "refs": [
+    "§6",
+    "D-036"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.dd.type",
+      "bogo"
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.dd.item",
+      0
+     ],
+     "returns": true
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.ue.item",
+      1
+     ],
+     "returns": true
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "bg"
+     ]
+    }
+   ],
+   "expect": {
+    "promos.dd": {
+     "type": "bogo",
+     "value": 0,
+     "cap": 0,
+     "min": 0,
+     "item": null
+    },
+    "promos.ue.item": null,
+    "promos.gh.item": null,
+    "cart": {}
+   },
+   "work": "setBrand sets every app's promos.item to null and keeps the promo type and numbers."
+  },
+  {
+   "id": "setBrand clears the BOGO item even for the same brand",
+   "refs": [
+    "§6",
+    "D-036"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "promos.dd.item",
+      1
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    }
+   ],
+   "expect": {
+    "promos.dd.item": null,
+    "cart": {}
+   },
+   "work": "setBrand always empties the cart and clears the items, as it always resets the deal switch."
+  },
+  {
    "id": "ready: a card's membership and credit reach the engine",
    "refs": [
     "§5.4",
@@ -4625,7 +4841,8 @@
      "type": "none",
      "value": 0,
      "cap": 0,
-     "min": 0
+     "min": 0,
+     "item": null
     },
     "cards": [],
     "tipDel": null,
@@ -4851,7 +5068,8 @@
      "type": "percent",
      "value": 20,
      "cap": 0,
-     "min": 0
+     "min": 0,
+     "item": null
     },
     "plats.gh.delFee": 3.49,
     "$savedKeys": [
@@ -5151,13 +5369,22 @@
      "type": "none",
      "value": 5,
      "cap": 0,
-     "min": 0
+     "min": 0,
+     "item": null
     },
     "promos.dd": {
      "type": "dollar",
      "value": 5,
      "cap": 0,
-     "min": 15
+     "min": 15,
+     "item": null
+    },
+    "promos.gh": {
+     "type": "bogo",
+     "value": 0,
+     "cap": 0,
+     "min": 0,
+     "item": 1
     },
     "manualCredits": [
      {
@@ -5177,10 +5404,42 @@
     "$has.plats.zz": false,
     "$storageWrites": 0
    },
-   "work": "Bad types fall back to fresh: tipDel string, tipPick < 0, speed 0, fuel jet, brand 42, dd.svc < 0, memberOwn 'yes', store lat string, ue promo type bogo (the type alone falls back; value 5 is a valid number and stays). member and markup are derived, never loaded. cards keeps the strings, then syncCredits prunes c_zz and the duplicate. cart keeps only canonical keys with integer qty >= 0. The saved pos is a ZIP position (not GPS), so it's ignored, and derive re-derives pos from the address. manualCredits keeps the first valid manual.1. mpg and miles may be null. Unknown fields and apps are dropped. load never writes to storage.",
+   "work": "Bad types fall back to fresh: tipDel string, tipPick < 0, speed 0, fuel jet, brand 42, dd.svc < 0, memberOwn 'yes', store lat string, ue promo type bxgy (the type alone falls back; value 5 is a valid number and stays; item 1.5 isn't an integer -> null). gh's bogo type and item 1 are valid (D-036); its missing numbers stay fresh. member and markup are derived, never loaded. cards keeps the strings, then syncCredits prunes c_zz and the duplicate. cart keeps only canonical keys with integer qty >= 0. The saved pos is a ZIP position (not GPS), so it's ignored, and derive re-derives pos from the address. manualCredits keeps the first valid manual.1. mpg and miles may be null. Unknown fields and apps are dropped. load never writes to storage.",
    "storage": {
     "kind": "memory",
-    "value": "{\"tipDel\": \"abc\", \"tipPick\": -1, \"cards\": [\"c_gold\", 5, \"c_zz\", \"c_gold\"], \"speed\": 0, \"fuel\": \"jet\", \"brand\": 42, \"plats\": {\"dd\": {\"svc\": -3, \"delFee\": 4.49, \"member\": true, \"markup\": 99, \"memberOwn\": \"yes\"}, \"zz\": {\"on\": true}}, \"cart\": {\"0\": 2, \"x\": 1, \"01\": 3, \"1\": 1.5, \"2\": -1}, \"milesBy\": {\"pz\": 7, \"bg\": \"far\"}, \"creditOptIn\": {\"c_gold.resy\": true, \"c_gold.dining\": \"yes\"}, \"usedIn\": {\"c_gold.dining\": \"2026-11\", \"x\": 5}, \"pos\": {\"lat\": 40, \"lon\": -74, \"src\": \"zip\"}, \"store\": {\"id\": \"pz@40030,-74000\", \"lat\": \"40.03\", \"lon\": -74}, \"promos\": {\"ue\": {\"type\": \"bogo\", \"value\": 5, \"cap\": 0, \"min\": 0}, \"dd\": {\"type\": \"dollar\", \"value\": 5, \"cap\": 0, \"min\": 15}}, \"manualCredits\": [{\"key\": \"manual.1\", \"name\": \"Gift\", \"amount\": 20, \"plats\": [\"direct\"]}, {\"key\": \"manual.1\", \"name\": \"Dup\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"bad\", \"name\": \"Bad key\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"manual.2\", \"name\": \"No amount\", \"plats\": [\"dd\"]}], \"mpg\": null, \"miles\": null, \"address\": \"10001\", \"unknownField\": 1}"
+    "value": "{\"tipDel\": \"abc\", \"tipPick\": -1, \"cards\": [\"c_gold\", 5, \"c_zz\", \"c_gold\"], \"speed\": 0, \"fuel\": \"jet\", \"brand\": 42, \"plats\": {\"dd\": {\"svc\": -3, \"delFee\": 4.49, \"member\": true, \"markup\": 99, \"memberOwn\": \"yes\"}, \"zz\": {\"on\": true}}, \"cart\": {\"0\": 2, \"x\": 1, \"01\": 3, \"1\": 1.5, \"2\": -1}, \"milesBy\": {\"pz\": 7, \"bg\": \"far\"}, \"creditOptIn\": {\"c_gold.resy\": true, \"c_gold.dining\": \"yes\"}, \"usedIn\": {\"c_gold.dining\": \"2026-11\", \"x\": 5}, \"pos\": {\"lat\": 40, \"lon\": -74, \"src\": \"zip\"}, \"store\": {\"id\": \"pz@40030,-74000\", \"lat\": \"40.03\", \"lon\": -74}, \"promos\": {\"ue\": {\"type\": \"bxgy\", \"value\": 5, \"cap\": 0, \"min\": 0, \"item\": 1.5}, \"dd\": {\"type\": \"dollar\", \"value\": 5, \"cap\": 0, \"min\": 15}, \"gh\": {\"type\": \"bogo\", \"item\": 1}}, \"manualCredits\": [{\"key\": \"manual.1\", \"name\": \"Gift\", \"amount\": 20, \"plats\": [\"direct\"]}, {\"key\": \"manual.1\", \"name\": \"Dup\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"bad\", \"name\": \"Bad key\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"manual.2\", \"name\": \"No amount\", \"plats\": [\"dd\"]}], \"mpg\": null, \"miles\": null, \"address\": \"10001\", \"unknownField\": 1}"
+   }
+  },
+  {
+   "id": "load: a BOGO item must be an integer >= 0; one past the menu is kept (load doesn't read the menu)",
+   "refs": [
+    "§8",
+    "D-036"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "promos.dd": {
+     "type": "bogo",
+     "value": 0,
+     "cap": 0,
+     "min": 0,
+     "item": null
+    },
+    "promos.ue.item": null,
+    "promos.gh.item": 7,
+    "rest.id": "pz",
+    "$storageWrites": 0
+   },
+   "work": "\"0\" is a string and true a boolean: each falls back to null alone, the type bogo stays. 7 is an integer >= 0, kept; the engine gives no promo for an index past the menu (engine contract §5.4).",
+   "storage": {
+    "kind": "memory",
+    "value": "{\"brand\": \"pz\", \"address\": \"10001\", \"promos\": {\"dd\": {\"type\": \"bogo\", \"item\": \"0\"}, \"ue\": {\"type\": \"bogo\", \"item\": true}, \"gh\": {\"type\": \"bogo\", \"item\": 7}}}"
    }
   },
   {

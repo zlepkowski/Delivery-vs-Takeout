@@ -7,11 +7,11 @@
     "rest": {
       "id": "fixture_pizza", "name": "Fixture Pizza", "profiled": true,
       "menu": [
-        ["Medium 2-topping", 13.99, true],
-        ["Medium specialty", 16.99, true],
-        ["Wings (8 pc)", 11.99, false],
-        ["2 L soda", 3.49, false],
-        ["Small cheese", 6.49, true]
+        {"name": "Medium 2-topping", "price": 13.99, "dealItem": true},
+        {"name": "Medium specialty", "price": 16.99, "dealItem": true},
+        {"name": "Wings (8 pc)", "price": 11.99, "dealItem": false},
+        {"name": "2 L soda", "price": 3.49, "dealItem": false},
+        {"name": "Small cheese", "price": 6.49, "dealItem": true}
       ],
       "deal": {"label": "Mix & Match $7.99 each, 2+", "price": 7.99, "minItems": 2, "scope": "pickup"},
       "directDelivery": true, "directFee": 4.99, "directSvc": null, "amexGoldDirect": false,
