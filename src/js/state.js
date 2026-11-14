@@ -764,13 +764,20 @@
     return out;
   }
 
-  /** The copy the page prices: apps with empty fees are switched off. null while missing(S) isn't []. */
+  /** The copy the page prices (D-033). An app missing a pickup input (markup, pickDisc) is switched off; one missing only delivery inputs gets noDelivery. null while missing(S) isn't []. */
   function forEngine(S) {
     if (missing(S).length > 0) { return null; }
     var F = copyValue(S);
     for (var i = 0; i < APPS.length; i++) {
       var pl = platOf(F, APPS[i]);
-      if (pl !== null && pl.on === true && appMissing(S, APPS[i]).length > 0) { pl.on = false; }
+      if (pl === null || pl.on !== true) { continue; }
+      var miss = appMissing(S, APPS[i]);
+      if (miss.length === 0) { continue; }
+      if (miss.indexOf("plats." + APPS[i] + ".markup") >= 0 || miss.indexOf("plats." + APPS[i] + ".pickDisc") >= 0) {
+        pl.on = false;
+      } else {
+        pl.noDelivery = true;
+      }
     }
     return F;
   }

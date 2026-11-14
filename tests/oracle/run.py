@@ -200,6 +200,8 @@ def gen_scenario(seed):
             "svcMin": r.choice([0, money(0.5, 4)]), "member": r.random() < 0.4,
             "memberSvc": pct(0, 10), "memberMin": r.choice([0, 10, 12, 15, money(5, 40)]),
             "pickDisc": r.choice([0, 0, pct(1, 25)])}
+        if r.random() < 0.15:
+            plats[p]["noDelivery"] = True   # D-033
         t = r.choice(["none", "percent", "dollar", "freedel"])
         pr = {"type": t, "value": pct(5, 60) if t == "percent" else (money(1, 40) if t == "dollar" else 0)}
         if r.random() < 0.7:

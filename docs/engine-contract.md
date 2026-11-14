@@ -35,7 +35,7 @@ S = {
   regFee, smallMin, smallFee,   // $; app delivery only
   plats: {
     direct: { on },
-    dd: { on, markup, delFee, svc, svcMin, member, memberSvc, memberMin, pickDisc },
+    dd: { on, noDelivery, markup, delFee, svc, svcMin, member, memberSvc, memberMin, pickDisc },   // noDelivery: optional, set only on forEngine's copy, never in S (D-033)
     ue: { … same keys … },
     gh: { … same keys … }
   },
@@ -69,9 +69,12 @@ A channel `plat-mode` is available when:
 |---|---|
 | `direct-p` | `S.plats.direct.on` |
 | `direct-d` | `S.plats.direct.on` and `S.rest.directDelivery === true` |
-| `dd-*`, `ue-*`, `gh-*` | `S.plats[p].on` and `S.rest.platforms` contains `p` |
+| `dd-p`, `ue-p`, `gh-p` | `S.plats[p].on` and `S.rest.platforms` contains `p` |
+| `dd-d`, `ue-d`, `gh-d` | as the app's pickup, and `S.plats[p].noDelivery !== true` (D-033) |
 
 An unavailable channel is **left out**: `calc` returns `null` and `allResults` skips it. Never price it at $0 (§9.3).
+
+`noDelivery` (D-033) is set only on the copy `POD.state.forEngine` builds, for an app whose delivery fees the user hasn't entered yet (D-032): its pickup is still priced, because app pickup reads none of those fees (§7). Like every boolean here, a missing `noDelivery` is false.
 
 ## 4. The cart (`cartInfo`)
 

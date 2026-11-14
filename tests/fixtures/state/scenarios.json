@@ -1,5 +1,5 @@
 {
- "about": "Hand-worked scenarios for POD.state (docs/state-contract.md, D-031). Expected values are worked by hand in each `work` (closed-form meridian distances, the engine contract's formulas), never copied from state.js. Run a scenario like this: D = a deep copy of datasets[data], with `patch` replacing whole top-level keys; now = new Date(step.now || doc.now), a local date-time with no zone (JS reads it as local time, so a period never depends on the machine's time zone); steps run in order on one S. `fresh` and `load` create S (it replaces the current one); every other call takes S. `signatures` gives each call's arguments: \"*\" is the step's `args` spread in place, S the current state, D the scenario's dataset, now as above, opts the step's `opts` (default undefined), storage the scenario's storage. `returns`, when present, is the expected return value. Then each `expect` key is checked: a plain key is a dotted path into S (array indexes allowed, e.g. credits.0.used); $missing, $appMissing.<app>, $forEngine (null or not), $forEngine.<path>, $calc.<channel>.<field> (POD.engine.calc on forEngine(S)), $allResults.ids (POD.engine.allResults(forEngine(S)) ids in order), $getPath.<path> (getPath; \"$undefined\" means undefined), $saved.<path> / $savedKeys (the object save wrote, \"$absent\" = not there), $has.<path> (the path exists in S), $storageWrites (setItem calls), $protoClean (Object.prototype gained nothing). storage: memory (a Map-backed getItem/setItem; `value` is the initial string), throwing (both methods throw), none (storage is null). Numbers compare exactly.",
+ "about": "Hand-worked scenarios for POD.state (docs/state-contract.md, D-031). Expected values are worked by hand in each `work` (closed-form meridian distances, the engine contract's formulas), never copied from state.js. Run a scenario like this: D = a deep copy of datasets[data], with `patch` replacing whole top-level keys; now = new Date(step.now || doc.now), a local date-time with no zone (JS reads it as local time, so a period never depends on the machine's time zone); steps run in order on one S. `fresh` and `load` create S (it replaces the current one); every other call takes S. `signatures` gives each call's arguments: \"*\" is the step's `args` spread in place, S the current state, D the scenario's dataset, now as above, opts the step's `opts` (default undefined), storage the scenario's storage. `returns`, when present, is the expected return value. Then each `expect` key is checked: a plain key is a dotted path into S (array indexes allowed, e.g. credits.0.used); $missing, $appMissing.<app>, $forEngine (null or not), $forEngine.<path> (\"$absent\" = no such key), $calc.<channel>.<field> (POD.engine.calc on forEngine(S)), $allResults.ids (POD.engine.allResults(forEngine(S)) ids in order), $getPath.<path> (getPath; \"$undefined\" means undefined), $saved.<path> / $savedKeys (the object save wrote, \"$absent\" = not there), $has.<path> (the path exists in S), $storageWrites (setItem calls), $protoClean (Object.prototype gained nothing). storage: memory (a Map-backed getItem/setItem; `value` is the initial string), throwing (both methods throw), none (storage is null). Numbers compare exactly.",
  "now": "2026-11-13T12:00:00",
  "datasetsAbout": "S1: fixture values, not claims about the world. NY ZIPs 10001-10007 sit on longitude -74 at latitudes 40.000, 40.010, ... 40.060; MT ZIPs 20001-20007 on -110 at 45.000 ... 45.060. Tile 40_-74: Burger Co (bg) at 40.100; Pizza Co (pz) at 40.030 and 40.050, all on -74. Along a meridian, miles = 69.094094428 x degrees. Speed 30 mph. pz is profiled (dd 20%, ue 25%; a pickup deal: 2 flagged items at $15 each); bg is unprofiled (burger default 15%); xx's category has no default, so it can't be priced. gh's fees are null.",
  "datasets": {
@@ -3678,6 +3678,8 @@
     "$forEngine.plats.gh.on": false,
     "$forEngine.plats.dd.on": true,
     "plats.gh.on": true,
+    "$forEngine.plats.dd.noDelivery": "$absent",
+    "$forEngine.plats.gh.noDelivery": "$absent",
     "$calc.direct-p.net": 33.94,
     "$calc.direct-d.net": 53.55,
     "$calc.dd-d.net": 69.65,
@@ -3885,9 +3887,10 @@
    "work": ""
   },
   {
-   "id": "ready: a null shared app fee switches every app off, not the page",
+   "id": "ready: a null shared app fee drops every app's delivery and keeps its pickup (D-033)",
    "refs": [
-    "§7"
+    "§7",
+    "D-033"
    ],
    "data": "S1",
    "steps": [
@@ -3934,15 +3937,187 @@
     "$appMissing.dd": [
      "smallFee"
     ],
-    "$forEngine.plats.dd.on": false,
-    "$forEngine.plats.ue.on": false,
+    "$appMissing.ue": [
+     "smallFee"
+    ],
+    "$forEngine.plats.dd.on": true,
+    "$forEngine.plats.dd.noDelivery": true,
+    "$forEngine.plats.ue.on": true,
+    "$forEngine.plats.ue.noDelivery": true,
+    "$forEngine.plats.gh.on": false,
+    "$forEngine.plats.gh.noDelivery": "$absent",
     "$forEngine.plats.direct.on": true,
+    "$has.plats.dd.noDelivery": false,
+    "$calc.dd-p.net": 53.54,
+    "$calc.ue-p.net": 55.72,
     "$allResults.ids": [
      "direct-p",
-     "direct-d"
+     "dd-p",
+     "direct-d",
+     "ue-p"
     ]
    },
-   "work": ""
+   "work": "smallFee is a delivery input, so dd and ue keep pickup (dd-p 53.54, ue-p 55.72, as in the first ready scenario) and lose dd-d and ue-d. gh misses its markup, a pickup input, so it is switched off whole. S itself never gets noDelivery."
+  },
+  {
+   "id": "ready: a null pickDisc switches the app off whole (D-033)",
+   "refs": [
+    "§7",
+    "D-033"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.ue.pickDisc",
+      null
+     ]
+    }
+   ],
+   "expect": {
+    "$missing": [],
+    "$appMissing.ue": [
+     "plats.ue.pickDisc"
+    ],
+    "$forEngine.plats.ue.on": false,
+    "$forEngine.plats.ue.noDelivery": "$absent",
+    "plats.ue.on": true,
+    "$allResults.ids": [
+     "direct-p",
+     "dd-p",
+     "direct-d",
+     "dd-d"
+    ]
+   },
+   "work": "pickDisc is a pickup input: ue-p can't be priced without it, so ue is off and neither ue channel is listed."
+  },
+  {
+   "id": "ready: a null delivery fee on one app drops only that app's delivery (D-033)",
+   "refs": [
+    "§7",
+    "D-033"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.delFee",
+      null
+     ]
+    }
+   ],
+   "expect": {
+    "$appMissing.dd": [
+     "plats.dd.delFee"
+    ],
+    "$appMissing.ue": [],
+    "$forEngine.plats.dd.on": true,
+    "$forEngine.plats.dd.noDelivery": true,
+    "$forEngine.plats.ue.noDelivery": "$absent",
+    "$allResults.ids": [
+     "direct-p",
+     "dd-p",
+     "direct-d",
+     "ue-p",
+     "ue-d"
+    ]
+   },
+   "work": "dd-d is left out; ue is complete and keeps both channels. Order as the first ready scenario without dd-d."
+  },
+  {
+   "id": "noDelivery is never a field of S: setPath can't create it and load drops it (D-033)",
+   "refs": [
+    "§3",
+    "§8",
+    "D-033"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.noDelivery",
+      true
+     ],
+     "returns": false
+    }
+   ],
+   "expect": {
+    "$has.plats.dd.noDelivery": false,
+    "$has.plats.ue.noDelivery": false,
+    "plats.ue.on": false
+   },
+   "work": "The saved text has plats.dd.noDelivery and plats.ue.noDelivery; load keeps only the fields fresh has (plats.ue.on false is kept).",
+   "storage": {
+    "kind": "memory",
+    "value": "{\"plats\": {\"dd\": {\"noDelivery\": true}, \"ue\": {\"on\": false, \"noDelivery\": true}}}"
+   }
   },
   {
    "id": "ready: the user's own switch stays off",
@@ -3991,9 +4166,78 @@
    ],
    "expect": {
     "$forEngine.plats.ue.on": false,
-    "$appMissing.ue": []
+    "$appMissing.ue": [],
+    "$forEngine.plats.ue.noDelivery": "$absent"
    },
    "work": ""
+  },
+  {
+   "id": "ready: the user's own switch stays off even with a delivery fee missing (D-033)",
+   "refs": [
+    "§7",
+    "D-033"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.ue.on",
+      false
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.ue.delFee",
+      null
+     ]
+    }
+   ],
+   "expect": {
+    "$forEngine.plats.ue.on": false,
+    "$appMissing.ue": [
+     "plats.ue.delFee"
+    ],
+    "$forEngine.plats.ue.noDelivery": "$absent",
+    "$allResults.ids": [
+     "direct-p",
+     "dd-p",
+     "direct-d",
+     "dd-d"
+    ]
+   },
+   "work": "forEngine only touches apps whose on is true: a switched-off app stays off and gets no noDelivery."
   },
   {
    "id": "setPath writes only existing paths",

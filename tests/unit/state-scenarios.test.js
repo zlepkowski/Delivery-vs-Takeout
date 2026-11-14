@@ -173,7 +173,9 @@ function check(sc, out, key, want) {
   if (key.startsWith('$forEngine.')) {
     const F = fe();
     assert.ok(F, label + ': forEngine(S) is null');
-    return eq(walk(F, key.slice('$forEngine.'.length)).value);
+    const w = walk(F, key.slice('$forEngine.'.length));
+    if (want === '$absent') return assert.equal(w.found, false, label + ': should not be set on the copy');
+    return eq(w.value);
   }
   if (key.startsWith('$calc.')) {
     const [ch, field] = key.slice('$calc.'.length).split('.');

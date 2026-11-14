@@ -370,6 +370,7 @@ ue_d = r2(ue_food + r2(1.99 + r2(max(ue_food * 15 / 100, 3))) + r2(ue_food * 8.8
 sc("ready: missing is empty, gh is switched off for the engine", ["§7", "D-032"], setup, {
     "$missing": [], "$appMissing.dd": [], "$appMissing.ue": [], "$appMissing.gh": GH_MISSING,
     "$forEngine.plats.gh.on": False, "$forEngine.plats.dd.on": True, "plats.gh.on": True,
+    "$forEngine.plats.dd.noDelivery": "$absent", "$forEngine.plats.gh.noDelivery": "$absent",
     "$calc.direct-p.net": dp, "$calc.direct-d.net": dir_d, "$calc.dd-d.net": dd_d, "$calc.dd-p.net": dd_p,
     "$calc.ue-p.net": ue_p, "$calc.ue-d.net": ue_d,
     "$allResults.ids": ["direct-p", "dd-p", "direct-d", "ue-p", "dd-d", "ue-d"]},
@@ -392,12 +393,41 @@ sc("ready: an unprofiled brand needs a valid manualSubtotal", ["§7"],
 sc("ready: a null tip blocks everything", ["§7", "D-032"],
    [FR, st("setAddress", "10001"), st("setCar", "Acme", "Sedan"), st("setBrand", "pz"), st("setPath", "tipDel", None)],
    {"$missing": ["tipDel"]}, "")
-sc("ready: a null shared app fee switches every app off, not the page", ["§7"],
+sc("ready: a null shared app fee drops every app's delivery and keeps its pickup (D-033)", ["§7", "D-033"],
    setup + [st("setPath", "smallFee", None)],
-   {"$missing": [], "$appMissing.dd": ["smallFee"], "$forEngine.plats.dd.on": False, "$forEngine.plats.ue.on": False,
-    "$forEngine.plats.direct.on": True, "$allResults.ids": ["direct-p", "direct-d"]}, "")
+   {"$missing": [], "$appMissing.dd": ["smallFee"], "$appMissing.ue": ["smallFee"],
+    "$forEngine.plats.dd.on": True, "$forEngine.plats.dd.noDelivery": True,
+    "$forEngine.plats.ue.on": True, "$forEngine.plats.ue.noDelivery": True,
+    "$forEngine.plats.gh.on": False, "$forEngine.plats.gh.noDelivery": "$absent",
+    "$forEngine.plats.direct.on": True, "$has.plats.dd.noDelivery": False,
+    "$calc.dd-p.net": dd_p, "$calc.ue-p.net": ue_p,
+    "$allResults.ids": ["direct-p", "dd-p", "direct-d", "ue-p"]},
+   "smallFee is a delivery input, so dd and ue keep pickup (dd-p %.2f, ue-p %.2f, as in the first ready scenario) and lose dd-d and ue-d. "
+   "gh misses its markup, a pickup input, so it is switched off whole. S itself never gets noDelivery." % (dd_p, ue_p))
+sc("ready: a null pickDisc switches the app off whole (D-033)", ["§7", "D-033"],
+   setup + [st("setPath", "plats.ue.pickDisc", None)],
+   {"$missing": [], "$appMissing.ue": ["plats.ue.pickDisc"], "$forEngine.plats.ue.on": False,
+    "$forEngine.plats.ue.noDelivery": "$absent", "plats.ue.on": True,
+    "$allResults.ids": ["direct-p", "dd-p", "direct-d", "dd-d"]},
+   "pickDisc is a pickup input: ue-p can't be priced without it, so ue is off and neither ue channel is listed.")
+sc("ready: a null delivery fee on one app drops only that app's delivery (D-033)", ["§7", "D-033"],
+   setup + [st("setPath", "plats.dd.delFee", None)],
+   {"$appMissing.dd": ["plats.dd.delFee"], "$appMissing.ue": [], "$forEngine.plats.dd.on": True,
+    "$forEngine.plats.dd.noDelivery": True, "$forEngine.plats.ue.noDelivery": "$absent",
+    "$allResults.ids": ["direct-p", "dd-p", "direct-d", "ue-p", "ue-d"]},
+   "dd-d is left out; ue is complete and keeps both channels. Order as the first ready scenario without dd-d.")
+sc("noDelivery is never a field of S: setPath can't create it and load drops it (D-033)", ["§3", "§8", "D-033"],
+   [st("load"), st("setPath", "plats.dd.noDelivery", True, returns=False)],
+   {"$has.plats.dd.noDelivery": False, "$has.plats.ue.noDelivery": False, "plats.ue.on": False},
+   "The saved text has plats.dd.noDelivery and plats.ue.noDelivery; load keeps only the fields fresh has (plats.ue.on false is kept).",
+   storage={"kind": "memory", "value": json.dumps({"plats": {"dd": {"noDelivery": True}, "ue": {"on": False, "noDelivery": True}}})})
 sc("ready: the user's own switch stays off", ["§7"], setup + [st("setPath", "plats.ue.on", False)],
-   {"$forEngine.plats.ue.on": False, "$appMissing.ue": []}, "")
+   {"$forEngine.plats.ue.on": False, "$appMissing.ue": [], "$forEngine.plats.ue.noDelivery": "$absent"}, "")
+sc("ready: the user's own switch stays off even with a delivery fee missing (D-033)", ["§7", "D-033"],
+   setup + [st("setPath", "plats.ue.on", False), st("setPath", "plats.ue.delFee", None)],
+   {"$forEngine.plats.ue.on": False, "$appMissing.ue": ["plats.ue.delFee"], "$forEngine.plats.ue.noDelivery": "$absent",
+    "$allResults.ids": ["direct-p", "dd-p", "direct-d", "dd-d"]},
+   "forEngine only touches apps whose on is true: a switched-off app stays off and gets no noDelivery.")
 
 # ---------------------------------------------------------------- setPath / getPath
 sc("setPath writes only existing paths", ["§3"],
@@ -513,7 +543,7 @@ doc = {
               "spread in place, S the current state, D the scenario's dataset, now as above, opts the step's `opts` (default "
               "undefined), storage the scenario's storage. `returns`, when present, is the expected return value. Then each `expect` key is checked: a "
               "plain key is a dotted path into S (array indexes allowed, e.g. credits.0.used); $missing, $appMissing.<app>, "
-              "$forEngine (null or not), $forEngine.<path>, $calc.<channel>.<field> (POD.engine.calc on forEngine(S)), "
+              "$forEngine (null or not), $forEngine.<path> (\"$absent\" = no such key), $calc.<channel>.<field> (POD.engine.calc on forEngine(S)), "
               "$allResults.ids (POD.engine.allResults(forEngine(S)) ids in order), $getPath.<path> (getPath; \"$undefined\" "
               "means undefined), $saved.<path> / $savedKeys (the object save wrote, \"$absent\" = not there), $has.<path> "
               "(the path exists in S), $storageWrites (setItem calls), $protoClean (Object.prototype gained nothing). "

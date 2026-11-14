@@ -376,8 +376,8 @@ test('D-029 §2.1 restFor copies an unprofiled brand\'s category markup (CATEGOR
   assert.deepStrictEqual(H.CATEGORY_DEFAULTS, before);
 });
 
-test('D-029 the hand-worked receipts are all loaded (at least 12 receipts, 58 cases)', () => {
+test('D-029 the hand-worked receipts are all loaded (at least 13 receipts, 65 cases)', () => {
   const cases = RECEIPTS.reduce((n, r) => n + r.cases.length, 0);
-  assert.ok(RECEIPTS.length >= 12, `only ${RECEIPTS.length} receipts loaded`);
-  assert.ok(cases >= 58, `only ${cases} receipt cases loaded`);
+  assert.ok(RECEIPTS.length >= 13, `only ${RECEIPTS.length} receipts loaded`);
+  assert.ok(cases >= 65, `only ${cases} receipt cases loaded`);
 });

@@ -189,6 +189,13 @@ Consequence: an unprofiled Five Guys has no `amexGoldDirect`, so the Amex Gold d
 - **Pickup discount 0**: no standing app pickup discount is assumed; promos are entered by the user. That's the conservative direction (it never makes an app look cheaper).
 *Why:* the user preferred empty fields the user fills to estimates the page would have to label. Switching an app's defaults to labeled estimates later is a change to the evidence files only (ISS-034).
 
+**D-033 — App pickup is priced without the app's delivery fees** · 2026-11-14 · *accepted (orchestrator; the open question in state contract §7)*
+Under D-032 every app's delivery fee starts empty, and `forEngine` switched a whole app off when any fee was missing, so the first screen priced no app at all, not even app pickup, which reads none of those fees (engine contract §7: app pickup has no fees). Now:
+- **Engine contract §3:** an app's delivery channel `p-d` is also unavailable when `S.plats[p].noDelivery === true` (a missing value is false, as for every boolean). Pickup `p-p` is unaffected.
+- **State contract §7:** `forEngine` switches an app off (`on = false`) only when a **pickup input** is missing (`plats.p.markup`, `plats.p.pickDisc`). When only **delivery inputs** are missing (`delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `regFee`, `smallMin`, `smallFee`), it sets `noDelivery = true` on the copy instead. `noDelivery` lives only on that copy: never in `fresh`, never saved or loaded.
+- The oracle, a new receipt (`r13-app-delivery-off`) and the state scenarios changed first; the fuzzer now sets `noDelivery` on 15% of apps.
+*Why:* it's the smallest change that lets the page price everything the user has given it. A delivery fee is still never invented (D-032): the app's delivery row is simply left out until the user enters its fees.
+
 ---
 
 ## Skill updates

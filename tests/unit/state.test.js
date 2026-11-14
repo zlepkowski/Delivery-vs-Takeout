@@ -541,14 +541,32 @@ test('D-032 §7 appMissing lists exactly the evidence nulls of each app, then th
   }
 });
 
-test('D-032 §7 forEngine switches off every app whose appMissing is non-empty, and only those', () => {
+test('D-033 §7 forEngine: an app missing only delivery inputs keeps pickup (noDelivery), and only those apps', () => {
   const S = readyState();
+  // D-032: under the real defaults every app lacks only delivery inputs (pickDisc is 0, markup comes from the profile).
+  for (const app of APPS) {
+    const miss = J(ST.appMissing(S, app));
+    assert.ok(miss.length > 0, app + ' has empty delivery fees under the real defaults');
+    assert.ok(!miss.includes('plats.' + app + '.markup') && !miss.includes('plats.' + app + '.pickDisc'),
+      app + ': markup and pickDisc are present');
+  }
   const F = ST.forEngine(S);
-  for (const app of APPS) assert.equal(F.plats[app].on, false, app + ' is switched off in the copy');
+  for (const app of APPS) {
+    assert.equal(F.plats[app].on, true, app + ' keeps its pickup in the copy');
+    assert.equal(F.plats[app].noDelivery, true, app + ' loses its delivery in the copy');
+  }
   assert.equal(F.plats.direct.on, true, 'direct is not an app and stays on');
-  assert.equal(S.plats.dd.on, true, 'the user switch on S is unchanged');
+  assert.equal(Object.prototype.hasOwnProperty.call(F.plats.direct, 'noDelivery'), false, 'direct never gets noDelivery');
+  for (const app of APPS) {
+    assert.equal(Object.prototype.hasOwnProperty.call(S.plats[app], 'noDelivery'), false, app + ': S itself is unchanged');
+  }
+  const ids = J(FULL.POD.engine.allResults(F).map((r) => r.id));
+  for (const app of APPS) {
+    if (S.rest.platforms.includes(app)) assert.ok(ids.includes(app + '-p'), app + '-p is priced');
+    assert.ok(!ids.includes(app + '-d'), app + '-d is left out');
+  }
 
-  // Fill every field dd lacks: dd is then complete and stays on; ue and gh stay off.
+  // Fill every field dd lacks: dd is then complete and has no noDelivery; ue and gh keep theirs.
   assert.equal(ST.setPath(S, 'plats.dd.delFee', 2.99), true);
   assert.equal(ST.setPath(S, 'plats.dd.svcMin', 3), true);
   assert.equal(ST.setPath(S, 'regFee', 0), true);
@@ -557,8 +575,16 @@ test('D-032 §7 forEngine switches off every app whose appMissing is non-empty, 
   assert.deepEqual(J(ST.appMissing(S, 'dd')), [], 'dd is complete');
   const F2 = ST.forEngine(S);
   assert.equal(F2.plats.dd.on, true, 'a complete app stays on');
-  assert.equal(F2.plats.ue.on, false);
-  assert.equal(F2.plats.gh.on, false);
+  assert.equal(Object.prototype.hasOwnProperty.call(F2.plats.dd, 'noDelivery'), false, 'a complete app gets no noDelivery');
+  assert.equal(F2.plats.ue.noDelivery, true);
+  assert.equal(F2.plats.gh.noDelivery, true);
+
+  // A missing pickup input (pickDisc) switches the whole app off, with no noDelivery.
+  assert.equal(ST.setPath(S, 'plats.ue.pickDisc', null), true);
+  const F3 = ST.forEngine(S);
+  assert.equal(F3.plats.ue.on, false, 'a missing pickDisc switches ue off');
+  assert.equal(Object.prototype.hasOwnProperty.call(F3.plats.ue, 'noDelivery'), false, 'an app switched off gets no noDelivery');
+  assert.equal(S.plats.ue.on, true, 'the user switch on S is unchanged');
 });
 
 // ---- G: periodOf across realms (§5.2) -----------------------------------------------------------

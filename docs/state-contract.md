@@ -41,7 +41,7 @@ The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, 
 | `periodOf(cadence, now)` | the period a date falls in (§5.2) | a string, or `null` |
 | `missing(S)` | which shared inputs the engine still needs (§7) | an array of paths |
 | `appMissing(S, p)` | which of app `p`'s fees are still empty (§7) | an array of paths |
-| `forEngine(S)` | the copy of `S` the page prices: apps with empty fees switched off (§7) | a new object, or `null` |
+| `forEngine(S)` | the copy of `S` the page prices: an app missing a pickup input switched off, one missing only delivery inputs marked `noDelivery` (§7, D-033) | a new object, or `null` |
 | `load(storage, D, now, opts)` | saved state merged over `fresh`, then `derive` (§8) | `S` |
 | `save(S, storage)` | writes the user fields (§8) | `true` / `false` |
 
@@ -199,7 +199,15 @@ D-032: a default an app doesn't publish starts empty (`null`). The page asks the
 
 `appMissing(S, p)`: for `p` in `APPS`, the paths `"plats.p.markup"`, `"plats.p.delFee"`, `"plats.p.svc"`, `"plats.p.svcMin"`, `"plats.p.memberSvc"`, `"plats.p.memberMin"`, `"plats.p.pickDisc"`, then the shared app-delivery fees `"regFee"`, `"smallMin"`, `"smallFee"`, each unless a finite number ≥ 0, in that order. Any other `p` gives `[]`.
 
-`forEngine(S)`: `null` when `missing(S)` isn't `[]`. Otherwise a **deep copy** of `S` (sharing nothing with it) in which every app `p` whose `plats[p].on` is `true` and whose `appMissing(S, p)` isn't `[]` has `plats[p].on = false`. The page passes this copy to `POD.engine.allResults` and lists each switched-off app with what it's missing. `S` itself is never changed, so the user's own on/off switch survives. (Turning off only an app's delivery mode, so its pickup could still be priced, would need an engine change: a Phase 5 question.)
+`forEngine(S)`: `null` when `missing(S)` isn't `[]`. Otherwise a **deep copy** of `S` (sharing nothing with it) in which, for every app `p` whose `plats[p].on` is `true` and whose `appMissing(S, p)` isn't `[]`:
+- if that list contains `"plats.p.markup"` or `"plats.p.pickDisc"` (the **pickup inputs**: app pickup can't be priced without them), `plats[p].on = false`;
+- otherwise (only **delivery inputs** are missing: `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `regFee`, `smallMin`, `smallFee`), `plats[p].noDelivery = true`: the engine leaves out `p-d` and still prices `p-p` (engine contract §3, D-033).
+
+The page passes this copy to `POD.engine.allResults` and lists each app that lost a channel with what it's missing. `S` itself is never changed, so the user's own on/off switch survives. `noDelivery` exists only on this copy: `fresh` has no such field, `setPath` can't create it, `save` never writes it and `load` drops it.
+
+A missing `pickDisc` switches the whole app off, delivery included, although delivery never reads it: the engine has no pickup-only switch. That leaves a channel out (never misprices it), and `pickDisc` has a sourced default of 0 (D-032), so it's empty only when the user clears it.
+
+*Amended 2026-11-14 (D-033):* this used to switch the whole app off when any of its fees was missing, so under D-032's empty delivery fees no app pickup was priced either.
 
 ## 8. Persistence
 

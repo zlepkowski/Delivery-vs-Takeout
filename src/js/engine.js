@@ -54,6 +54,7 @@
     }
     var P = S.plats[p];
     if (!P || !P.on) { return false; }
+    if (m === "d" && P.noDelivery === true) { return false; }
     return S.rest.platforms.indexOf(p) >= 0;
   }
 

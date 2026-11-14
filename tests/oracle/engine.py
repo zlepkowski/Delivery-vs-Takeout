@@ -108,7 +108,10 @@ def available(S, ch):
         if not (plats.get("direct") or {}).get("on"):
             return False
         return m == "p" or rest.get("directDelivery") is True
-    return bool((plats.get(p) or {}).get("on")) and p in (rest.get("platforms") or [])
+    P = plats.get(p) or {}
+    if m == "d" and P.get("noDelivery") is True:   # D-033: delivery fees not entered yet
+        return False
+    return bool(P.get("on")) and p in (rest.get("platforms") or [])
 
 
 def per_mile(S):
