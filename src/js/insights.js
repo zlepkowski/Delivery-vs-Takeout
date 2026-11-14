@@ -147,6 +147,15 @@
     return makeInsight("fuel", "Fuel", "", text, data);
   }
 
+  /** D-036: a bogo candidate counts only when its counterfactual result has a "BOGO: " note. */
+  function hasBogoNote(a) {
+    var notes = listOf(a && a.notes);
+    for (var i = 0; i < notes.length; i++) {
+      if (typeof notes[i] === "string" && notes[i].indexOf("BOGO: ") === 0) { return true; }
+    }
+    return false;
+  }
+
   /** 3.4 counterfactual, profiled: add k of the cheapest item, k = 1..20. */
   function counterProfiled(F, r, min, menu, j) {
     if (j < 0) { return null; }
@@ -193,6 +202,7 @@
       if (pr.type === "freedel" && r.mode === "p") { continue; }
       var cand = profiled ? counterProfiled(F, r, min, menu, j) : counterUnprofiled(F, r, min);
       if (!cand) { continue; }
+      if (pr.type === "bogo" && !hasBogoNote(cand.a)) { continue; }
       cand.delta = round2(cand.a.net - r.net);
       if (!best || cand.delta < best.delta) { best = cand; }
     }

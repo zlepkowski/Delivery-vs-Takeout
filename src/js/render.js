@@ -37,7 +37,8 @@
   var FUELS = [["regular", "Regular"], ["premium", "Premium"], ["diesel", "Diesel"], ["ev", "Electric"]];
   var CADENCES = [["once", "Once"], ["monthly", "Monthly"], ["quarterly", "Quarterly"],
     ["semiannual", "Every six months"], ["annual", "Yearly"]];
-  var PROMO_TYPES = [["none", "No promo"], ["percent", "% off"], ["dollar", "$ off"], ["freedel", "Free delivery"]];
+  var PROMO_TYPES = [["none", "No promo"], ["percent", "% off"], ["dollar", "$ off"], ["freedel", "Free delivery"],
+    ["bogo", "Buy one, get one free"]];
   var NOTE_DD = "DoorDash publishes 15% service (5% with DashPass, on orders of $12 or more) for markets not yet on its newer fee model; check your own checkout.";
 
   var nearRows = [];
@@ -172,9 +173,9 @@
       for (var i = 0; i < menu.length; i++) {
         var line = menu[i];
         var q = S.cart && hasOwn(S.cart, String(i)) ? S.cart[String(i)] : 0;
-        h += '<li data-testid="menu-item"><span class="name">' + esc(line[0]) +
-          (line[2] === true ? ' <span class="tag">Deal item</span>' : "") + "</span>" +
-          '<span class="price num">' + money(line[1]) + "</span>" +
+        h += '<li data-testid="menu-item"><span class="name">' + esc(line.name) +
+          (line.dealItem === true ? ' <span class="tag">Deal item</span>' : "") + "</span>" +
+          '<span class="price num">' + money(line.price) + "</span>" +
           '<span class="qty"><button type="button" data-action="qty" data-index="' + i +
           '" data-delta="-1" aria-label="Remove one">−</button>' +
           '<span class="num" data-testid="qty-' + i + '">' + q + "</span>" +
@@ -536,6 +537,20 @@
 
   // ---- settings ----------------------------------------------------------------------------------
 
+  /** The free-item select of a BOGO promo (D-036, UI contract §5.9). Needs a profiled restaurant's menu. */
+  function bogoItem(S, p, pr) {
+    if (pr.type !== "bogo") { return ""; }
+    if (!S.rest || !S.rest.profiled || !S.rest.menu) {
+      return '<p class="muted" data-testid="bogo-note-' + p + '">Buy one, get one free needs a restaurant with a menu.</p>';
+    }
+    var menu = S.rest.menu, o = '<option value="">Pick the item…</option>';
+    for (var m = 0; m < menu.length; m++) {
+      o += '<option value="' + m + '"' + (pr.item === m ? " selected" : "") + ">" + esc(menu[m].name) + "</option>";
+    }
+    return '<label for="promos-' + p + '-item">Free item</label><select id="promos-' + p + '-item" data-bind="promos.' +
+      p + '.item">' + o + "</select>";
+  }
+
   function secSettings(c) {
     var S = c.S, h = "";
     h += '<div class="fields">' +
@@ -558,7 +573,7 @@
           PROMO_TYPES[t][1] + "</option>";
       }
       h += '<label for="promos-' + p + '-type">Promo</label><select id="promos-' + p + '-type" data-bind="promos.' + p +
-        '.type" data-type="text">' + opts + "</select>" +
+        '.type" data-type="text">' + opts + "</select>" + bogoItem(S, p, pr) +
         numField("promos." + p + ".value", "Promo amount", pr.value) +
         numField("promos." + p + ".cap", "Promo cap ($)", pr.cap) +
         numField("promos." + p + ".min", "Promo minimum ($)", pr.min) + "</div>";

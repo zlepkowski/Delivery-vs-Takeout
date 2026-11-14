@@ -600,3 +600,60 @@ test('D-031 §5.2 periodOf gives the same answer for a host-realm Date and a VM-
   assert.equal(S1ST.periodOf('monthly', vmBad), null, 'an invalid VM Date is null');
   assert.equal(S1ST.periodOf('monthly', new Date(NaN)), null, 'an invalid host Date is null');
 });
+
+// ---- H: the per-item promo index (D-036; state contract §2, §6, §8) -----------------------------
+// Expected values are the contract's text: a fresh promo's item is null, setBrand clears it, load
+// keeps an integer >= 0 (0 included) and drops anything else alone, and save/load keeps it.
+
+test('D-036 §2 fresh gives item: null for every app, with the other promo fields at their blank values', () => {
+  const S = ST.fresh(REAL);
+  for (const p of APPS) {
+    assert.deepEqual(J(S.promos[p]), { type: 'none', value: 0, cap: 0, min: 0, item: null }, p + ' promo');
+  }
+});
+
+test('D-036 §1 setPath("promos.dd.item", 2) returns true and writes the index', () => {
+  const S = ST.fresh(REAL);
+  assert.equal(ST.setPath(S, 'promos.dd.item', 2), true);
+  assert.equal(S.promos.dd.item, 2);
+  assert.equal(ST.getPath(S, 'promos.dd.item'), 2);
+});
+
+test('D-036 §6 setBrand clears every app\'s item and keeps type, value, cap and min', () => {
+  const S = ST.fresh(REAL);
+  APPS.forEach((p, n) => {
+    assert.equal(ST.setPath(S, 'promos.' + p + '.type', 'bogo'), true, p + ' type');
+    assert.equal(ST.setPath(S, 'promos.' + p + '.value', 0), true, p + ' value');
+    assert.equal(ST.setPath(S, 'promos.' + p + '.cap', 20), true, p + ' cap');
+    assert.equal(ST.setPath(S, 'promos.' + p + '.min', 30), true, p + ' min');
+    assert.equal(ST.setPath(S, 'promos.' + p + '.item', 2 + n), true, p + ' item');
+  });
+  ST.setBrand(S, REAL, 'dominos', undefined);
+  for (const p of APPS) {
+    assert.deepEqual(J(S.promos[p]), { type: 'bogo', value: 0, cap: 20, min: 30, item: null }, p + ' after setBrand');
+  }
+});
+
+test('D-036 §8 load keeps an integer item >= 0 (0 included) and drops each other value alone, keeping the rest of the promo', () => {
+  // item 0 is an integer >= 0: kept. "0" (a string), true, 1.5, -1 and {} are dropped to null.
+  const cases = [[0, 0], [3, 3], ['0', null], [true, null], [1.5, null], [-1, null], [{}, null]];
+  for (const [saved, want] of cases) {
+    const text = JSON.stringify({ promos: { dd: { type: 'bogo', value: 0, cap: 20, min: 30, item: saved } } });
+    const storage = { getItem: () => text, setItem() { throw new Error('load never writes'); } };
+    const S = ST.load(storage, REAL, NOW, undefined);
+    assert.deepEqual(J(S.promos.dd), { type: 'bogo', value: 0, cap: 20, min: 30, item: want },
+      'saved item ' + JSON.stringify(saved));
+    assert.equal(S.promos.ue.item, null, 'the other app keeps its blank item');
+  }
+});
+
+test('D-036 §8 a save and load round trip keeps promos[p].item', () => {
+  const S = ST.fresh(REAL);
+  assert.equal(ST.setPath(S, 'promos.ue.type', 'bogo'), true);
+  assert.equal(ST.setPath(S, 'promos.ue.item', 4), true);
+  const st = memStorage();
+  assert.equal(ST.save(S, st), true, 'save returns true');
+  const loaded = ST.load(st, REAL, NOW, undefined);
+  assert.equal(loaded.promos.ue.item, 4, 'ue item after load');
+  assert.equal(loaded.promos.dd.item, null, 'dd item stays null');
+});

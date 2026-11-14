@@ -205,3 +205,48 @@ test('D-036 build-profiles: an item markup with a source and no platform key is 
   assert.match(r.stderr, /Item A/);
   assert.match(r.stderr, /markup has no platform key/);
 });
+
+test('D-036 build-profiles: an item markup that is not an object (30) is rejected', () => {
+  const r = build('reject-item-markup-not-object');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /markup must be an object/);
+});
+
+test('D-036 build-profiles: an item markup with an unknown key ("uber") is rejected', () => {
+  const r = build('reject-item-markup-unknown-key');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /key 'uber' is not dd, ue, gh or source/);
+});
+
+test('D-036 build-profiles: a negative item markup (dd -5, https source) is rejected by the 0-60 range', () => {
+  const r = build('reject-item-markup-negative');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /markup\.dd out of range 0-60: -5/);
+});
+
+test('D-036 build-profiles: an item markup with an http (not https) source is rejected', () => {
+  const r = build('reject-item-markup-http-source');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /markup needs a source url/);
+});
+
+test('D-036 build-profiles: an item markup whose value is a string ("30") is rejected', () => {
+  const r = build('reject-item-markup-string-value');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /markup\.dd must be a number/);
+});

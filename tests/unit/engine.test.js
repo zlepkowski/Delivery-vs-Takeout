@@ -285,15 +285,42 @@ test('restFor: dominos menu equals the profile menu, as a copy', () => {
 });
 
 test('restFor: mutating the returned menu does not change the data tables', () => {
+  // Menu items are objects (D-036): {name, price, dealItem, markup?}. The writes must land on the copy,
+  // so each one is checked on r first; otherwise a no-op write would pass vacuously.
   const before = structuredClone(D.PROFILES.dominos.menu);
   const r = engine.restFor('dominos', D);
-  r.menu[0][1] = 999;
-  r.menu.push(['Injected', 1, false]);
-  r.menu[1][2] = true;
+  r.menu[0].price = 999;
+  r.menu.push({ name: 'Injected', price: 1, dealItem: false });
+  r.menu[1].dealItem = !before[1].dealItem;
+  assert.equal(r.menu[0].price, 999, 'the copy took the price write');
+  assert.equal(r.menu.length, before.length + 1, 'the copy took the push');
+  assert.equal(r.menu[1].dealItem, !before[1].dealItem, 'the copy took the dealItem write');
   same(D.PROFILES.dominos.menu, before, 'PROFILES.dominos.menu');
   const again = engine.restFor('dominos', D);
   assert.equal(again.menu.length, before.length);
-  assert.equal(again.menu[0][1], before[0][1]);
+  assert.equal(again.menu[0].price, before[0].price);
+  assert.equal(again.menu[1].dealItem, before[1].dealItem);
+});
+
+test('D-036 restFor copies an item\'s markup object: the copy shares nothing with D', () => {
+  const H = {
+    BRANDS: { m: { name: 'M', category: 'pizza' } },
+    CATEGORY_DEFAULTS: { pizza: { markup: { dd: 1, ue: 2, gh: 3 }, est: true } },
+    PROFILES: {
+      m: {
+        menu: [{ name: 'A', price: 5, dealItem: false, markup: { dd: 30 } }],
+        deal: null, directDelivery: false, directSvc: null, amexGoldDirect: false,
+        platforms: ['dd'], markup: { dd: 15 }, markupEst: false
+      }
+    }
+  };
+  const before = structuredClone(H);
+  const r = engine.restFor('m', H);
+  same(structuredClone(r.menu[0].markup), { dd: 30 }, 'the copied item markup');
+  assert.notStrictEqual(r.menu[0].markup, H.PROFILES.m.menu[0].markup, 'a new object, not D\'s');
+  r.menu[0].markup.dd = 99;
+  assert.equal(r.menu[0].markup.dd, 99, 'the copy took the write');
+  same(H, before, 'H (the data tables) after the write');
 });
 
 test('restFor: wingstop has direct delivery at a 2.99 fee', () => {
@@ -342,7 +369,7 @@ test('D-029 §2.1 restFor shares no array or object with D (platforms, markup, d
     CATEGORY_DEFAULTS: { pizza: { markup: { dd: 1, ue: 2, gh: 3 }, est: true } },
     PROFILES: {
       f: {
-        menu: [['A', 5, true]],
+        menu: [{ name: 'A', price: 5, dealItem: true }],
         deal: { label: 'L', price: 4, minItems: 1, scope: 'both' },
         directDelivery: true,
         directFee: 2,
@@ -360,7 +387,8 @@ test('D-029 §2.1 restFor shares no array or object with D (platforms, markup, d
   r.markup.dd = 99;
   r.deal.price = 0;
   r.directSvc.modes.push('p');
-  r.menu[0][1] = 0;
+  r.menu[0].price = 0;
+  assert.equal(r.menu[0].price, 0, 'the copy took the price write');
   assert.deepStrictEqual(H, before);
 });
 
@@ -376,8 +404,256 @@ test('D-029 §2.1 restFor copies an unprofiled brand\'s category markup (CATEGOR
   assert.deepStrictEqual(H.CATEGORY_DEFAULTS, before);
 });
 
-test('D-029 the hand-worked receipts are all loaded (at least 13 receipts, 65 cases)', () => {
+test('D-029 the hand-worked receipts are all loaded (at least 15 receipts, 91 cases)', () => {
   const cases = RECEIPTS.reduce((n, r) => n + r.cases.length, 0);
-  assert.ok(RECEIPTS.length >= 13, `only ${RECEIPTS.length} receipts loaded`);
-  assert.ok(cases >= 65, `only ${cases} receipt cases loaded`);
+  assert.ok(RECEIPTS.length >= 15, `only ${RECEIPTS.length} receipts loaded`);
+  assert.ok(cases >= 91, `only ${cases} receipt cases loaded`);
+});
+
+// ---------------------------------------------------------------------------
+// 7. Per-item markup and BOGO (D-036; engine contract §2.1, §5.2, §5.4, §6)
+//    Base: _base.json (Domino's, New York). Pizza = item 0 at 21.99, wings = 2 at 11.99,
+//    Coke = 6 at 4.99. App markup 15.3% on dd and ue (gh isn't on Domino's platforms).
+//    Every expected value below is worked by hand in its comment. Nothing is read from the engine.
+//    S is built with clone() (JSON), then NaN and Infinity are assigned directly, since JSON can't carry them.
+// ---------------------------------------------------------------------------
+
+const PIZZA = 'Large (14") ExtravaganZZa';
+const COKE = 'Coke® (2 L)';
+
+/** A fresh base state: cart {0: 1, 6: 1}, menu subtotal 26.98. */
+const baseS = () => clone(BASE);
+
+test('D-036 §5.2 a per-item markup changes only its own line, and only on its own app', () => {
+  // Pizza at 40% on dd: 21.99 × 1 × 1.40 = 30.786; Coke at the app's 15.3%: 4.99 × 1.153 = 5.75347.
+  // dd food = 30.786 + 5.75347 = 36.53947 → 36.54. dd-p tax = 36.54 × 8.54% = 3.120516 → 3.12.
+  // drive (as r01) 1.42. dd-p gross = 36.54 + 3.12 + 1.42 = 41.08 = net.
+  const S = baseS();
+  S.rest.menu[0].markup = { dd: 40 };
+  const dd = engine.calc(S, 'dd-p');
+  assert.equal(dd.parts.food, 36.54, 'dd food with the pizza at 40%');
+  assert.deepStrictEqual(structuredClone(dd.lines)[0], ['Food', 36.54]);
+  assert.equal(dd.net, 41.08);
+  // Uber Eats has no override for the pizza: 26.98 × 1.153 = 31.10794 → 31.11, as in r01.
+  assert.equal(engine.calc(S, 'ue-p').parts.food, 31.11, 'ue food is unchanged');
+  // Its own line only: Coke at 40% on Uber Eats, pizza at the app's 15.3% (21.99 × 1.153 = 25.35447).
+  // ue food = 25.35447 + 4.99 × 1.40 = 25.35447 + 6.986 = 32.34047 → 32.34. dd food is unchanged at 31.11.
+  const S2 = baseS();
+  S2.rest.menu[6].markup = { ue: 40 };
+  assert.equal(engine.calc(S2, 'ue-p').parts.food, 32.34, 'ue food with Coke at 40%');
+  assert.equal(engine.calc(S2, 'dd-p').parts.food, 31.11, 'dd food is unchanged by a ue override');
+});
+
+test('D-036 §5.2 an item markup of 0 is used as 0%, not as the app markup', () => {
+  // Pizza at 0% on dd: 21.99 × 1.00 = 21.99; + Coke 5.75347 = 27.74347 → 27.74.
+  // tax = 27.74 × 8.54% = 2.368996 → 2.37; gross = 27.74 + 2.37 + 1.42 = 31.53.
+  const S = baseS();
+  S.rest.menu[0].markup = { dd: 0 };
+  const r = engine.calc(S, 'dd-p');
+  assert.equal(r.parts.food, 27.74);
+  assert.equal(r.net, 31.53);
+});
+
+test('D-036 §2.1 each malformed item markup falls back to the app markup (15.3%), never to 0%', () => {
+  // Pizza falls back to 15.3%: food 31.11 (r01), dd-p tax 31.11 × 8.54% = 2.656794 → 2.66,
+  // gross = 31.11 + 2.66 + 1.42 = 35.19.
+  const bad = [
+    ['-1', -1], ['"20"', '20'], ['true', true], ['null', null],
+    ['NaN', NaN], ['Infinity', Infinity], ['[10]', [10]], ['{}', {}]
+  ];
+  for (const [label, v] of bad) {
+    const S = baseS();
+    S.rest.menu[0].markup = { dd: v };
+    const r = engine.calc(S, 'dd-p');
+    assert.equal(r.parts.food, 31.11, 'markup.dd = ' + label + ': food');
+    assert.equal(r.net, 35.19, 'markup.dd = ' + label + ': net');
+  }
+  // A markup that is not an object at all falls back the same way.
+  const S = baseS();
+  S.rest.menu[0].markup = 30;
+  assert.equal(engine.calc(S, 'dd-p').parts.food, 31.11, 'markup = 30 (not an object): food');
+});
+
+test('D-036 §5.2 the food is rounded once, not per item (31.11, where per-item rounding gives 31.10)', () => {
+  // 21.99 × 1.153 = 25.35447 → 25.35 and 4.99 × 1.153 = 5.75347 → 5.75: the lines sum to 31.10.
+  // Summed first: 31.10794 → 31.11. The contract says 31.11 (§5.2).
+  const r = engine.calc(baseS(), 'dd-p');
+  assert.equal(r.parts.food, 31.11);
+});
+
+test('D-036 §5.4 BOGO free count is floor(q/2) for q = 0 to 5 (pizza at 15.3% on Uber Eats, no cap)', () => {
+  // free = floor(q/2). promo = round2(21.99 × free × 1.153):
+  //   q=0: 0; q=1: 0; q=2: 25.35447 → 25.35; q=3: 25.35; q=4: 50.70894 → 50.71; q=5: 50.71.
+  const want = [0, 0, 25.35, 25.35, 50.71, 50.71];
+  for (let q = 0; q <= 5; q++) {
+    const S = baseS();
+    S.cart = { '0': q };
+    S.promos.ue = { type: 'bogo', value: 0, cap: 0, min: 0, item: 0 };
+    const r = engine.calc(S, 'ue-p');
+    assert.equal(r.disc, want[q], 'q = ' + q + ': disc');
+    assert.deepStrictEqual(structuredClone(r.notes), want[q] > 0 ? ['BOGO: ' + PIZZA] : [], 'q = ' + q + ': notes');
+  }
+});
+
+test('D-036 §5.4 an invalid BOGO item gives no promo, no note and no throw', () => {
+  // Cart {0: 2, 6: 1}: food = 50.70894 + 5.75347 = 56.46241 → 56.46. No promo.
+  // tax = 56.46 × 8.54% = 4.821684 → 4.82. ue-p gross = 56.46 + 4.82 + 1.42 = 62.70 = net.
+  const cases = [
+    ['null', (P) => { P.item = null; }],
+    ['missing key', (P) => { delete P.item; }],
+    ['"0" (a string)', (P) => { P.item = '0'; }],
+    ['true', (P) => { P.item = true; }],
+    ['1.5', (P) => { P.item = 1.5; }],
+    ['-1', (P) => { P.item = -1; }],
+    ['8 (menu.length)', (P) => { P.item = 8; }],
+    ['NaN', (P) => { P.item = NaN; }],
+    ['Infinity', (P) => { P.item = Infinity; }],
+    ['2 (wings, not in the cart)', (P) => { P.item = 2; }]
+  ];
+  for (const [label, set] of cases) {
+    const S = baseS();
+    S.cart = { '0': 2, '6': 1 };
+    S.promos.ue = { type: 'bogo', value: 0, cap: 0, min: 0 };
+    set(S.promos.ue);
+    let r = null;
+    assert.doesNotThrow(() => { r = engine.calc(S, 'ue-p'); }, 'item ' + label + ': no throw');
+    assert.equal(r.disc, 0, 'item ' + label + ': disc');
+    assert.equal(r.net, 62.70, 'item ' + label + ': net');
+    assert.deepStrictEqual(structuredClone(r.notes), [], 'item ' + label + ': no BOGO note');
+    assert.ok(!structuredClone(r.lines).some((l) => l[0] === 'Promo'), 'item ' + label + ': no Promo row');
+  }
+});
+
+test('D-036 §5.4 a BOGO cap limits the promo; a cap that does not bind leaves it alone', () => {
+  // Cart {0: 2}: food 50.70894 → 50.71; free 1, promo 25.35447.
+  // cap 20: promo = 20. tax = (50.71 − 20) × 8.54% = 30.71 × 0.0854 = 2.622634 → 2.62.
+  //   gross = 50.71 + 2.62 + 1.42 = 54.75; net = 54.75 − 20 = 34.75.
+  // cap 30 does not bind: promo 25.35 (as r15).
+  const capped = baseS();
+  capped.cart = { '0': 2 };
+  capped.promos.ue = { type: 'bogo', value: 0, cap: 20, min: 0, item: 0 };
+  const a = engine.calc(capped, 'ue-p');
+  assert.equal(a.disc, 20);
+  assert.equal(a.parts.food, 50.71);
+  assert.equal(a.net, 34.75);
+
+  const loose = baseS();
+  loose.cart = { '0': 2 };
+  loose.promos.ue = { type: 'bogo', value: 0, cap: 30, min: 0, item: 0 };
+  assert.equal(engine.calc(loose, 'ue-p').disc, 25.35);
+});
+
+test('D-036 §5.4 the BOGO minimum is tested on the marked-up food: at equality it applies, a cent above it does not', () => {
+  // Cart {0: 2, 6: 1} on Uber Eats delivery: food 56.46. Net with the promo (25.35) is 52.70 (r15).
+  // Without it: 56.46 + 10.46 fees + 4.82 tax + 8.47 tip = 80.21.
+  const at = baseS();
+  at.cart = { '0': 2, '6': 1 };
+  at.promos.ue = { type: 'bogo', value: 0, cap: 0, min: 56.46, item: 0 };
+  const eq = engine.calc(at, 'ue-d');
+  assert.equal(eq.disc, 25.35, 'min 56.46 at equality');
+  assert.equal(eq.net, 52.70);
+
+  const above = baseS();
+  above.cart = { '0': 2, '6': 1 };
+  above.promos.ue = { type: 'bogo', value: 0, cap: 0, min: 56.47, item: 0 };
+  const no = engine.calc(above, 'ue-d');
+  assert.equal(no.disc, 0, 'min 56.47: no promo');
+  assert.equal(no.net, 80.21);
+  assert.deepStrictEqual(structuredClone(no.notes), []);
+
+  // §9.2: the menu subtotal is 21.99 × 2 + 4.99 = 48.97, under a min of 50, but the marked-up food 56.46 clears it.
+  const markedUp = baseS();
+  markedUp.cart = { '0': 2, '6': 1 };
+  markedUp.promos.ue = { type: 'bogo', value: 0, cap: 0, min: 50, item: 0 };
+  assert.equal(engine.calc(markedUp, 'ue-d').disc, 25.35, 'min 50 on food 56.46 applies');
+});
+
+test('D-036 §6 the BOGO note is exactly "BOGO: " + the item\'s name, and it names the chosen item', () => {
+  // Coke (item 6) at 4.99 with 2 in the cart on Uber Eats pickup:
+  // food = 4.99 × 2 × 1.153 = 11.50694 → 11.51. promo = 4.99 × 1 × 1.153 = 5.75347 → 5.75.
+  // tax = (11.51 − 5.75) × 8.54% = 5.76 × 0.0854 = 0.491904 → 0.49. gross = 11.51 + 0.49 + 1.42 = 13.42.
+  // net = 13.42 − 5.75 = 7.67.
+  const S = baseS();
+  S.cart = { '6': 2 };
+  S.promos.ue = { type: 'bogo', value: 0, cap: 0, min: 0, item: 6 };
+  const r = engine.calc(S, 'ue-p');
+  assert.equal(r.disc, 5.75);
+  assert.equal(r.net, 7.67);
+  same(structuredClone(r.notes), ['BOGO: ' + COKE], 'notes');
+});
+
+test('D-036 §5.4 an unprofiled brand gets no BOGO, even with a menu on it: food 23.06, net 26.45', () => {
+  // Estimate: manualSubtotal 20 × 1.153 = 23.06. tax = 23.06 × 8.54% = 1.969324 → 1.97.
+  // gross = 23.06 + 1.97 + 1.42 = 26.45. No BOGO applies (§5.4 needs a profiled brand).
+  const S = baseS();
+  S.rest = {
+    id: 'taco_bell', name: 'Taco Bell', profiled: false, menu: [], deal: null, directDelivery: false,
+    directSvc: null, amexGoldDirect: false, platforms: ['dd', 'ue', 'gh'],
+    markup: { dd: 15.3, ue: 15.3, gh: 15.3 }, markupEst: true
+  };
+  S.manualSubtotal = 20;
+  S.cart = {};
+  S.promos.ue = { type: 'bogo', value: 0, cap: 0, min: 0, item: 0 };
+  let r = engine.calc(S, 'ue-p');
+  assert.equal(r.parts.food, 23.06);
+  assert.equal(r.disc, 0);
+  assert.equal(r.net, 26.45);
+  same(structuredClone(r.notes), ['Estimate'], 'notes');
+
+  // The same brand with an artificial menu entry and a cart: still no BOGO, because the brand is unprofiled.
+  S.rest.menu = [{ name: PIZZA, price: 21.99, dealItem: false }];
+  S.cart = { '0': 2 };
+  r = engine.calc(S, 'ue-p');
+  assert.equal(r.disc, 0, 'unprofiled with a menu entry: no promo');
+  same(structuredClone(r.notes), ['Estimate'], 'unprofiled with a menu entry: notes');
+});
+
+test('D-036 §4 malformed cart lines give no line and no throw', () => {
+  // qty "2", null and true are not finite numbers: no line, so the cart is empty.
+  // Empty cart on dd-p: food 0, tax 0, drive 1.42 → net 1.42.
+  for (const q of ['2', null, true]) {
+    const S = baseS();
+    S.cart = { '0': q };
+    let ci = null;
+    assert.doesNotThrow(() => { ci = engine.cartInfo(S); }, 'qty ' + JSON.stringify(q));
+    assert.equal(ci.menuSub, 0, 'qty ' + JSON.stringify(q) + ': menuSub');
+    assert.equal(ci.qty, 0, 'qty ' + JSON.stringify(q) + ': qty');
+    const r = engine.calc(S, 'dd-p');
+    assert.equal(r.net, 1.42, 'qty ' + JSON.stringify(q) + ': net');
+  }
+  // A cart line whose menu entry is null gives no line; the other line still counts.
+  // Coke only: menuSub 4.99, qty 1. dd-p food = 4.99 × 1.153 = 5.75347 → 5.75; tax 5.75 × 8.54% = 0.49105 → 0.49;
+  // net = 5.75 + 0.49 + 1.42 = 7.66.
+  const N = baseS();
+  N.rest.menu[0] = null;
+  N.cart = { '0': 1, '6': 1 };
+  const ci = engine.cartInfo(N);
+  assert.equal(ci.menuSub, 4.99);
+  assert.equal(ci.qty, 1);
+  let r = null;
+  assert.doesNotThrow(() => { r = engine.calc(N, 'dd-p'); });
+  assert.equal(r.parts.food, 5.75);
+  assert.equal(r.net, 7.66);
+});
+
+test('D-036 purity: calc and allResults with a BOGO and item markups leave S, its menu items and the override unchanged', () => {
+  const S = baseS();
+  S.rest.menu[0].markup = { ue: 10 };
+  S.rest.menu[6].markup = { dd: 40 };
+  S.promos.ue = { type: 'bogo', value: 0, cap: 30, min: 0, item: 0 };
+  const override = { cart: { '0': 2, '6': 1 }, miles: 9 };
+  const sBefore = clone(S);
+  const oBefore = clone(override);
+
+  // The BOGO really fires here, so the check isn't vacuous: pizza at 10% on ue,
+  // food 54.13 (21.99 × 2 × 1.10 = 48.378, + 5.75347), promo 24.19 (21.99 × 1 × 1.10 = 24.189, under the cap of 30).
+  const r = engine.calc(S, 'ue-d', override);
+  assert.equal(r.parts.food, 54.13);
+  assert.equal(r.disc, 24.19);
+
+  for (const ch of engine.CHANNELS) { engine.calc(S, ch, override); }
+  engine.allResults(S, override);
+  assert.deepStrictEqual(S, sBefore, 'S');
+  assert.deepStrictEqual(S.rest.menu[0].markup, { ue: 10 }, 'the pizza markup');
+  assert.deepStrictEqual(override, oBefore, 'override');
 });

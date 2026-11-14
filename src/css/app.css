@@ -298,6 +298,9 @@ label.check {
 
 .fields input, .fields select { width: 100%; }
 
+/* A note inside a grid (the BOGO "needs a menu" line) takes the whole row, so the pairs after it stay put */
+.fields > p { grid-column: 1 / -1; }
+
 .app-settings {
   border: 1px solid var(--line);
   border-radius: 10px;
