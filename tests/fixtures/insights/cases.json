@@ -3786,8 +3786,8 @@
    ]
   },
   {
-   "id": "minimum-bogo",
-   "title": "A BOGO with a $35 minimum is a candidate; adding a Coke reaches it but one pizza makes nothing free",
+   "id": "minimum-bogo-nothing-free",
+   "title": "A BOGO minimum that, once reached, would make nothing free isn't advice",
    "refs": [
     "§3.4",
     "D-036"
@@ -3809,16 +3809,156 @@
     14
    ],
    "hand": {
+    "#ids": [
+     "distance",
+     "fuel",
+     "spread"
+    ]
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 66.7 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 66.7,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 76.12,
+      "capped": true
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $30.70 (Order direct · pickup) to $46.10 (DoorDash · delivery): a $15.40 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 15.4
+     }
+    }
+   ]
+  },
+  {
+   "id": "minimum-bogo-no-item",
+   "title": "A BOGO with no item picked is never a Minimum candidate",
+   "refs": [
+    "§3.4",
+    "D-036"
+   ],
+   "patch": {
+    "promos": {
+     "ue": {
+      "type": "bogo",
+      "value": 0,
+      "cap": 0,
+      "min": 35,
+      "item": null
+     }
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "#ids": [
+     "distance",
+     "fuel",
+     "spread"
+    ]
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 66.7 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 66.7,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 76.12,
+      "capped": true
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $30.70 (Order direct · pickup) to $46.10 (DoorDash · delivery): a $15.40 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 15.4
+     }
+    }
+   ]
+  },
+  {
+   "id": "minimum-bogo-adds-the-item",
+   "title": "Adding the cheapest item reaches the minimum and makes a second Coke: one is free",
+   "refs": [
+    "§3.4",
+    "D-036"
+   ],
+   "patch": {
+    "promos": {
+     "ue": {
+      "type": "bogo",
+      "value": 0,
+      "cap": 0,
+      "min": 35,
+      "item": 6
+     }
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "#ids": [
+     "distance",
+     "fuel",
+     "minimum",
+     "spread"
+    ],
     "minimum.channel": "ue-p",
     "minimum.short": 3.89,
     "minimum.addQty": 1,
     "minimum.addItem": "Coke® (2 L)",
     "minimum.addAmount": 4.99,
-    "minimum.net": 41.43,
+    "minimum.net": 35.19,
     "minimum.was": 35.19,
-    "minimum.delta": 6.24,
+    "minimum.delta": 0,
     "minimum.cls": "",
-    "minimum.text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $41.43: $6.24 more than now."
+    "minimum.text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $35.19: $0.00 more than now."
    },
    "expect": [
     {
@@ -3848,7 +3988,7 @@
      "id": "minimum",
      "label": "Minimum",
      "cls": "",
-     "text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $41.43: $6.24 more than now.",
+     "text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $35.19: $0.00 more than now.",
      "data": {
       "channel": "ue-p",
       "min": 35,
@@ -3856,9 +3996,9 @@
       "addQty": 1,
       "addItem": "Coke® (2 L)",
       "addAmount": 4.99,
-      "net": 41.43,
+      "net": 35.19,
       "was": 35.19,
-      "delta": 6.24
+      "delta": 0.0
      }
     },
     {

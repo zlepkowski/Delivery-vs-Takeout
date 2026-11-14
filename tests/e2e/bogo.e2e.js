@@ -117,6 +117,13 @@ test('D-036 a new restaurant clears the BOGO item; an unprofiled one has no item
   await page.waitForSelector('[data-testid="bogo-note-ue"]');
   assert.equal(await H.text(page, '[data-testid="bogo-note-ue"]'), 'Buy one, get one free needs a restaurant with a menu.');
   assert.equal(await page.locator('#promos-ue-item').count(), 0);
+  // On the desktop grid (label | input), the note must not take a cell and shift the pairs after it.
+  for (const f of ['value', 'cap', 'min']) {
+    const lab = await page.locator('label[for="promos-ue-' + f + '"]').boundingBox();
+    const box = await page.locator('#promos-ue-' + f).boundingBox();
+    assert.ok(Math.abs(lab.y + lab.height / 2 - (box.y + box.height / 2)) < 12,
+      'promos-ue-' + f + ': label and input on one row (label y ' + lab.y + ', input y ' + box.y + ')');
+  }
   const exp = H.expected(await H.saved(page));
   assert.deepEqual([exp.S.promos.ue.type, exp.S.promos.ue.item], ['bogo', null], 'the type stays; the old index is cleared');
 

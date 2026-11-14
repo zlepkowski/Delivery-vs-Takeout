@@ -2,7 +2,7 @@
 
 The exact definition of `POD.insights` in `src/js/insights.js`: the nine advice cards of BUILD.md §4.5. **Where this file and BUILD.md §4.5 differ, this file wins** (D-034). `src/js/insights.js` and the Python reference `tests/oracle/insights.py` both implement it. Change it only by a decision: the reference and the fixtures (`tests/fixtures/insights/`) change first, the code after.
 
-*Amended 2026-11-14 (D-036, Phase 6):* menu items are objects (`{name, price, dealItem, markup?}`, engine contract §2.1); Minimum also counts a `bogo` promo at a profiled brand (§3.4); a menu entry that isn't an object gives `[]` (§1).
+*Amended 2026-11-14 (D-036, Phase 6):* menu items are objects (`{name, price, dealItem, markup?}`, engine contract §2.1); Minimum also counts a `bogo` promo at a profiled brand, when reaching the minimum makes something free (§3.4); a menu entry that isn't an object gives `[]` (§1).
 
 *Amended 2026-11-14 after the 5.2 review:* a restricted gold-partner credit counts for Wallet and Timing only once opted in (§3.5, §3.6); the never-throw guards are written out (§1, §3.4).
 
@@ -76,6 +76,7 @@ A **candidate** is each entry `r` of `R`, in order, with all of: `r.plat !== "di
 For a candidate, the counterfactual:
 - **Profiled** (`F.rest.profiled === true`): `j` = the cheapest item of the whole menu (none → not a candidate). For `k` = 1, 2, … 20: `a = calc(F, r.id, {cart: cart plus k of j})`; stop at the first `k` with `a.parts.food >= min`. None by 20 → not a candidate. `addQty = k`, `addItem = menu[j].name`, `addAmount = round2(k * menu[j].price)`.
 - **Unprofiled:** when `F.plats[r.plat].markup` isn't a finite number, not a candidate. Otherwise `ms = Math.ceil(min / (1 + markup / 100) * 100) / 100`. Up to 5 tries (two always suffice: the ceiling puts `ms × (1 + markup)` at or above `min`, so only rounding to the cent can fall short, by less than one step; the cap is a guard): `a = calc(F, r.id, {manualSubtotal: ms})`; stop when `a.parts.food >= min`, else `ms = round2(ms + 0.01)`. None in 5 → not a candidate. `addQty = null`, `addItem = null`, `addAmount = round2(ms - F.manualSubtotal)`.
+- **A `bogo` candidate counts only when `a.notes` has an entry starting with `"BOGO: "`** (D-036, amended after the 6.2 review): reaching the minimum must make something free. Otherwise (no item picked, or fewer than 2 of it even after adding `j`) it isn't a candidate: the advice would be to spend more for no promo.
 - `delta = round2(a.net - r.net)`.
 
 Shows the candidate with the **smallest `delta`** (a tie keeps the earlier in `R`). None → no insight.

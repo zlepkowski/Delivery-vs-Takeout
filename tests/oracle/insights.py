@@ -180,6 +180,8 @@ def minimum(F, R):
                     break
             if a is None:
                 continue
+            if pr["type"] == "bogo" and not any(n.startswith("BOGO: ") for n in a["notes"]):
+                continue   # D-036: reaching the minimum must make something free
             add_qty, add_item, add_amount = k, menu[j]["name"], E.round2(k * menu[j]["price"])
         else:
             pl = (F.get("plats") if _obj(F.get("plats")) else {}).get(r["plat"])

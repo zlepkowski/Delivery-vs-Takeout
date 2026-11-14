@@ -277,16 +277,28 @@ case("minimum-unprofiled-second-try", "Rounding to the cent falls short once: th
     "promos": {"gh": {"type": "dollar", "value": 5, "cap": 0, "min": 25.053}}}), {
     "minimum.addAmount": 2.26, "minimum.channel": "gh-p",
 }, refs=["§3.4"])
-# D-036: a BOGO counts as a Minimum candidate at a profiled brand (both modes, like dollar).
-# ue food 31.11 < 35, short 3.89. + 1 Coke: 25.35447 + 4.99 x 2 x 1.153 = 36.86141 -> 36.86 >= 35, but the BOGO pizza (item 0)
-# is still 1 in the cart, so free = 0: no saving. ue-p: tax 36.86 x 8.54% = 3.147844 -> 3.15; 36.86 + 3.15 + 1.42 = 41.43,
-# delta 41.43 - 35.19 = 6.24. ue-d: service 5.529 -> 5.53, fees 7.52, tax 3.15, tip 5.53: 53.06, delta 7.96. ue-p wins.
+# D-036: a BOGO counts as a Minimum candidate at a profiled brand only when reaching the minimum makes something free
+# (insights contract §3.4, amended after the 6.2 review). ue food 31.11 < 35. + 1 Coke (the cheapest): food 36.86 >= 35,
+# but the BOGO pizza (item 0) is still 1 in the cart, so free = 0 and the result has no "BOGO: " note: not a candidate.
 BOGO35 = {"type": "bogo", "value": 0, "cap": 0, "min": 35, "item": 0}
-case("minimum-bogo", "A BOGO with a $35 minimum is a candidate; adding a Coke reaches it but one pizza makes nothing free", {
+case("minimum-bogo-nothing-free", "A BOGO minimum that, once reached, would make nothing free isn't advice", {
     "promos": {"ue": BOGO35}}, {
+    "#ids": ["distance", "fuel", "spread"],
+}, refs=["§3.4", "D-036"])
+case("minimum-bogo-no-item", "A BOGO with no item picked is never a Minimum candidate", {
+    "promos": {"ue": dict(BOGO35, item=None)}}, {
+    "#ids": ["distance", "fuel", "spread"],
+}, refs=["§3.4", "D-036"])
+# The Coke (item 6, 4.99) is both the BOGO item and the cheapest item. + 1 Coke: cart {0:1, 6:2}, food 25.35447 + 4.99 x 2
+# x 1.153 = 36.86141 -> 36.86 >= 35; free 1 Coke = 4.99 x 1.153 = 5.75347 -> 5.75. ue-p: tax (36.86 - 5.75) x 8.54% =
+# 31.11 x 0.0854 = 2.656794 -> 2.66; gross 36.86 + 2.66 + 1.42 = 40.94; net 35.19, was 35.19: delta 0.00.
+# ue-d: service 5.529 -> 5.53, fees 7.52, tip 5.53: 36.86 + 7.52 + 2.66 + 5.53 = 52.57 - 5.75 = 46.82, delta 1.72. ue-p wins.
+case("minimum-bogo-adds-the-item", "Adding the cheapest item reaches the minimum and makes a second Coke: one is free", {
+    "promos": {"ue": dict(BOGO35, item=6)}}, {
+    "#ids": ["distance", "fuel", "minimum", "spread"],
     "minimum.channel": "ue-p", "minimum.short": 3.89, "minimum.addQty": 1, "minimum.addItem": "Coke® (2 L)",
-    "minimum.addAmount": 4.99, "minimum.net": 41.43, "minimum.was": 35.19, "minimum.delta": 6.24, "minimum.cls": "",
-    "minimum.text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $41.43: $6.24 more than now.",
+    "minimum.addAmount": 4.99, "minimum.net": 35.19, "minimum.was": 35.19, "minimum.delta": 0, "minimum.cls": "",
+    "minimum.text": "Uber Eats · pickup is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $35.19: $0.00 more than now.",
 }, refs=["§3.4", "D-036"])
 # 2 pizzas: ue food 21.99 x 2 x 1.153 = 50.70894 -> 50.71 < 55 (short 4.29). ue-p now: tax 50.71 x 8.54% = 4.330634 -> 4.33;
 # 50.71 + 4.33 + 1.42 = 56.46. + 1 Coke: food 56.46 >= 55, free 1 pizza 25.35: receipt r15's ue-p, 35.19. delta -21.27.
