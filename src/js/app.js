@@ -116,6 +116,7 @@
       var box = document.getElementById("mc-plat-" + CREDIT_PLATS[k]);
       if (box && box.checked) { plats.push(CREDIT_PLATS[k]); }
     }
+    if (plats.length === 0) { view.mcError = true; return; }
     var key = POD.state.addManualCredit(POD.S, POD.data, {
       name: fieldValue("mc-name").trim(),
       amount: parseFloat(fieldValue("mc-amount")),
@@ -144,17 +145,17 @@
     if (!el || !el.getAttribute) { return; }
     var S = POD.S, D = POD.data, opts = POD.opts;
     var bind = el.getAttribute("data-bind");
+    var before = stateKey();
     if (bind) {
-      view.geoError = false;
       view.mcError = false;
       POD.state.setPath(S, bind, parseValue(el));
+      clearGeoIfChanged(before);
       afterChange(derive());
       return;
     }
     var action = el.getAttribute("data-action");
     if (!action) { return; }
     var now = new Date();
-    view.geoError = false;
     view.mcError = false;
     switch (action) {
       case "address": POD.state.setAddress(S, D, el.value, opts); break;
@@ -166,6 +167,7 @@
       case "used": POD.state.markUsed(S, D, el.getAttribute("data-key"), el.checked, now); break;
       default: return;
     }
+    clearGeoIfChanged(before);
     afterChange(derive());
   }
 
@@ -174,6 +176,13 @@
   }
 
   // ---- geolocation (§6) -------------------------------------------------------------------------
+
+  /** The geolocation message stays until the next state change (ui-contract §6), not any click. */
+  function stateKey() { return JSON.stringify(POD.S); }
+
+  function clearGeoIfChanged(before) {
+    if (stateKey() !== before) { view.geoError = false; }
+  }
 
   function locate() {
     view.geoError = false;
@@ -215,7 +224,7 @@
     var S = POD.S, D = POD.data, opts = POD.opts;
     var now = new Date();
     var i, cur, store;
-    view.geoError = false;
+    var before = stateKey();
     view.mcError = false;
     switch (action) {
       case "example": runExample(); break;
@@ -239,6 +248,7 @@
       case "more-stores": view.moreStores = true; break;
       default: return;
     }
+    clearGeoIfChanged(before);
     afterChange(derive());
   }
 

@@ -1192,6 +1192,204 @@
    "work": ""
   },
   {
+   "id": "setCar: switching to an unlisted car clears the old car's mpg (D-031 amendment)",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    }
+   ],
+   "expect": {
+    "make": "Other",
+    "fuel": "regular",
+    "mpg": null,
+    "miPerKwh": null,
+    "$missing": [
+     "rest",
+     "mpg",
+     "miles",
+     "minutes"
+    ]
+   },
+   "work": "Sedan was 30 mpg; Other isn't listed, so mpg is cleared and the page asks for it."
+  },
+  {
+   "id": "setCar: an EV to an unlisted car keeps fuel ev and clears miPerKwh",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Volt"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    }
+   ],
+   "expect": {
+    "fuel": "ev",
+    "miPerKwh": null,
+    "mpg": null
+   },
+   "work": "Volt was 3.5 mi/kWh; it's cleared, the fuel stays ev."
+  },
+  {
+   "id": "setCar: the same unlisted pair again keeps the user's own mpg",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "mpg",
+      33
+     ],
+     "returns": true
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    }
+   ],
+   "expect": {
+    "mpg": 33,
+    "fuel": "regular"
+   },
+   "work": "The pair didn't change, so the typed 33 stays."
+  },
+  {
+   "id": "setCar: a listed make with no model yet clears the old mpg",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Zeta",
+      ""
+     ]
+    }
+   ],
+   "expect": {
+    "make": "Zeta",
+    "model": "",
+    "mpg": null
+   },
+   "work": "Zeta with no model isn't a listed pair: 30 from the Sedan is cleared until a model is chosen."
+  },
+  {
+   "id": "setCar: from a typed car to a listed one takes the data",
+   "refs": [
+    "§6"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "mpg",
+      33
+     ],
+     "returns": true
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sport"
+     ]
+    }
+   ],
+   "expect": {
+    "mpg": 25,
+    "fuel": "premium"
+   },
+   "work": "Sport:25* is listed: applyCar sets 25 and premium."
+  },
+  {
    "id": "setBrand: a profiled brand, its markups and the nearest store",
    "refs": [
     "§6",

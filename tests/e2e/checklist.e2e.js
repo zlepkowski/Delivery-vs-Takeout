@@ -427,3 +427,93 @@ test('settings: a cleared tip is asked for; an unprofiled brand takes a typed me
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+// ---- added after the 5.3 review: what a broken render would otherwise pass ---------------------
+
+test('results: the missing list follows the contract order; rows carry best, member, neg and Estimate', async () => {
+  const { ctx, page, errors } = await H.openPage(browser, site.url);
+  await page.click('[data-action="example"]');
+  await page.waitForSelector('[data-testid="result-row"]');
+  await H.commit(page, '#wear', '');
+  await H.commit(page, '#tipDel', '');
+  assert.equal(await H.text(page, '[data-testid="missing"]'), 'To compare, we still need: the delivery tip, wear per mile.');
+  await H.commit(page, '#tipDel', '15');
+  await H.commit(page, '#wear', '0.1104');
+  await page.waitForSelector('[data-testid="result-row"]');
+
+  // DashPass from the Sapphire Reserve; DoorDash's fees from the checkout.
+  await tick(page, '[data-action="toggle-card"][data-card="chase_sapphire_reserve"]');
+  for (const [p, v] of Object.entries({ 'plats.dd.delFee': 2.99, 'plats.dd.svcMin': 3, regFee: 0, smallMin: 12, smallFee: 2.5 })) {
+    await H.commit(page, '#need-' + p.replace(/\./g, '-'), v);
+  }
+  const exp = await assertResultsMatchSaved(page, 'DashPass');
+  const rows = page.locator('[data-testid="result-row"]');
+  assert.equal(await page.locator('[data-testid="result-row"].best').count(), 1, 'one best row');
+  assert.ok(await rows.first().evaluate((r) => r.classList.contains('best')), 'the first row is the best');
+  const dd = page.locator('[data-testid="result-row"][data-channel="dd-d"]');
+  assert.equal(exp.R.find((r) => r.id === 'dd-d').member, 'DashPass');
+  assert.ok((await dd.textContent()).includes('DashPass'), 'the member badge shows');
+  assert.ok((await dd.locator('summary').textContent()).trim() === 'Receipt');
+  const neg = await dd.locator('[data-testid="line"]').evaluateAll((ls) => ls.filter((l) =>
+    l.querySelector('[data-testid="line-label"]').textContent.trim() === 'Card credits').map((l) =>
+    l.classList.contains('neg') || !!l.querySelector('.neg')));
+  assert.deepEqual(neg, [true], 'the Card credits line is marked neg');
+  const delivery = await dd.locator('[data-testid="line"]').evaluateAll((ls) => ls.filter((l) =>
+    l.querySelector('[data-testid="line-label"]').textContent.trim() === 'Delivery fee').map((l) =>
+    l.querySelector('[data-testid="line-amount"]').textContent.trim()));
+  assert.deepEqual(delivery, ['waived'], 'DashPass waives the delivery fee');
+
+  // The card's membership can be turned off; then DoorDash charges its delivery fee again.
+  assert.ok(await page.isChecked('#cardMember-dd'), 'the card membership is on by default (D-024)');
+  assert.equal(await page.locator('#memberOwn-dd').count(), 1);
+  await page.click('#cardMember-dd');
+  await assertResultsMatchSaved(page, 'membership off');
+  assert.ok(!(await dd.textContent()).includes('DashPass'), 'no badge once the membership is off');
+
+  // An unprofiled brand's rows say Estimate.
+  await page.selectOption('#brand', 'taco_bell');
+  await H.commit(page, '#manualSubtotal', '20');
+  await page.waitForSelector('[data-testid="result-row"]');
+  assert.ok((await H.text(page, '[data-testid="result-row"]')).includes('Estimate'));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('wallet: tier tags, and a credit with nowhere to apply is refused', async () => {
+  const { ctx, page, errors } = await H.openPage(browser, site.url);
+  await tick(page, '[data-action="toggle-card"][data-card="amex_delta_gold"]');
+  await tick(page, '[data-action="toggle-card"][data-card="amex_platinum"]');
+  const locked = page.locator('[data-testid="credit"][data-key="amex_delta_gold.rideshare"]');
+  assert.ok((await locked.textContent()).includes('Locked'));
+  assert.equal(await locked.locator('[data-action="used"]').count(), 0, 'a locked credit has no "Used" box');
+  assert.ok((await H.text(page, '[data-testid="credit"][data-key="amex_platinum.uber_cash"]')).includes('Works on Uber Eats'));
+  assert.ok((await H.text(page, '[data-testid="credit"][data-key="amex_platinum.resy"]')).includes('Some restaurants'));
+  await page.fill('#mc-name', 'Gift');
+  await page.fill('#mc-amount', '25');
+  await page.click('[data-action="add-credit"]');
+  assert.equal(await H.text(page, '[data-testid="mc-error"]'), 'Give the credit a name, an amount above $0 and where it works.');
+  assert.equal(await page.locator('[data-testid="credit"][data-key="manual.1"]').count(), 0, 'nothing was added');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('car: switching from a listed car to "Other" asks for the new car\'s mpg instead of keeping the old one', async () => {
+  const { ctx, page, errors } = await H.openPage(browser, site.url);
+  await page.click('[data-action="example"]');
+  await page.waitForSelector('[data-testid="result-row"]');
+  await page.selectOption('#make', 'Other');
+  await H.waitText(page, '[data-testid="missing"]', 'your car');
+  assert.equal(await page.inputValue('#mpg'), '', 'the Camry\'s 46 mpg isn\'t carried over');
+  await H.commit(page, '#mpg', '30');
+  assert.equal(await H.text(page, '[data-testid="car-summary"]'), '30 mpg · regular');
+  await assertResultsMatchSaved(page, 'Other, 30 mpg');
+  await page.selectOption('#fuel', 'ev');
+  await H.commit(page, '#miPerKwh', '4');
+  assert.equal(await H.text(page, '[data-testid="car-summary"]'), '4 mi/kWh · electric');
+  await assertResultsMatchSaved(page, 'Other EV');
+  await page.reload();
+  await page.waitForSelector('[data-testid="result-row"]');
+  assert.equal(await H.text(page, '[data-testid="car-summary"]'), '4 mi/kWh · electric', 'the typed car survives a reload');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});

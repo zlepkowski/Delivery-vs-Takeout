@@ -135,8 +135,7 @@
           msg += '<p data-testid="near-status">Some store data didn\'t load, so the list may be incomplete.</p>';
         }
         if (n === 0) {
-          msg += '<p class="muted"' + (res.partial ? "" : ' data-testid="near-status"') +
-            ">No restaurants found within " + res.radius + " miles.</p>";
+          msg += '<p class="muted" data-testid="near-status">No restaurants found within ' + res.radius + " miles.</p>";
         } else {
           var shown = view.moreStores ? n : Math.min(n, SHOWN_NEAR);
           list = '<ol class="near-list" data-testid="near-list">';
@@ -240,11 +239,21 @@
 
   // ---- results -----------------------------------------------------------------------------------
 
+  // ui-contract §5.5 step 1: the order the names are listed in.
+  var MISSING_ORDER = ["rest", "tax", "fuel", "mpg", "gas", "miPerKwh", "kwh", "miles", "minutes",
+    "manualSubtotal", "tipDel", "tipPick", "wear", "hourly"];
+
   function missingText(missing, loading) {
-    var names = [], seen = {};
-    for (var i = 0; i < missing.length; i++) {
-      var p = missing[i];
-      var nm = hasOwn(FRIENDLY, p) ? FRIENDLY[p] : p;
+    var names = [], seen = {}, isMissing = {}, i, p, nm;
+    for (i = 0; i < missing.length; i++) { isMissing[missing[i]] = true; }
+    var order = MISSING_ORDER.slice(0);
+    for (i = 0; i < missing.length; i++) {
+      if (MISSING_ORDER.indexOf(missing[i]) < 0) { order.push(missing[i]); }
+    }
+    for (i = 0; i < order.length; i++) {
+      p = order[i];
+      if (!hasOwn(isMissing, p)) { continue; }
+      nm = hasOwn(FRIENDLY, p) ? FRIENDLY[p] : p;
       if ((p === "miles" || p === "minutes") && loading) { nm = "the trip distance (finding stores near you…)"; }
       if (!hasOwn(seen, nm)) { seen[nm] = true; names.push(nm); }
     }

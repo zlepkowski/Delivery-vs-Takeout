@@ -640,8 +640,16 @@
   }
 
   function setCar(S, D, make, model) {
-    S.make = isStr(make) ? make : "";
-    S.model = isStr(model) ? model : "";
+    var newMake = isStr(make) ? make : "";
+    var newModel = isStr(model) ? model : "";
+    var changed = newMake !== S.make || newModel !== S.model;
+    S.make = newMake;
+    S.model = newModel;
+    // A pair the user just picked that isn't listed: the old car's mpg and kWh belong to it, not to this one.
+    if (changed && findCar(D, newMake, newModel) === null) {
+      S.mpg = null;
+      S.miPerKwh = null;
+    }
     applyCar(S, D);
   }
 

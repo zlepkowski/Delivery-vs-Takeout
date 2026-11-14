@@ -150,6 +150,22 @@ sc("setCar: an unknown car keeps the user's own fuel and mpg", ["§4.1"],
    "Sedan sets regular/30; Other isn't in CAR_DATA, so nothing changes; the user then types 33 mpg and premium, and applyState adds the premium spread.")
 sc("setCar: an unknown model under a known make changes nothing", ["§4.1"], [FR, st("setCar", "Acme", "Hover")],
    {"fuel": "regular", "mpg": None}, "")
+sc("setCar: switching to an unlisted car clears the old car's mpg (D-031 amendment)", ["§6"],
+   [FR, st("setAddress", "10004"), st("setCar", "Acme", "Sedan"), st("setCar", "Other", "")],
+   {"make": "Other", "fuel": "regular", "mpg": None, "miPerKwh": None, "$missing": ["rest", "mpg", "miles", "minutes"]},
+   "Sedan was 30 mpg; Other isn't listed, so mpg is cleared and the page asks for it.")
+sc("setCar: an EV to an unlisted car keeps fuel ev and clears miPerKwh", ["§6"],
+   [FR, st("setAddress", "10004"), st("setCar", "Acme", "Volt"), st("setCar", "Other", "")],
+   {"fuel": "ev", "miPerKwh": None, "mpg": None}, "Volt was 3.5 mi/kWh; it's cleared, the fuel stays ev.")
+sc("setCar: the same unlisted pair again keeps the user's own mpg", ["§6"],
+   [FR, st("setCar", "Other", ""), st("setPath", "mpg", 33, returns=True), st("setCar", "Other", "")],
+   {"mpg": 33, "fuel": "regular"}, "The pair didn't change, so the typed 33 stays.")
+sc("setCar: a listed make with no model yet clears the old mpg", ["§6"],
+   [FR, st("setCar", "Acme", "Sedan"), st("setCar", "Zeta", "")],
+   {"make": "Zeta", "model": "", "mpg": None}, "Zeta with no model isn't a listed pair: 30 from the Sedan is cleared until a model is chosen.")
+sc("setCar: from a typed car to a listed one takes the data", ["§6"],
+   [FR, st("setCar", "Other", ""), st("setPath", "mpg", 33, returns=True), st("setCar", "Acme", "Sport")],
+   {"mpg": 25, "fuel": "premium"}, "Sport:25* is listed: applyCar sets 25 and premium.")
 
 # ---------------------------------------------------------------- brand and trip
 pz_store = {"id": "pz@40030,-74000", "lat": 40.03, "lon": -74}
