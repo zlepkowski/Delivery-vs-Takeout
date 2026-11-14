@@ -198,6 +198,13 @@ def gen_scenario(seed):
                 cart[str(i)] = r.randint(0, 3)
         if r.random() < 0.15:
             cart[r.choice(["99", "x", "01", "-1", str(n)])] = r.randint(1, 2)
+        if r.random() < 0.05:   # D-036: a malformed quantity or menu entry gives no cart line
+            k = str(r.randrange(n))
+            if r.random() < 0.5:
+                cart[k] = r.choice(["2", None, True, [1]])
+            else:
+                menu[int(k)] = r.choice([None, ["Item", 3.5, False], "x"])
+                cart[k] = r.randint(1, 3)
     else:
         rest = {"id": "fuzz_u", "name": "Fuzz U", "profiled": False, "menu": [], "deal": None,
                 "directDelivery": False, "directSvc": None, "amexGoldDirect": False,
@@ -635,7 +642,7 @@ def main():
                     seen["bogo"].add(i)
                 if v is not None and v["plat"] != "direct" and req["S"]["rest"]["profiled"]:
                     plain = dict(req["S"], rest=dict(req["S"]["rest"], menu=[
-                        {k: x for k, x in it.items() if k != "markup"} for it in req["S"]["rest"]["menu"]]))
+                        ({k: x for k, x in it.items() if k != "markup"} if isinstance(it, dict) else it) for it in req["S"]["rest"]["menu"]]))
                     if E.calc(plain, req["channel"], req.get("override"))["parts"]["food"] != v["parts"]["food"]:
                         seen["itemMarkup"].add(i)
             if not res["ok"]:

@@ -80,6 +80,8 @@ def _cart_lines(rest, cart):
             continue
         if str(i) != str(k) or i < 0 or i >= len(menu):
             continue
+        if not _finite(q) or not isinstance(menu[i], dict):   # D-036: no line, never a throw
+            continue
         out.append((i, q))
     out.sort()
     return out
@@ -209,8 +211,8 @@ def calc(S, ch, override=None):
             elif t == "bogo":
                 j = _bogo_index(rest, pr.get("item"))
                 cart = eff["cart"]
-                if j is not None and str(j) in cart:
-                    item = rest["menu"][j]
+                item = rest["menu"][j] if j is not None else None
+                if isinstance(item, dict) and str(j) in cart and _finite(cart[str(j)]):
                     free = math.floor(cart[str(j)] / 2)
                     promo = round2(_cap(item["price"] * free * (1 + _mk(item, p, P) / 100), pr.get("cap")))
         pick = round2(food * _num(P.get("pickDisc")) / 100) if m == "p" else 0

@@ -81,7 +81,7 @@ An unavailable channel is **left out**: `calc` returns `null` and `allResults` s
 
 ## 4. The cart (`cartInfo`)
 
-- The **cart lines** are the entries of `cart` whose key is a canonical non-negative integer `i` with `i < menu.length`, in **ascending menu-index order** (the order JS iterates integer-like keys); line `i` has item `menu[i]` and quantity `q = cart[i]`.
+- The **cart lines** are the entries of `cart` whose key is a canonical non-negative integer `i` with `i < menu.length`, whose quantity is a finite number and whose menu entry `menu[i]` is an object (D-036: anything else gives no line, never a throw), in **ascending menu-index order** (the order JS iterates integer-like keys); line `i` has item `menu[i]` and quantity `q = cart[i]`.
 - Profiled: `menuSub = round2(Σ price * q)` over the cart lines, accumulated from 0 in that order. The same order applies to `dealSub`, `qty` and `eligQty` (and to app food, §5.2). `qty` = Σ q. `eligQty` = Σ q of lines whose item has `dealItem === true`.
 - Unprofiled: `menuSub = round2(manualSubtotal)`, `qty = 0`, `eligQty = 0`.
 - `dealReady` = `rest.deal` is non-null **and** `eligQty ≥ deal.minItems`.

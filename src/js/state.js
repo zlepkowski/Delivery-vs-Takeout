@@ -11,7 +11,7 @@
   var APPS = ["dd", "ue", "gh"];                                   // §0
   var PLAT_IDS = ["direct", "dd", "ue", "gh"];                     // §5.3
   var FUELS = ["regular", "premium", "diesel", "ev"];              // §7
-  var PROMO_TYPES = ["none", "percent", "dollar", "freedel"];      // §8
+  var PROMO_TYPES = ["none", "percent", "dollar", "freedel", "bogo"];  // §8 (bogo: D-036)
   var CADENCES = ["monthly", "quarterly", "semiannual", "annual", "once"]; // §5.2
   var APP_NUMS = ["delFee", "svc", "svcMin", "memberSvc", "memberMin", "pickDisc"]; // §2, §8
   var APP_PATHS = ["markup", "delFee", "svc", "svcMin", "memberSvc", "memberMin", "pickDisc"]; // §7
@@ -142,7 +142,7 @@
     };
     for (var i = 0; i < APPS.length; i++) {
       S.plats[APPS[i]] = freshPlat(part(P, APPS[i]));
-      S.promos[APPS[i]] = { type: "none", value: 0, cap: 0, min: 0 };
+      S.promos[APPS[i]] = { type: "none", value: 0, cap: 0, min: 0, item: null };
     }
     return S;
   }
@@ -664,6 +664,10 @@
     S.brand = isStr(brandId) ? brandId : null;
     S.cart = {};
     S.dealOn = true;
+    for (var i = 0; i < APPS.length; i++) {
+      // D-036: an index into the old menu would name another item in the new one
+      if (isObj(S.promos) && isObj(S.promos[APPS[i]])) { S.promos[APPS[i]].item = null; }
+    }
     S.store = null;
     S.storePicked = false;
     applyBrand(S, D);
@@ -938,6 +942,7 @@
       for (var j = 0; j < PROMO_NUMS.length; j++) {
         if (isNonNeg(src[PROMO_NUMS[j]])) { dst[PROMO_NUMS[j]] = src[PROMO_NUMS[j]]; }
       }
+      if (isIntNonNeg(src.item) || src.item === null) { dst.item = src.item; }
     }
   }
 

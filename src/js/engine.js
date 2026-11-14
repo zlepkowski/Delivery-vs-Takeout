@@ -18,9 +18,73 @@
     return !!o && Object.prototype.hasOwnProperty.call(o, k);
   }
 
+  /** "object" as in the contracts: not null, typeof "object", not an array. */
+  function isObj(v) {
+    return v !== null && typeof v === "object" && !Array.isArray(v);
+  }
+
+  /** "finite number": typeof x === "number" and isFinite(x). */
+  function isNum(v) {
+    return typeof v === "number" && isFinite(v);
+  }
+
   /** cap(x) = max > 0 ? min(x, max) : x (a missing max means no cap). */
   function cap(x, max) {
     return max > 0 ? Math.min(x, max) : x;
+  }
+
+  /** The cart: the overridden one, else S.cart (contract §1). */
+  function cartOf(S, ov) {
+    return ov.cart !== undefined ? ov.cart : S.cart;
+  }
+
+  /**
+   * The cart lines (contract §4) of a profiled brand: [{i, it, q}] in ascending menu-index order.
+   * A key that isn't a canonical index in range, a non-object menu entry and a non-number quantity give no line.
+   */
+  function cartLines(S, ov) {
+    var out = [];
+    if (!S.rest || !S.rest.profiled) { return out; }
+    var cart = cartOf(S, ov);
+    var menu = Array.isArray(S.rest.menu) ? S.rest.menu : [];
+    var idx = [];
+    var k;
+    for (k in cart) {
+      if (has(cart, k) && isNum(cart[k])) {
+        var i = parseInt(k, 10);
+        if (String(i) === k && i >= 0 && i < menu.length && isObj(menu[i])) { idx.push(i); }
+      }
+    }
+    idx.sort(function (a, b) { return a - b; });
+    for (var j = 0; j < idx.length; j++) {
+      out.push({ i: idx[j], it: menu[idx[j]], q: cart[String(idx[j])] });
+    }
+    return out;
+  }
+
+  /** mk(it, p): the item's own markup on app p when it has a valid one, else the app's markup (D-036). */
+  function itemMarkup(it, p, appMarkup) {
+    if (isObj(it.markup) && has(it.markup, p) && isNum(it.markup[p]) && it.markup[p] >= 0) {
+      return it.markup[p];
+    }
+    return appMarkup;
+  }
+
+  /**
+   * The BOGO promo before the clamp (contract §5.4, D-036): floor(q / 2) of the chosen item, at its
+   * marked-up price, capped by pr.cap. 0 when the item isn't a valid one in this cart. Never throws.
+   */
+  function bogoAmount(S, ov, p, pr) {
+    var j = pr.item;
+    var menu = S.rest.menu;
+    if (!S.rest.profiled || !Array.isArray(menu)) { return 0; }
+    if (!isNum(j) || Math.floor(j) !== j || j < 0 || j >= menu.length) { return 0; }
+    var it = menu[j];
+    var cart = cartOf(S, ov);
+    var key = String(j);
+    if (!isObj(it) || !isNum(it.price) || !has(cart, key) || !isNum(cart[key])) { return 0; }
+    var free = Math.floor(cart[key] / 2);
+    return cap(it.price * free * (1 + itemMarkup(it, p, S.plats[p].markup) / 100), pr.cap);
   }
 
   /** Deep copy of plain data (objects and arrays), so the copy shares nothing with the source. */
@@ -70,22 +134,11 @@
     var eligQty = 0;
 
     if (rest.profiled) {
-      var cart = ov.cart !== undefined ? ov.cart : S.cart;
-      var menu = rest.menu;
-      var idx = [];
-      var k;
-      for (k in cart) {
-        if (has(cart, k)) {
-          var i = parseInt(k, 10);
-          if (String(i) === k && i >= 0 && i < menu.length) { idx.push(i); }
-        }
-      }
-      idx.sort(function (a, b) { return a - b; });
-      for (var j = 0; j < idx.length; j++) {
-        var line = menu[idx[j]];
-        var price = line[1];
-        var isDeal = line[2] === true;
-        var q = cart[String(idx[j])];
+      var lines = cartLines(S, ov);
+      for (var j = 0; j < lines.length; j++) {
+        var price = lines[j].it.price;
+        var isDeal = lines[j].it.dealItem === true;
+        var q = lines[j].q;
         menuSum += price * q;
         dealSum += (isDeal && deal ? Math.min(price, deal.price) : price) * q;
         qty += q;
@@ -139,8 +192,18 @@
       (deal.scope === "both" || (deal.scope === "delivery" && m === "d") || (deal.scope === "pickup" && m === "p"));
     var base = dealApplied ? ci.dealSub : ci.menuSub;
 
-    // 5.2 Markup
-    var food = app ? round2(base * (1 + P.markup / 100)) : base;
+    // 5.2 Markup: a profiled app's food is a sum over the cart lines, each at its own markup (D-036)
+    var food = base;
+    if (app && rest.profiled) {
+      var acc = 0;
+      var mlines = cartLines(S, ov);
+      for (var li = 0; li < mlines.length; li++) {
+        acc = acc + mlines[li].it.price * mlines[li].q * (1 + itemMarkup(mlines[li].it, p, P.markup) / 100);
+      }
+      food = round2(acc);
+    } else if (app) {
+      food = round2(base * (1 + P.markup / 100));
+    }
 
     // 5.3 Fees
     var memberOn = false;
@@ -171,6 +234,7 @@
     var pick = 0;
     var disc = 0;
     var taxDisc = 0;
+    var bogoNote = null;
     if (app) {
       var pr = S.promos[p];
       var promoOn = pr.type !== "none" && food >= (pr.min || 0);
@@ -181,12 +245,15 @@
           promo = round2(pr.value);
         } else if (pr.type === "freedel") {
           promo = m === "d" ? delivery : 0;
+        } else if (pr.type === "bogo") {
+          promo = round2(bogoAmount(S, ov, p, pr));
         }
       }
       pick = m === "p" ? round2(food * P.pickDisc / 100) : 0;
       promo = Math.min(promo, food);
       pick = round2(Math.min(pick, food - promo));
       disc = round2(promo + pick);
+      if (pr.type === "bogo" && promo > 0) { bogoNote = rest.menu[pr.item].name; }
 
       // 5.5 Tax base (freedel takes money off the delivery fee, not the food)
       taxDisc = pr.type === "freedel" ? pick : disc;
@@ -249,6 +316,7 @@
 
     var notes = [];
     if (dealApplied) { notes.push("Deal: " + deal.label); }
+    if (bogoNote !== null) { notes.push("BOGO: " + bogoNote); }
     if (!rest.profiled) { notes.push("Estimate"); }
 
     return {

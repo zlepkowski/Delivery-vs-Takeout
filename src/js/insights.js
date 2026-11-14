@@ -64,9 +64,9 @@
     var best = -1;
     for (var i = 0; i < menu.length; i++) {
       var line = menu[i];
-      if (!Array.isArray(line) || !isNum(line[1])) { continue; }
-      if (onlyDeal && line[2] !== true) { continue; }
-      if (best < 0 || line[1] < menu[best][1]) { best = i; }
+      if (!isObj(line) || !isNum(line.price)) { continue; }
+      if (onlyDeal && line.dealItem !== true) { continue; }
+      if (best < 0 || line.price < menu[best].price) { best = i; }
     }
     return best;
   }
@@ -104,7 +104,7 @@
     if (!best) { return null; }
     var was = findIn(R, best.id);
     if (!was) { return null; }
-    var item = menu[j][0];
+    var item = menu[j].name;
     var cls = best.net <= R[0].net ? "good" : "";
     var text = "Add " + n + " " + TIMES + " " + item + " and " + deal.label + " applies: " +
       best.name + " comes to " + money(best.net) + " (now " + money(was.net) + ").";
@@ -153,7 +153,7 @@
     for (var k = 1; k <= 20; k++) {
       var a = POD.engine.calc(F, r.id, { cart: cartPlus(F.cart, j, k) });
       if (a && a.parts.food >= min) {
-        return { r: r, a: a, min: min, addQty: k, addItem: menu[j][0], addAmount: round2(k * menu[j][1]) };
+        return { r: r, a: a, min: min, addQty: k, addItem: menu[j].name, addAmount: round2(k * menu[j].price) };
       }
     }
     return null;
@@ -185,7 +185,8 @@
       if (r.plat === "direct") { continue; }
       var pr = isObj(F.promos) && has(F.promos, r.plat) ? F.promos[r.plat] : null;
       if (!isObj(pr)) { continue; }
-      if (pr.type !== "percent" && pr.type !== "dollar" && pr.type !== "freedel") { continue; }
+      var bogoOk = pr.type === "bogo" && profiled;
+      if (pr.type !== "percent" && pr.type !== "dollar" && pr.type !== "freedel" && !bogoOk) { continue; }
       var min = pr.min;
       if (!isNum(min) || !(min > 0)) { continue; }
       if (!(r.parts.food < min)) { continue; }
@@ -402,6 +403,7 @@
     if (!isObj(F) || !isObj(F.rest)) { return []; }
     if (!Array.isArray(R0) || R0.length === 0) { return []; }
     if (F.rest.profiled === true && !Array.isArray(F.rest.menu)) { return []; }
+    if (F.rest.profiled === true && !F.rest.menu.every(isObj)) { return []; }
 
     var R = [];
     for (var i = 0; i < R0.length; i++) {
