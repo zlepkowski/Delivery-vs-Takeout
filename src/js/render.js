@@ -616,7 +616,11 @@
 
   // ---- the page ----------------------------------------------------------------------------------
 
-  function isBlock(el) { return el.tagName === "SECTION" || el.id === "side"; }
+  /** A block is patched inside, so a control the user is clicking keeps its element (D-035, §2). */
+  function isBlock(el) {
+    var cls = el.getAttribute("class") || "";
+    return el.tagName === "SECTION" || el.id === "side" || cls === "app-settings" || cls === "fields";
+  }
 
   /**
    * Makes live's children match fresh's. Same count: each child whose HTML differs is replaced, and a
