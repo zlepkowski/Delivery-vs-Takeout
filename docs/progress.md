@@ -73,8 +73,8 @@ Branch `claude/hopeful-clarke-omoss1` (this session's; fast-forwarded to `claude
 | Task | Status | Commit |
 |---|---|---|
 | 5.1 D-033: app pickup priced without the app's delivery fees (`noDelivery` on `forEngine`'s copy). Contracts, oracle, receipt r13, state scenarios and the forEngine unit test first; builder: engine `available`, state `forEngine` | ✅ 601/601 unit; receipts 65/65; 0 of 500 scenarios; reviewer: code correct, 3 doc fixes applied | `e216570` |
-| 5.2 D-034: insights contract `docs/insights-contract.md`, Python reference `tests/oracle/insights.py`, 34 hand-checked fixture cases, `run.py` insights checks (fixtures + 500 seeded scenarios); builder: `src/js/insights.js` | ✅ verified (637/637 unit; 34/34; 0 of 500 and 0 of 1,500 on a second seed); in review | — |
-| 5.3 D-035: UI contract `docs/ui-contract.md`; e2e checklist `tests/e2e/checklist.e2e.js` + `helpers.js` (temp site with fixture tiles; expected prices from the saved state through the verified modules); builder slice A (core flow), slice B (wallet, settings) | in progress | — |
+| 5.2 D-034: insights contract `docs/insights-contract.md`, Python reference `tests/oracle/insights.py`, hand-checked fixture cases, `run.py` insights checks (fixtures + 500 seeded scenarios); builder: `src/js/insights.js`; review fix round (restricted gold-partner rule, never-throw guards, 7 edge fixtures for surviving mutants) | ✅ 644/644 unit; 41/41 fixtures; 0 of 500 and 0 of 1,500 on a second seed; reviewer APPROVE + should-fixes done | `c65f1e3`, `f10e69f` |
+| 5.3 D-035: UI contract `docs/ui-contract.md`; e2e checklist `tests/e2e/checklist.e2e.js` + `helpers.js` (temp site with fixture tiles; expected prices from the saved state through the verified modules); builder slice A (core flow: 8/8 of its e2e, verified), contract amended after slice A (lost clicks, desktop gap, clipped results); slice B (wallet, settings, render-only-what-changed) | in progress | — |
 | 5.4 Close: full suite, screenshots reviewed, reflector, progress | ⬜ | — |
 
 ### Phase 4: State, derivations, wallet (2026-11-13, done)
