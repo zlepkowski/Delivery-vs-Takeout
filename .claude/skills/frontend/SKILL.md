@@ -16,8 +16,8 @@ The spec is `docs/BUILD.md`. Where this skill and the spec differ, this skill wi
 | `src/js/engine.js` | `POD.engine` | `calc`, `allResults`, `cartInfo`, `perMile`, `CHANNELS`. **Pure** |
 | `src/js/geo.js` | `POD.geo` | ZIP unpacking, `zipByCode`, `nearestZip`, `zipSpacing`, `estimateMiles`, `tripMiles`, tile cells and paths, `storesNear`, `nearestStore`. Pure. The spec is `docs/geo-contract.md` (D-030), which overrides BUILD.md §8 |
 | `src/js/state.js` | `POD.state` | `fresh`, `load`, `save`, `setPath`, `getPath`, `apply*`, `syncCredits` |
-| `src/js/render.js` | `POD.ui` | `render`, `renderAll`, `syncStatic`, the `render*` functions |
-| `src/js/insights.js` | `POD.insights` | `build(S, results)` → `[[label, html, className]]` |
+| `src/js/render.js` | `POD.ui` | `render(ctx)`, the one function that writes the DOM. `ctx = {S, D, opts, view, now}`; holds no state (ui-contract.md, D-035) |
+| `src/js/insights.js` | `POD.insights` | `build(F, R, now)` → `[{id, label, cls, text, data}]`: plain text and numbers, no HTML. Escape `text` once, in render (insights-contract.md, D-034) |
 | `src/js/links.js` | `POD.links` | deep-link builders (Phase 9) |
 | `src/js/api.js` | `POD.api` | optional backend seam (Phase 8) |
 | `src/js/app.js` | `POD.boot` | event delegation + boot. Loaded last |
@@ -55,10 +55,11 @@ The gate does **not** catch newer **APIs**. Don't use `Array.prototype.includes/
 
 ## Render
 
-- Render functions **replace a whole subtree**. They never diff and are idempotent.
-- `syncStatic()` writes `S` back into inputs, skipping `document.activeElement` so typing isn't clobbered.
+- `POD.ui.render(ctx)` **writes only the blocks whose HTML changed**, and is idempotent. Never replace the whole page: a full replace removed the button under the pointer when a text box committed on mousedown, so the click was lost (5f60686, 2f657df; ui-contract amendment). Restore focus by element `id` (D-035).
 - **Escape** every string from data or user input before it goes into `innerHTML` (`POD.util.esc`, added in Phase 5).
 - Format money only with `POD.util.money`. Negative receipt lines render green, and `0` renders as "waived".
+- A box commits on `change`. An empty or unparsable number box is `null`, so the page asks for it; a typed `0` is a real value (D-035; the manualSubtotal 0 BLOCKED report, 2f657df).
+- A sticky panel needs `max-height` and `overflow-y: auto`. The sticky results card clipped the fee inputs until screenshots were reviewed (5f60686).
 
 ## The engine (§4): the order is load-bearing
 
@@ -87,7 +88,7 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 
 - Restaurants come **from the user's location**, not a fixed list. State holds `S.brand` (a brand id) and `S.store` (`{id, lat, lon}`). The trip distance comes from the picked store: straight line × 2 × 1.25, rounded to 0.1 mi (`tripMiles`, geo-contract §6). `estimateMiles()` is only the fallback.
 - **Every `POD.geo` function takes the data tables as `D`** (`POD.data` in the app), reads nothing global, and returns `null` on bad input (D-030).
-- **Tile loading is the page's job (Phase 5).** `storesNear`/`nearestStore` return `status: "need"` with the cells to load. `app.js` loads each with `tilePath(cell)`, puts a failed load in `opts.failed[cell] = true`, and calls again. A tile from another `BRANDS_RUN` is never reloaded: the result stays `partial`. Make tile URLs depend on `BRANDS_RUN` (e.g. `?v=<BRANDS_RUN>`) so a cached tile can't pair with a newer `brands.js`, but first check that a query string loads over `file://` (geo-contract §9).
+- **Tile loading is the page's job (Phase 5).** `storesNear`/`nearestStore` return `status: "need"` with the cells to load. `app.js` loads each with `tilePath(cell)`, puts a failed load in `opts.failed[cell] = true`, and calls again. A tile from another `BRANDS_RUN` is never reloaded: the result stays `partial`. Tile URLs carry `?v=<BRANDS_RUN>` so a cached tile can't pair with a newer `brands.js`; that query string is checked to load over `file://` (D-035, geo-contract §9).
 - **Profiled brands** (`POD.data.PROFILES[brandId]`) have a menu, deal, per-platform markup, `directFee`, the `amexGoldDirect` flag and an optional `directSvc`.
 - **Unprofiled brands** use `POD.data.CATEGORY_DEFAULTS[category]`, and the user's `manualSubtotal` as the cart. **Their direct-delivery channel is removed, not priced at $0** (§9.3). Label the numbers as estimates.
 - A channel a brand doesn't offer is **left out** of `allResults`, never priced at zero.
@@ -112,7 +113,8 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 - **Never put a neutral number in a code fallback.** A missing table value makes the brand unpriceable (`null`). `restFor` gave `markup {}` (0%) for a missing category, so the apps looked cheaper (ba25e38, c4e21c4).
 - **A malformed optional input has no effect; it never throws.** A `directSvc` with no `modes` took down `allResults`, and a deal with no `scope` silently never applied. Guard each optional field (793577b, c4e21c4).
 - **Return copies, never references, and key every memo cache by the table it came from.** `restFor` shared `directSvc.modes` with `D` until it deep-copied (c4e21c4). A global spacing cache answered from another table, caught only by a file-order test (97ce6fe, c8e1e5c).
-- **When an input changes and its derived value isn't known yet, clear the derived field; never keep the old one.** Switching brand, moving or unpinning while tiles loaded kept the old trip and priced the new brand (9a17357). Every unsaved derived field must be set by `derive` on every branch, including after a reload of a pinned trip, where `milesSrc` came back `null` (5cbada0).
+- **When an input changes, clear every derived field it feeds unless the same call recomputes it; never keep the old value.** Switching brand, moving or unpinning while tiles loaded kept the old trip and priced the new brand (9a17357). Every unsaved derived field must be set by `derive` on every branch, including after a reload of a pinned trip, where `milesSrc` came back `null` (5cbada0). A field that is derived in one mode and typed in another is cleared when the mode switches: a listed car changed to "Other" kept Camry's 46 mpg, so the page priced the old car silently (e705a87, D-031 amendment).
+- **Every module that reads credits applies the §9.1 tier itself, not only `calc`.** Wallet and the Timing insight would have counted a restricted gold-partner credit as working direct until it was gated (f10e69f; progress.md Phase 5 review).
 - **Setters that take a value accept plain values only (null, boolean, string, finite number).** Never store or copy an object the caller still owns: `setPath` deep-copied any value, and a cycle overflowed the stack (9a17357, D-031 amendment).
 - **Report an issue in your report; never append to `docs/issues.md` unless your card's SCOPE lists it.** The builder appended ISS-031 under an ID already in use, and the orchestrator reverted it (Phase 4 review). Phase 1 had the same slip.
 - **A DONE WHEN that `deepStrictEqual`s `loadApp()`/`loadData()` output is a card bug: report BLOCKED with that diagnosis and don't edit the test** (ISS-008: c4e21c4, a5b725d). The copy rule is in test-runner.

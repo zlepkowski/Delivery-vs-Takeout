@@ -209,7 +209,7 @@ Under D-032 every app's delivery fee starts empty, and `forEngine` switched a wh
 **D-035 — The UI contract** · 2026-11-14 · *accepted*
 [`docs/ui-contract.md`](ui-contract.md) defines the page: ten sections in a fixed order (one column on a phone, inputs left and results right on a desktop), what each control calls in `POD.state`, what each section reads and the exact strings the e2e checks, tile loading by script injection with a `?v=<BRANDS_RUN>` query (checked to work over `file://`), geolocation with a typed-ZIP fallback, and `POD.util.esc`. **Where it differs from BUILD.md §3/§10, it wins.** The judgment calls:
 - **Values commit on `change`**, not on every keystroke; an empty or unparsable number box is `null`, so the page asks for it rather than pricing a 0.
-- **Every change re-renders every section**, and focus is restored by element `id` (BUILD.md §3's full replace; no `syncStatic` diffing).
+- **Every change re-renders, writing only the blocks whose HTML changed**, and focus is restored by element `id`. *(Amended 2026-11-14 after slice A: a whole-section replace removed the button under the pointer when a text box committed on mouse down, so the click was lost.)*
 - **Apps waiting for fees get inline inputs under the results** (D-032, D-033): each app lists only the fees it's missing, labeled as "what your app's checkout shows"; shared fees appear once.
 - **A first-visit example** ("Show me an example": ZIP 10118, a Toyota Camry, Domino's, one pizza) runs the same actions a user would. It sets inputs, not data, so no number is invented.
 - **A tile that fails to load** makes the list "may be incomplete"; the browser's own resource error for the missing file is the one console error the e2e allows, in that test only. Locally without built tiles it's expected; on Pages every indexed tile exists.
@@ -297,3 +297,23 @@ Under D-032 every app's delivery fee starts empty, and `forEngine` switched a wh
 - code-review: + blocker: a derived field fed by a changed input is recomputed or cleared, never kept (9a17357)
 - code-review: + should-fix: a new test file catches its own mutants (a7861b6)
 - backend: no change (Phase 8, no evidence yet)
+
+### Phase 5 (2026-11-14): reflector proposal, approved by the orchestrator with one change (code-review: "a re-render without a type-then-click e2e" is should-fix, not blocker: the finding came from a builder, and a missing test isn't a wrong answer)
+- frontend: ~ file table: `render(ctx)`, `build(F, R, now)` → `{id, label, cls, text, data}` (D-034, D-035)
+- frontend: ~ Render: write only the changed blocks, restore focus by id; − syncStatic / full-subtree replace (5f60686, 2f657df)
+- frontend: + an empty or bad number box is null; a typed 0 is a value (D-035, 2f657df)
+- frontend: + a sticky panel needs max-height + overflow-y auto (5f60686)
+- frontend: ~ derived-value rule extended to fields that switch between derived and typed (setCar, e705a87, da81998)
+- frontend: + every module that reads credits applies the §9.1 tier itself (f10e69f)
+- frontend: ~ tile URLs carry `?v=<BRANDS_RUN>`, checked over file:// (D-035)
+- test-runner: + the one allowed console error is a deliberately omitted tile's ERR_FILE_NOT_FOUND, in that test only (D-035, 2f657df)
+- test-runner: + e2e builds with `helpers.buildSite()`; expected prices from `H.expected(saved state)` (2f657df)
+- test-runner: + run the data path in Node before an e2e names a store, row or missing field (2f657df)
+- test-runner: + type-then-click test for any control a re-render can replace (5f60686, 2f657df)
+- test-runner: ~ pin every boundary at equality; check every insight's condition for the state; −0 before JSON (f10e69f)
+- code-review: ~ render should-fix: whole-page or control-subtree replace (5f60686)
+- code-review: + blocker: credit readers apply the §9.1 tier (f10e69f)
+- code-review: + should-fix: type-then-click e2e for a re-render that can replace a clickable control (5f60686, 2f657df)
+- code-review: ~ stale-derived blocker covers derived/typed mode switches (e705a87)
+- test-runner: + (orchestrator addition) a scratch copy never links to the repo's node_modules; `npm ci` in one emptied the real node_modules at the Phase 5 close
+- data-research, backend: no change

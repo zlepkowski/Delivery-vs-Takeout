@@ -31,7 +31,7 @@ A finding needs a **concrete failure scenario**: specific inputs, and then the w
 - Logic that duplicates something already in `POD.util` or another module.
 - Money formatted outside `POD.util.money`, or rounded outside `round2`.
 - A magic number that belongs in a data table (a fee, a rate, a threshold).
-- A render function that patches the DOM instead of replacing the subtree.
+- A render change that replaces the whole page, or a subtree holding a control the user may click, instead of writing only the changed blocks (ui-contract amendment, 5f60686).
 
 ## Nits
 
@@ -61,6 +61,8 @@ CHECKED: the checklist items that apply to this diff and passed, e.g. 1, 4, 5, 8
 - **Profile diffs: spot-check every item name (size, piece count, spelling) against the cited page, and open one URL per platform.** The 1.7 medians re-fetched correctly; the errors were in names and citations (ec5e627, 7af787d, 0a4262b).
 - **Blocker, credits: each `cards.js` row's "included" claim must match the issuer sentence.** Amex Platinum was marked as including Uber One, which the card only reimburses (83f24d7).
 - **Should-fix, issue log: a new `ISS-nnn` must be unused and sit under `## Open`.** Check `grep -o '^### ISS-[0-9]*' docs/issues.md | sort | uniq -d` prints nothing. Duplicate IDs (2fbdac1, c5f8b19, e1bc046) and open issues filed under Closed (3f44708) each needed a renumber.
-- **Blocker, stale derived value: when an input changes, check that every derived field it feeds is recomputed or cleared, never kept.** Switching brand while tiles loaded kept the previous trip and priced the new brand. The 4.3 code review found it; the contract was amended (9a17357).
+- **Blocker, stale derived value: when an input changes, check that every derived field it feeds is recomputed or cleared, never kept.** Switching brand while tiles loaded kept the previous trip and priced the new brand. The 4.3 code review found it; the contract was amended (9a17357). The same holds when a field switches between derived and typed: a listed car changed to "Other" kept 46 mpg (e705a87, da81998).
+- **Blocker, credit readers: check that every module that reads credits applies the §9.1 tier, not only `calc`.** Wallet and Timing needed the restricted gold-partner gate too; the reviewer caught it before it shipped (f10e69f).
+- **Should-fix, re-render: a change that replaces a control the user can click right after typing needs a type-then-click e2e.** Without it a click is lost when a text box commits on the same mousedown. Slice A's lost click was found by the builder, not review (5f60686, 2f657df).
 - **Should-fix, test integrity: a new test file must catch its own mutants.** A hole covered only by another file's tests is still a hole. The Phase 4 state tests missed four such holes (a7861b6).
 - **Should-fix, optional inputs: review a missing and a malformed value for each optional field, not only the fuzzer's shapes.** The first engine passed 10,000 scenarios, yet a `directSvc` with no `modes` threw and a deal with no `scope` never applied (793577b, c4e21c4). A throw inside `calc` or `allResults` is a blocker, because it takes the page down.

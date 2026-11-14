@@ -1,6 +1,6 @@
 # Progress
 
-**Current phase:** 5 (UI + 9 insights + "Near you" picker) is **in progress** on `claude/hopeful-clarke-omoss1`
+**Current phase:** 5 (UI + 9 insights + "Near you" picker) is **done**. Next is **Phase 6 (Phase B: per-item markup)**, to start in a **fresh session**, with the user's `/goal`
 **Last updated:** 2026-11-14
 **Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/hopeful-clarke-omoss1` (the Phase 5 session branch, fast-forwarded from `claude/exciting-rubin-7evr9n` at `7fc7184`; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
@@ -8,19 +8,18 @@
 
 1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **Phase 5 (UI + 9 insights + "Near you" picker, BUILD.md §7, §10–§13):** `render.js` and `app.js` wire the page to `POD.state`. Done when: the §13 manual checklist is automated in Playwright, 0 console errors, phone and desktop screenshots reviewed. Write the UI contract (what each control calls, what each view reads) and the e2e checklist **before** the builder, as in Phases 2–4.
-4. **What Phase 5 gets from Phase 4** (`docs/state-contract.md`, D-031 + its amendment):
-   - Boot: `S = POD.state.load(localStorage, POD.data, new Date(), opts)`. After **every** change call the matching action (`setAddress`, `setPosition`, `setCar`, `setBrand`, `pickStore`, `setQty`, `pinMiles`, `unpinMiles`, `toggleCard`, `setOptIn`, `markUsed`, `addManualCredit`, `removeManualCredit`), or `setPath` **followed by `derive`** (setPath re-derives nothing), then `save(S, localStorage)`.
-   - A trip status `need` lists tile cells: load each with `POD.geo.tilePath`, add failures to `opts.failed`, then `derive` again. While tiles load the trip is cleared (`miles: null`), so `missing(S)` holds the comparison back. It never shows a stale distance.
-   - Pricing: `F = POD.state.forEngine(S)`; `null` means show `missing(S)` (the shared inputs to ask for). Otherwise `POD.engine.allResults(F)`, and list each app that `forEngine` switched off with `appMissing(S, p)` (the fees to fill in).
-   - **D-032: every app starts switched off.** The apps don't publish their delivery fee, and Uber/Grubhub publish no service fee either: `dd.delFee`, `dd.svcMin`, every `ue` fee but `pickDisc`, every `gh` fee but `pickDisc`, and `regFee`/`smallMin`/`smallFee` are `null`. The first screen must ask for these clearly (ISS-034), or offer labeled estimates if the user changes D-032. Pricing app pickup without delivery fees would need an engine change (state contract §7).
-   - Tips default to 15% delivery / 0% pickup (the user's choice, D-032).
+3. **Phase 6 (Phase B: per-item markup, BUILD.md §11 "Phase B"):** markup per menu item instead of one rate per platform, so BOGO and item-level app pricing can be modeled. Done when: the oracle is updated first, BOGO cases pass, profiles migrated. Same pattern as Phases 2–5: change `docs/engine-contract.md` by a decision, then the Python oracle and hand-worked receipts, then the builder; the profile shape (D-027) and `tools/build-profiles.py` change with tests before the data is migrated.
+4. **What Phase 6 inherits from Phase 5:**
+   - Contracts: engine (D-029, amended by D-033: `plats[p].noDelivery` on `forEngine`'s copy), state (D-031, amended: `forEngine` splits pickup and delivery inputs; `setCar` clears a stale mpg), geo (D-030), insights (D-034, `docs/insights-contract.md`), UI (D-035, `docs/ui-contract.md`).
+   - Insights read `calc` counterfactuals: a per-item markup changes their numbers, so `tests/oracle/insights.py` and `tests/fixtures/insights/build.py` must follow the engine change (run `python3 -I tests/fixtures/insights/build.py tests/fixtures/insights/cases.json` after the oracle changes; every hand-worked value in it is asserted).
+   - The page shows each app's markup only through the results; a per-item markup UI is new work for the UI contract.
+   - e2e harness: `tests/e2e/helpers.js` (`buildSite()` = a temp site with the fixture tiles; `expected(saved)` = what the page should show, through the verified modules; `commit()` = fill + blur).
 5. **Open questions carried forward:**
-   - **ISS-032 (needs the user):** ~6,200 ZIPs share one coordinate with 9+ others in the ZIP source (452 California ZIPs from 118 cities on one point). Options are in the issue; browser geolocation in Phase 5 helps whatever is chosen.
-   - **ISS-034:** app fees aren't published (D-032 nulls). Phase 5 decides how the page asks for them; the user may later allow labeled estimates.
-   - D-028: whether `amexGoldDirect` becomes brand-level for unprofiled Five Guys (an engine contract change; `restFor` sets it `false` for every unprofiled brand today).
-   - ISS-030 (platform evidence dates) is a Phase 5 item. ISS-031 (direct service fee data per chain). No profiled chain has a confirmed direct-only deal (all 9 `deal: null`). Research that before Phase 5's insights.
-6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 20 hosts in ISS-001 (at the cap). Phase 5 needs none.
+   - **ISS-032 (needs the user):** stacked ZIP coordinates. "Use my location" now exists on the page; the data fix (a, b or c) is still the user's call.
+   - **ISS-034 (the user may revisit D-032):** app delivery fees are entered by the user from their checkout. Labeled estimates would make delivery comparable on the first screen.
+   - **ISS-035:** no profiled chain has a direct-only deal, so the deal block and Unlock never show on real data (Unlock is fixture-tested). Researching deals needs the chains' hosts on the network allowlist (a user decision), or the e2e gets a test-only profile.
+   - D-028 (`amexGoldDirect` for unprofiled Five Guys), ISS-030 (platform evidence dates: a fine-print caveat for now), ISS-031 (direct service fee data per chain).
+6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 20 hosts in ISS-001 (at the cap). Phase 6 needs none unless profiles are re-researched.
 7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
@@ -38,7 +37,7 @@
 | 2 | Engine (§4) | Opus (oracle) → builder | ✅ done | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
 | 3 | Geography + stores near you | Opus (contract) → builder | ✅ done | 59011 vs 10118 estimates differ ≥10× (10.4 vs 0.4 mi, 26×); `storesNear` passes fixture tests (129 hand-worked + 71 real-data cases); an uncached ZIP takes <10 ms (mean ≈ 4 ms) |
 | 4 | State, derivations, wallet (§5) | Opus (contract) → builder | ✅ done | Cascade tests pass (80 hand-worked scenarios + named tests); `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
-| 5 | UI + 9 insights + "Near you" picker | builder | ⬜ | The §13 manual checklist is automated in Playwright; 0 console errors; phone and desktop screenshots reviewed |
+| 5 | UI + 9 insights + "Near you" picker | Opus (contracts, e2e) → builder | ✅ done | The §13 manual checklist is automated in Playwright (19 checklist tests + 2 smoke, 0 console errors); phone and desktop screenshots reviewed; insights match a Python reference on 41 fixtures and 500 seeded scenarios |
 | — | **v4 parity milestone** | | | |
 | 6 | Phase B: per-item markup | Opus (oracle) → builder | ⬜ | Oracle updated first; BOGO cases pass; profiles migrated |
 | 7 | Phase A static: VIN lookup, weekly gas + store refresh | researcher + builder | ⬜ | Big Timber → Domino's ≈ the real ~33 mi; the scheduled refresh passes a dry run |
@@ -66,7 +65,7 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
-### Phase 5: UI + 9 insights + "Near you" picker (2026-11-14, in progress)
+### Phase 5: UI + 9 insights + "Near you" picker (2026-11-14, done)
 
 Branch `claude/hopeful-clarke-omoss1` (this session's; fast-forwarded to `claude/exciting-rubin-7evr9n` at `7fc7184`, the Phase 4 tip).
 
@@ -74,8 +73,13 @@ Branch `claude/hopeful-clarke-omoss1` (this session's; fast-forwarded to `claude
 |---|---|---|
 | 5.1 D-033: app pickup priced without the app's delivery fees (`noDelivery` on `forEngine`'s copy). Contracts, oracle, receipt r13, state scenarios and the forEngine unit test first; builder: engine `available`, state `forEngine` | ✅ 601/601 unit; receipts 65/65; 0 of 500 scenarios; reviewer: code correct, 3 doc fixes applied | `e216570` |
 | 5.2 D-034: insights contract `docs/insights-contract.md`, Python reference `tests/oracle/insights.py`, hand-checked fixture cases, `run.py` insights checks (fixtures + 500 seeded scenarios); builder: `src/js/insights.js`; review fix round (restricted gold-partner rule, never-throw guards, 7 edge fixtures for surviving mutants) | ✅ 644/644 unit; 41/41 fixtures; 0 of 500 and 0 of 1,500 on a second seed; reviewer APPROVE + should-fixes done | `c65f1e3`, `f10e69f` |
-| 5.3 D-035: UI contract `docs/ui-contract.md`; e2e checklist `tests/e2e/checklist.e2e.js` + `helpers.js` (temp site with fixture tiles; expected prices from the saved state through the verified modules); builder slice A (core flow: 8/8 of its e2e, verified), contract amended after slice A (lost clicks, desktop gap, clipped results); slice B (wallet, settings, render-only-what-changed) | in progress | — |
-| 5.4 Close: full suite, screenshots reviewed, reflector, progress | ⬜ | — |
+| 5.3 D-035: UI contract `docs/ui-contract.md`; e2e checklist `tests/e2e/checklist.e2e.js` + `helpers.js` (temp site with fixture tiles; expected prices from the saved state through the verified modules); builder slice A (core flow), contract amended after slice A (lost clicks, desktop gap, clipped results); slice B (wallet, settings, render-only-what-changed); review fix round (missing-name order, credit refusal; D-031 amended: `setCar` clears a stale mpg) | ✅ checklist 19/19, smoke 2/2, unit 649/649; reviewer APPROVE + fixes; screenshots reviewed at 390 and 1280 px | `5f60686`, `2f657df`, `da81998`, `e705a87` |
+| 5.4 Close: tester added `tests/unit/ui-util.test.js` (17: `POD.util.esc`, load order, DOM-free load; 4 of 4 mutants caught); full suite in a clean worktree at `c1c58b4` (es5 15 files, unit 649, oracle receipts 65/65 + 0 of 500 + geo 129/71/330 + insights 41/41 + 0 of 500, e2e 21) and again on the final tree (unit 666); screenshots reviewed; reflector approved with one change (decisions.md, Skill updates) | ✅ | `c1c58b4`, latest |
+
+**Phase 5 notes for a resuming session.**
+- Five contracts now define the app: engine, geo, state, insights, UI. Each changes only by a decision, with the reference/fixtures/tests first.
+- Locally, without built tiles, every store search logs the browser's missing-file errors and falls back to the estimator; that's expected (D-035). The e2e and Pages have tiles.
+- Workers can run in parallel when their SCOPEs are disjoint; stage a shared file (e.g. `index.html`) as a constructed blob if one worker's line must be committed without another's.
 
 **Review evidence for the Phase 5 reflector** (all fixed unless noted):
 - **Designing the first screen found a dead end before any code.** Under D-032 (every app delivery fee empty) `forEngine` switched whole apps off, so a new user would see one route (direct pickup). D-033 split pickup from delivery inputs (`e216570`). Lesson: before building a screen, compute what it shows with the real defaults.
@@ -87,6 +91,7 @@ Branch `claude/hopeful-clarke-omoss1` (this session's; fast-forwarded to `claude
 - **"0 console errors" vs a missing tile:** the browser logs its own resource error for a missing script, which the page can't suppress. The e2e stays inside the fixture tiles, and one test allows only that error (D-035).
 - **Screenshots caught what no test checked:** the sticky results card clipped the fee inputs (unreachable), a desktop gap, a wrapping price. Lesson: review screenshots after each UI slice, not only at the phase end; a sticky panel needs `max-height` + `overflow-y: auto`.
 - **The UI review found a Phase 4 state bug:** `setCar` to an unlisted car kept the previous car's 46 mpg, so the page priced the old car silently. A field that's derived in one mode and typed in another must be cleared when the user switches modes (D-031 amended, fix round 1).
+- **A scratch copy wiped the repo's `node_modules`:** at the close, `npm ci` ran in a stale scratch copy whose `node_modules` was a symlink to the real repo's (`ci.log`: "Removing non-directory …/wt/node_modules"), and the real `node_modules` was emptied; the next unit run failed on a missing `acorn`. The orchestrator traced it, restored with `npm ci`, removed the stale copies, and added a test-runner rule.
 - **Parallel workers on disjoint files worked:** the insights fix round and the UI slice ran at once; the UI builder diagnosed an unrelated unit failure as someone else's uncommitted edit by reverting only its own files in a scratch copy. The stop hook asked for commits 5 times; only verified work was committed, and `index.html` was staged as a constructed blob (`git update-index --cacheinfo`) so the insights commit didn't carry the UI builder's half-done line.
 
 ### Phase 4: State, derivations, wallet (2026-11-13, done)
