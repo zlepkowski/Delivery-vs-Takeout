@@ -74,6 +74,7 @@ test('D-036 BOGO on Uber Eats: pick the type, then the item; the free pizza show
   assert.ok((await H.text(page, 'label[for="promos-ue-item"]')).includes('Free item'));
   let exp = H.expected(await H.saved(page));
   assert.deepEqual([exp.S.promos.ue.type, exp.S.promos.ue.item], ['bogo', null]);
+  assert.equal(await page.locator('[data-testid="result-row"][data-channel="ue-p"]').count(), 1, 'the ue-p row is shown');
   assert.equal((await tagsOf(page, 'ue-p')).filter((t) => t.startsWith('BOGO')).length, 0, 'no item, no BOGO');
 
   await page.selectOption('#promos-ue-item', '0');
@@ -130,6 +131,31 @@ test('D-036 a new restaurant clears the BOGO item; an unprofiled one has no item
   await page.selectOption('#brand', 'dominos');
   await page.waitForSelector('#promos-ue-item');
   assert.equal(await page.inputValue('#promos-ue-item'), '', 'back at Domino\'s, nothing is picked');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('D-036 type then click in the app settings: the box commits on mouse down and the clicked select keeps the click', async () => {
+  // Phase 5's lost-click lesson inside one settings block: committing a number box re-renders the block, and the
+  // select under the pointer must survive (same element, focused), or the user's click does nothing.
+  const { ctx, page, errors } = await H.openPage(browser, site.url);
+  await page.click('[data-action="example"]');
+  await page.waitForSelector('[data-testid="result-row"]');
+  await page.selectOption('#promos-ue-type', 'bogo');
+  await page.waitForSelector('#promos-ue-item');
+  for (const [box, value, select] of [['#promos-ue-value', '5', '#promos-ue-item'], ['#plats-ue-delFee', '2.49', '#promos-ue-type']]) {
+    await page.evaluate((s) => { window.__clicked = document.querySelector(s); }, select);
+    await page.fill(box, value);                    // focus stays in the box: not committed yet
+    await page.click(select);                       // mouse down commits the box, then the select takes the click
+    assert.equal(await page.evaluate(() => document.activeElement && '#' + document.activeElement.id), select,
+      box + ' then ' + select + ': the clicked select has focus');
+    assert.ok(await page.evaluate((s) => window.__clicked === document.querySelector(s), select),
+      box + ' then ' + select + ': the select under the pointer was not replaced');
+    const path = box.slice(1).replace(/-/g, '.');
+    const saved = JSON.parse(await H.saved(page));
+    assert.equal(path.split('.').reduce((o, k) => o[k], saved), parseFloat(value), box + ' committed');
+    await page.keyboard.press('Escape');
+  }
   assert.deepEqual(errors, []);
   await ctx.close();
 });
