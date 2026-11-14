@@ -196,6 +196,26 @@ Under D-032 every app's delivery fee starts empty, and `forEngine` switched a wh
 - The oracle, a new receipt (`r13-app-delivery-off`) and the state scenarios changed first; the fuzzer now sets `noDelivery` on 15% of apps.
 *Why:* it's the smallest change that lets the page price everything the user has given it. A delivery fee is still never invented (D-032): the app's delivery row is simply left out until the user enters its fees.
 
+**D-034 — The insights contract** · 2026-11-14 · *accepted*
+[`docs/insights-contract.md`](insights-contract.md) defines `POD.insights.build(F, R, now)` exactly: the nine cards of BUILD.md §4.5 (Unlock, Distance, Fuel, Minimum, Wallet, Timing, Locked, Nuance, Spread), when each shows, its numbers, and its sentence character for character. **Where it differs from BUILD.md §4.5, the contract wins.** `src/js/insights.js` and the Python reference `tests/oracle/insights.py` (built on the engine oracle) both implement it; `tests/fixtures/insights/` holds 34 cases whose key numbers are worked by hand, and `run.py` compares the JS with the reference on them and on 500 seeded scenarios. The judgment calls:
+- **Insights return plain text and numbers, not HTML** (`{id, label, cls, text, data}`), so the page escapes once and tests compare numbers exactly.
+- **Counterfactuals add the cheapest item:** Unlock adds the cheapest deal item, Minimum the cheapest menu item (up to 20) or, for an unprofiled brand, the smallest typed subtotal that reaches the minimum. Minimum shows the candidate whose total moves least.
+- **Distance and Fuel compare the cheapest pickup with the cheapest delivery**, as straight lines (credits that clamp at the total make the real line bend). Fuel caps its message at $12/gal (BUILD.md §4.5) and is skipped for EVs.
+- **Timing counts calendar days to the next period** (the same calendar periods as `periodOf`, D-031), with no `Date` built inside, and lists unused credits that can apply here.
+- **Locked lists both locked credits and restricted credits not opted in**, the second with a pointer to "Qualifies here" (§9.1).
+- An empty order gets no advice.
+*Why:* the same reason as D-029 to D-031: an independent reference can only check the code if both follow one exact definition.
+
+**D-035 — The UI contract** · 2026-11-14 · *accepted*
+[`docs/ui-contract.md`](ui-contract.md) defines the page: ten sections in a fixed order (one column on a phone, inputs left and results right on a desktop), what each control calls in `POD.state`, what each section reads and the exact strings the e2e checks, tile loading by script injection with a `?v=<BRANDS_RUN>` query (checked to work over `file://`), geolocation with a typed-ZIP fallback, and `POD.util.esc`. **Where it differs from BUILD.md §3/§10, it wins.** The judgment calls:
+- **Values commit on `change`**, not on every keystroke; an empty or unparsable number box is `null`, so the page asks for it rather than pricing a 0.
+- **Every change re-renders every section**, and focus is restored by element `id` (BUILD.md §3's full replace; no `syncStatic` diffing).
+- **Apps waiting for fees get inline inputs under the results** (D-032, D-033): each app lists only the fees it's missing, labeled as "what your app's checkout shows"; shared fees appear once.
+- **A first-visit example** ("Show me an example": ZIP 10118, a Toyota Camry, Domino's, one pizza) runs the same actions a user would. It sets inputs, not data, so no number is invented.
+- **A tile that fails to load** makes the list "may be incomplete"; the browser's own resource error for the missing file is the one console error the e2e allows, in that test only. Locally without built tiles it's expected; on Pages every indexed tile exists.
+- **ISS-030** (dated platform evidence) is handled in the page's fine print for now: app listings are flagged as coming from announcements, some years old. A per-platform evidence date in `PROFILES` stays open for a later data pass.
+*Why:* the same as D-029 to D-034. The e2e checks this file's hooks and strings, written before the builder.
+
 ---
 
 ## Skill updates

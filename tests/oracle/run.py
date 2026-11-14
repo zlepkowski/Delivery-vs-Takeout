@@ -35,6 +35,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)  # -I leaves the script's own directory off sys.path
 import engine as E  # noqa: E402
 import geo as G  # noqa: E402
+import insights as I  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 RECEIPTS = os.path.join(ROOT, "tests", "fixtures", "receipts")
@@ -461,6 +462,90 @@ def geo_checks(failures):
         print("oracle: geo %s %d/%d calls match the JS" % (name, len(cs) - bad, len(cs)))
 
 
+# ---------------------------------------------------------------- insights (D-034)
+
+INS_FIX = os.path.join(ROOT, "tests", "fixtures", "insights", "cases.json")
+
+
+def ins_merge(a, b, replace):
+    out = json.loads(json.dumps(a))
+    for k, v in b.items():
+        if k in replace or not isinstance(v, dict) or not isinstance(out.get(k), dict):
+            out[k] = json.loads(json.dumps(v))
+        else:
+            out[k] = ins_merge(out[k], v, replace)
+    return out
+
+
+def ins_fuzz(i):
+    """An insights request built on the engine fuzzer's scenario i: speed, credit cadences and a date added."""
+    S, _ = gen_scenario(SEED + i)
+    r = random.Random("insights-%d" % (SEED + i))
+    S["speed"] = r.choice([27, 15, 45, 0])
+    for c in S["credits"]:
+        c["cadence"] = r.choice(["monthly", "quarterly", "semiannual", "annual", "once", "weekly"])
+        if r.random() < 0.2:
+            c["name"] = "Same name"
+    now = None if r.random() < 0.05 else [r.choice([2026, 2027, 2028, 2100]), r.randint(0, 11), r.randint(1, 28)]
+    return {"F": S, "now": now}
+
+
+def run_js_insights(requests):
+    with tempfile.TemporaryDirectory() as tmp:
+        fin = os.path.join(tmp, "in.json")
+        fout = os.path.join(tmp, "out.json")
+        with open(fin, "w", encoding="utf-8") as fh:
+            json.dump(requests, fh)
+        subprocess.run(["node", os.path.join("tests", "oracle", "insights_runner.js"), fin, fout], cwd=ROOT, check=True)
+        with open(fout, encoding="utf-8") as fh:
+            return json.load(fh)
+
+
+def insights_checks(failures):
+    doc = json.load(open(INS_FIX, encoding="utf-8"))
+    reqs, bad = [], 0
+    for c in doc["cases"]:
+        F = ins_merge(doc["base"], c["patch"], doc["replace"])
+        got = I.build(F, E.all_results(F), tuple(c["now"]) if c["now"] else None)
+        d = close(c["expect"], got, c["id"])
+        if d:
+            bad += 1
+            failures.append("insights fixture %s is stale vs the python reference: %s" % (c["id"], d))
+        reqs.append({"F": F, "now": c["now"]})
+    print("oracle: insights fixtures %d/%d cases match the python reference" % (len(doc["cases"]) - bad, len(doc["cases"])))
+    if len(doc["cases"]) < 34:
+        failures.append("insights: only %d fixture cases (at least 34 expected)" % len(doc["cases"]))
+    if not os.path.exists(os.path.join(ROOT, "src", "js", "insights.js")):
+        print("oracle: src/js/insights.js is not built yet, so the JS insights comparison is skipped")
+        return
+    fuzz = [ins_fuzz(i) for i in range(N)]
+    res = run_js_insights(reqs + fuzz)
+    if len(res) != len(reqs) + len(fuzz):
+        failures.append("insights: the JS runner returned %d results for %d requests" % (len(res), len(reqs) + len(fuzz)))
+        return
+    bad = 0
+    for c, r_ in zip(doc["cases"], res[:len(reqs)]):
+        d = ("JS error: " + r_["err"].splitlines()[0]) if not r_["ok"] else close(c["expect"], r_["v"], c["id"])
+        if d:
+            bad += 1
+            failures.append("insights fixture %s, JS: %s" % (c["id"], d))
+    print("oracle: insights fixtures %d/%d cases match the JS" % (len(reqs) - bad, len(reqs)))
+    bad, shown, tally = 0, 0, {}
+    for i, (q, r_) in enumerate(zip(fuzz, res[len(reqs):])):
+        exp = I.build(q["F"], E.all_results(q["F"]), tuple(q["now"]) if q["now"] else None)
+        for x in exp:
+            tally[x["id"]] = tally.get(x["id"], 0) + 1
+        d = ("JS error: " + r_["err"].splitlines()[0]) if not r_["ok"] else close(exp, r_["v"], "build")
+        if d:
+            bad += 1
+            failures.append("insights scenario seed %d (ORACLE_SEED=%d, index %d): %s" % (SEED + i, SEED, i, d))
+    print("oracle: insights %d seeded scenarios: %d differ; insights shown: %s"
+          % (N, bad, ", ".join("%s %d" % kv for kv in sorted(tally.items()))))
+    for iid in ("unlock", "distance", "fuel", "minimum", "wallet", "timing", "locked", "nuance", "spread"):
+        if N >= 200 and tally.get(iid, 0) < 3:
+            failures.append("insights: the fuzzer produced %r only %d times in %d scenarios" % (iid, tally.get(iid, 0), N))
+
+
 # ---------------------------------------------------------------- main
 
 def js_engine_built():
@@ -522,6 +607,7 @@ def main():
         print("oracle: %d seeded scenarios x %d calls: %d scenarios differ" % (N, len(fuzz) // max(N, 1), len(bad_scen)))
 
     geo_checks(failures)
+    insights_checks(failures)
 
     for f in failures[:10]:
         print("FAIL " + f)

@@ -1,8 +1,8 @@
 # Progress
 
-**Current phase:** 4 (State, derivations, wallet) is **done**. Next is **Phase 5 (UI + 9 insights + "Near you" picker)**, to start in a **fresh session**, with the user's `/goal`
-**Last updated:** 2026-11-13
-**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/exciting-rubin-7evr9n` (the Phase 3–4 session branch, built on `claude/sharp-heisenberg-tbo63x` at `2a84085`; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
+**Current phase:** 5 (UI + 9 insights + "Near you" picker) is **in progress** on `claude/hopeful-clarke-omoss1`
+**Last updated:** 2026-11-14
+**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/hopeful-clarke-omoss1` (the Phase 5 session branch, fast-forwarded from `claude/exciting-rubin-7evr9n` at `7fc7184`; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
 ## Resume here
 
@@ -65,6 +65,17 @@
 - Workers are dispatched as `general-purpose` Haiku agents that read their agent file and skill first, until a fresh session loads them by name (D-019).
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
+
+### Phase 5: UI + 9 insights + "Near you" picker (2026-11-14, in progress)
+
+Branch `claude/hopeful-clarke-omoss1` (this session's; fast-forwarded to `claude/exciting-rubin-7evr9n` at `7fc7184`, the Phase 4 tip).
+
+| Task | Status | Commit |
+|---|---|---|
+| 5.1 D-033: app pickup priced without the app's delivery fees (`noDelivery` on `forEngine`'s copy). Contracts, oracle, receipt r13, state scenarios and the forEngine unit test first; builder: engine `available`, state `forEngine` | ✅ 601/601 unit; receipts 65/65; 0 of 500 scenarios; reviewer: code correct, 3 doc fixes applied | `e216570` |
+| 5.2 D-034: insights contract `docs/insights-contract.md`, Python reference `tests/oracle/insights.py`, 34 hand-checked fixture cases, `run.py` insights checks (fixtures + 500 seeded scenarios); builder: `src/js/insights.js` | ✅ verified (637/637 unit; 34/34; 0 of 500 and 0 of 1,500 on a second seed); in review | — |
+| 5.3 D-035: UI contract `docs/ui-contract.md`; e2e checklist `tests/e2e/checklist.e2e.js` + `helpers.js` (temp site with fixture tiles; expected prices from the saved state through the verified modules); builder slice A (core flow), slice B (wallet, settings) | in progress | — |
+| 5.4 Close: full suite, screenshots reviewed, reflector, progress | ⬜ | — |
 
 ### Phase 4: State, derivations, wallet (2026-11-13, done)
 
