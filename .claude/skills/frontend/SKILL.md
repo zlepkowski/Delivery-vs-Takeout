@@ -57,6 +57,7 @@ The gate does **not** catch newer **APIs**. Don't use `Array.prototype.includes/
 
 - `POD.ui.render(ctx)` **writes only the blocks whose HTML changed**, and is idempotent. Never replace the whole page: a full replace removed the button under the pointer when a text box committed on mousedown, so the click was lost (5f60686, 2f657df; ui-contract amendment). Restore focus by element `id` (D-035).
 - **Escape** every string from data or user input before it goes into `innerHTML` (`POD.util.esc`, added in Phase 5).
+- A block re-render (`isBlock`) that replaces a container holding a control the user clicks right after typing loses that click. Patch the sub-block: `.app-settings` and `.fields` are blocks too (3502730, b45868b).
 - Format money only with `POD.util.money`. Negative receipt lines render green, and `0` renders as "waived".
 - A box commits on `change`. An empty or unparsable number box is `null`, so the page asks for it; a typed `0` is a real value (D-035; the manualSubtotal 0 BLOCKED report, 2f657df).
 - A sticky panel needs `max-height` and `overflow-y: auto`. The sticky results card clipped the fee inputs until screenshots were reviewed (5f60686).
@@ -70,9 +71,9 @@ The exact definition is `docs/engine-contract.md` (D-029), which overrides BUILD
 | # | Step | Rule |
 |---|---|---|
 | 1 | Direct-only deal | Only for `plat === "direct"`, and only when the cart has `deal.minItems` flagged items. Produces `dealSub` |
-| 2 | Markup | `food = menu × (1 + markup/100)`. Direct is 0%. Phase B: a sum over cart lines with per-item overrides |
+| 2 | Markup | Menu entries are objects `{name, price, dealItem, markup?}`. App food for a profiled brand is `round2(Σ price × qty × (1 + markup_i/100))` over the cart lines in menu-index order, rounded once. `markup_i` is the item's own `markup[p]` when a finite number ≥ 0, else the app's markup. Direct is 0%. Unprofiled: `round2(subtotal × (1 + markup/100))` (D-036, engine-contract §5.2) |
 | 3 | Fees | delivery, service (% with a `svcMin` floor), `directSvc` (a restaurant fee on the direct modes it lists), small-order (`food < smallMin`) and regulatory (both app delivery only). A membership (`food >= memberMin`, the app's own threshold, not a fixed $12) zeroes delivery and swaps `svc` → `memberSvc` |
-| 4 | Subtotal discounts | promo (`percent` with cap / `dollar` / `freedel`) + pickup discount. **Clamped jointly to ≤ food** |
+| 4 | Subtotal discounts | promo (`percent` with cap / `dollar` / `freedel` / `bogo`: `floor(qty/2)` of `promos[p].item` at its marked-up price, capped) + pickup discount. **Clamped jointly to ≤ food** |
 | 5 | Tax | `(food − disc) × tax%`, on the **discounted** subtotal, except that a `freedel` promo doesn't lower taxable food (contract §5.5) |
 | 6 | Tip | on the **pre-discount** subtotal. Separate rates for delivery and pickup |
 | 7 | Drive | pickup only: `miles × (fuel/mpg + wear)`, or `miles ÷ miPerKwh × kwh` for an EV, + `hourly × minutes/60` |
@@ -120,3 +121,6 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 - **A DONE WHEN that `deepStrictEqual`s `loadApp()`/`loadData()` output is a card bug: report BLOCKED with that diagnosis and don't edit the test** (ISS-008: c4e21c4, a5b725d). The copy rule is in test-runner.
 - **Work in the stored ×1000 integers: identify a point by its integer key, and range-check every parsed coordinate.** A 400-digit field parsed to `Infinity` and became a phantom store at `mi: null` that displaced the real nearest store. Own-point detection by a float distance of 0 was also wrong (197acd1, the geo.js should-fix and contract review). Bad coordinates are skipped or give `null`, never a result.
 - **Implement the engine from `docs/engine-contract.md` alone; don't open `tests/oracle/`.** The differential test only means something if the engine wasn't written from the oracle. The Phase 2 builder didn't read it and all 500 scenarios matched (be9e129).
+- **A defensive guard the contract doesn't name is a contract gap: list it under ASSUMPTIONS, naming the input and what the code does with it,** so the orchestrator writes it into the contract and the oracle (you can't edit either). The Phase 6 engine skipped a non-number quantity and a non-object menu entry; the ASSUMPTIONS line was the only trace, and the oracle would have thrown on both (f3af8a8).
+- **An insight's promise must hold in its counterfactual, not only its trigger.** Minimum offered "Adding 1 × Coke … $6.24 more" for a BOGO whose minimum frees nothing. A `bogo` candidate counts only when the counterfactual has a "BOGO: " note (insights-contract §3.4, d5c7f2e).
+- **A new note or control inside a grid takes a whole row, and is checked at desktop width in every state (unprofiled too).** An unprofiled BOGO note took one cell and shifted every promo label off its input; screenshot review caught it, not a test (0f907b5). Phase 5 had the same class.

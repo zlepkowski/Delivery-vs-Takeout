@@ -1,25 +1,26 @@
 # Progress
 
-**Current phase:** 5 (UI + 9 insights + "Near you" picker) is **done**. Next is **Phase 6 (Phase B: per-item markup)**, to start in a **fresh session**, with the user's `/goal`
+**Current phase:** 6 (Phase B: per-item markup, D-036) is **done**. Next is **Phase 7 (Phase A static: VIN lookup, weekly gas + store refresh)**, to start in a **fresh session**, with the user's `/goal`
 **Last updated:** 2026-11-14
-**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/hopeful-clarke-omoss1` (the Phase 5 session branch, fast-forwarded from `claude/exciting-rubin-7evr9n` at `7fc7184`; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
+**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/awesome-goodall-4qdauw` (the Phase 6 session branch, fast-forwarded from `claude/hopeful-clarke-omoss1` at `77495f1`, the Phase 5 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
 ## Resume here
 
 1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **Phase 6 (Phase B: per-item markup, BUILD.md §11 "Phase B"):** markup per menu item instead of one rate per platform, so BOGO and item-level app pricing can be modeled. Done when: the oracle is updated first, BOGO cases pass, profiles migrated. Same pattern as Phases 2–5: change `docs/engine-contract.md` by a decision, then the Python oracle and hand-worked receipts, then the builder; the profile shape (D-027) and `tools/build-profiles.py` change with tests before the data is migrated.
-4. **What Phase 6 inherits from Phase 5:**
-   - Contracts: engine (D-029, amended by D-033: `plats[p].noDelivery` on `forEngine`'s copy), state (D-031, amended: `forEngine` splits pickup and delivery inputs; `setCar` clears a stale mpg), geo (D-030), insights (D-034, `docs/insights-contract.md`), UI (D-035, `docs/ui-contract.md`).
-   - Insights read `calc` counterfactuals: a per-item markup changes their numbers, so `tests/oracle/insights.py` and `tests/fixtures/insights/build.py` must follow the engine change (run `python3 -I tests/fixtures/insights/build.py tests/fixtures/insights/cases.json` after the oracle changes; every hand-worked value in it is asserted).
-   - The page shows each app's markup only through the results; a per-item markup UI is new work for the UI contract.
-   - e2e harness: `tests/e2e/helpers.js` (`buildSite()` = a temp site with the fixture tiles; `expected(saved)` = what the page should show, through the verified modules; `commit()` = fill + blur).
+3. **Phase 7 (Phase A static, BUILD.md §11 Phase A, D-004):** a VIN box (NHTSA vPIC from the browser: year, make, model → the car's mpg from `cars.js`), a weekly gas refresh (EIA) and the weekly store-tile refresh in CI. Done when: Big Timber → Domino's ≈ the real ~33 mi (D-005); the scheduled refresh passes a dry run. Same pattern: contract by a decision, references and fixtures first, then the builder.
+4. **What Phase 7 inherits from Phase 6:**
+   - Six contracts now: engine (D-029, amended by D-033, D-036), state (D-031, amended by D-033, D-036), geo (D-030), insights (D-034, amended by D-036), UI (D-035, amended by D-036).
+   - Menu items are objects `{name, price, dealItem, markup?}` everywhere (`PROFILES`, `S.rest`, fixtures). App food for a profiled brand is a sum over cart lines at each item's markup, rounded once. `promos[p]` has `item` for the `bogo` type.
+   - The generator `tools/build-profiles.py` accepts a per-item markup only with an https source; a profile refresh in Phase 7 keeps that rule.
+   - e2e: `tests/e2e/bogo.e2e.js` beside `checklist.e2e.js`; both build their own temp site.
 5. **Open questions carried forward:**
-   - **ISS-032 (needs the user):** stacked ZIP coordinates. "Use my location" now exists on the page; the data fix (a, b or c) is still the user's call.
-   - **ISS-034 (the user may revisit D-032):** app delivery fees are entered by the user from their checkout. Labeled estimates would make delivery comparable on the first screen.
-   - **ISS-035:** no profiled chain has a direct-only deal, so the deal block and Unlock never show on real data (Unlock is fixture-tested). Researching deals needs the chains' hosts on the network allowlist (a user decision), or the e2e gets a test-only profile.
-   - D-028 (`amexGoldDirect` for unprofiled Five Guys), ISS-030 (platform evidence dates: a fine-print caveat for now), ISS-031 (direct service fee data per chain).
-6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 20 hosts in ISS-001 (at the cap). Phase 6 needs none unless profiles are re-researched.
+   - **ISS-036 (needs the user):** per-item markup has no data source yet. Either the user types an app's item price (new state field and inputs, contracts first) or researched per-item data appears.
+   - **ISS-032 (needs the user):** stacked ZIP coordinates; the data fix (a, b or c) is the user's call.
+   - **ISS-034:** app delivery fees are typed by the user (D-032); labeled estimates would change that.
+   - **ISS-035:** no profiled chain has a direct-only deal, so the deal block and Unlock never show on real data.
+   - D-028, ISS-030 (platform evidence dates: Phase 7's refresh is the natural place), ISS-031 (direct service fees per chain).
+6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 20 hosts in ISS-001 (at the cap). Phase 7 needs `vpic.nhtsa.dot.gov` (VIN) and EIA's weekly data (`www.eia.gov` is allowed; `api.eia.gov` isn't) and `data.alltheplaces.xyz` (allowed): ask the user which hosts to swap before the work starts.
 7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
@@ -39,7 +40,7 @@
 | 4 | State, derivations, wallet (§5) | Opus (contract) → builder | ✅ done | Cascade tests pass (80 hand-worked scenarios + named tests); `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
 | 5 | UI + 9 insights + "Near you" picker | Opus (contracts, e2e) → builder | ✅ done | The §13 manual checklist is automated in Playwright (19 checklist tests + 2 smoke, 0 console errors); phone and desktop screenshots reviewed; insights match a Python reference on 41 fixtures and 500 seeded scenarios |
 | — | **v4 parity milestone** | | | |
-| 6 | Phase B: per-item markup | Opus (oracle) → builder | ⬜ | Oracle updated first; BOGO cases pass; profiles migrated |
+| 6 | Phase B: per-item markup | Opus (oracle) → builder | ✅ done | Oracle updated first (`0b2d290`, before any code); BOGO cases pass (receipt r15, 17 cases; 4 insight fixtures; 4 e2e); profiles migrated to object items (`1359cf6`, shape only) |
 | 7 | Phase A static: VIN lookup, weekly gas + store refresh | researcher + builder | ⬜ | Big Timber → Domino's ≈ the real ~33 mi; the scheduled refresh passes a dry run |
 | 8 | Phase A backend: Worker behind the seam | api-builder | ⬜ | Fixture tests pass; the site is identical with the Worker off |
 | 9 | Phase E: deep links | builder | ⬜ | Link-builder tests pass; every result row hands off |
@@ -64,6 +65,34 @@
 - Workers are dispatched as `general-purpose` Haiku agents that read their agent file and skill first, until a fresh session loads them by name (D-019).
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
+
+### Phase 6: Phase B, per-item markup and BOGO (2026-11-14, done)
+
+Branch `claude/awesome-goodall-4qdauw` (this session's; fast-forwarded to `claude/hopeful-clarke-omoss1` at `77495f1`, the Phase 5 tip).
+
+| Task | Status | Commit |
+|---|---|---|
+| 6.1 D-036; engine, insights, state and UI contracts amended; `engine.py`/`insights.py` first; fuzzer with per-item overrides (valid and malformed) and BOGO promos plus a coverage floor; receipts migrated to object items (all 65 kept their values) and hand-worked r14 (9 cases) and r15 (17 cases); 4 insight fixtures; state scenarios; `bogo.e2e.js` | ✅ receipts 91/91 vs the oracle before any code | `0b2d290`, `a3ff9db` (ISS-036) |
+| 6.3 Researcher: `build-profiles.py` writes object items, validates a sourced per-item markup; `profiles.js` regenerated (shape only, checked item by item) | ✅ 64/64 generator and data tests | `1359cf6` |
+| 6.2 Builder: `engine.js`, `insights.js`, `state.js`; the builder's cart-line guards written into the contract and oracle | ✅ 0 of 500 / 2,000 / 3,000 scenarios on three seeds; reviewer: no math defect, 1 should-fix | `f3af8a8` |
+| 6.2 review fix: a BOGO Minimum candidate must make something free (contract, reference, fixtures first) | ✅ insights 47/47, 0 of 2,000 | `d5c7f2e`, `0f907b5` |
+| 6.4 Builder: BOGO on the page (type option, "Free item" select, note); fix 1: the note spans the desktop grid row (screenshot review); fix 2: settings patch deeper so a select clicked right after typing keeps the click (second review, reproduced first) | ✅ | `0f907b5`, `b45868b` (test), latest |
+| 6.5 Tester: named D-036 tests (engine, state, generator), restFor tests made to bite on object items again, floors raised; 10 mutants each caught by its own file (2 re-run by the orchestrator) | ✅ unit 731/731 | `0f907b5` |
+| 6.6 Close: full suite in a clean worktree at `3502730` with its own `npm ci` (es5 15 files; unit 731/731; oracle receipts 91/91, 0 of 500 scenarios, geo 129/129 + 71/71 + 330/330, insights 47/47 and 0 of 500; e2e 25/25); screenshots reviewed (BOGO settings and receipt at 390 and 1280 px, the unprofiled note, the order rows, the desktop results column); reflector approved with one fix (decisions.md, Skill updates: a builder reports a guard under ASSUMPTIONS, it can't edit the contract) | ✅ | latest |
+
+**Phase 6 notes for a resuming session.**
+- Per-item markup changes no real total yet (ISS-036); BOGO works on real data. Both are fully pinned by receipts, fuzzing and named tests.
+- The sum-rounded-once rule is load-bearing for the receipts: rounding each item first would move 150 of 190 app totals (D-036, measured before choosing).
+
+**Review evidence for the Phase 6 reflector** (all fixed unless noted):
+- **Measuring before choosing a formula avoided a cascade.** Per-item rounding (the literal app receipt) would have changed 150 of 190 hand-worked app totals by a cent; the unrounded sum changed none. The decision records both numbers (D-036). Lesson: before amending a formula, run the old fixtures through each candidate and count what moves.
+- **The worker's defensive guards outran the contract.** The engine builder skipped a non-number quantity and a non-object menu entry, which the contract didn't say; the oracle would have thrown on them. The orchestrator wrote the guards into the contract and the oracle and made the fuzzer generate them (0 differ on 3,000 scenarios). Lesson: an ASSUMPTIONS line in a builder report is a contract gap; close it in the contract and the reference, not just in the code.
+- **A shape migration made tests vacuous, silently.** `engine.test.js`'s restFor tests indexed menu items as arrays (`r.menu[0][1] = 999`, `again.menu[0][1]`); on object items they wrote stray keys and compared `undefined === undefined`, and still passed. Both reviewers flagged it; the tester rewrote them with write-landed checks. Lesson: when a data shape changes, grep every test for the old accessors (`[0]`, `[1]`, `[2]`) and treat a still-passing old-shape test as broken.
+- **Advice that's true but useless.** Minimum offered "Adding 1 × Coke brings it to $41.43: $6.24 more" for a BOGO whose minimum, once reached, frees nothing. The orchestrator's own fixture locked it in with a comment saying "no saving". Lesson: an insight's premise (here "a promo just out of reach") must hold in the counterfactual, not just its trigger.
+- **Screenshots caught a layout bug no test checked:** on the desktop grid the "needs a menu" note took one cell and shifted every promo label off its input. A row-alignment assertion now guards it. Lesson from Phase 5 again: review screenshots of every new control in each state (here: unprofiled).
+- **The lost-click class came back inside one section.** Phase 5 fixed lost clicks between sections, but `patchChildren` replaced a whole `.app-settings` block when one number box committed, so a select clicked right after typing lost the click (the second reviewer read it from the code; the orchestrator reproduced it: no element focused after the click). Lesson: the type-then-click rule applies to every new control in a re-rendered container, and the test must check the clicked element survived (identity + focus), not only the outcome.
+- **Rejection branches without fixtures:** the generator's per-item rules shipped with 6 of 11 branches tested; review found dropping `0 <= v` passed every test. 5 fixtures added; the mutant is caught.
+- **Stop hooks vs parallel workers (again):** the hook asked to commit 6 times while workers were mid-edit. Only verified files were staged by name each time; red intermediate commits (reference before code) were committed but not pushed until the tree was green.
 
 ### Phase 5: UI + 9 insights + "Near you" picker (2026-11-14, done)
 

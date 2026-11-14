@@ -327,3 +327,18 @@ Under D-032 every app's delivery fee starts empty, and `forEngine` switched a wh
 - code-review: ~ stale-derived blocker covers derived/typed mode switches (e705a87)
 - test-runner: + (orchestrator addition) a scratch copy never links to the repo's node_modules; `npm ci` in one emptied the real node_modules at the Phase 5 close
 - data-research, backend: no change
+
+### Phase 6 (2026-11-14): reflector proposal, approved by the orchestrator with one fix (frontend: a builder can't edit the contract or the oracle, so the guard rule says to report the guard under ASSUMPTIONS for the orchestrator)
+- frontend: ~ engine step 2 and step 4: object menu items, the per-item markup sum rounded once, and the `bogo` promo (D-036, engine-contract §5.2)
+- frontend: ~ Render: a block re-render that replaces a container with a clicked control loses the click; `.app-settings` and `.fields` are blocks (3502730, b45868b)
+- frontend: + a defensive guard the contract doesn't name is a contract gap: report it under ASSUMPTIONS for the orchestrator to put in the contract and oracle (f3af8a8)
+- frontend: + an insight's promise must hold in its counterfactual (d5c7f2e)
+- frontend: + a new note or control in a grid takes a whole row; check desktop in every state (0f907b5)
+- test-runner: ~ type-then-click test asserts the clicked element survived with focus, not only the outcome (3502730, b45868b)
+- test-runner: ~ generator rejection branches: Phase 6 had 6 of 11 untested (0f907b5)
+- test-runner: + after a data shape change, grep tests for the old accessors; a passing old-shape test is broken (0f907b5)
+- code-review: ~ test integrity blocker: a test that passes on the old shape (0f907b5)
+- code-review: ~ re-render should-fix: the e2e checks element survival and focus (3502730)
+- code-review: ~ optional-input should-fix cites the per-item rejections found in Phase 6 (0f907b5)
+- data-research: ~ profiles.js shape: menu items are objects; per-item markup needs its own source, never estimated (D-036, 1359cf6)
+- backend: no change (no Phase 6 evidence)
