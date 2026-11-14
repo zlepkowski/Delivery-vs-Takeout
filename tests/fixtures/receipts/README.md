@@ -4,7 +4,7 @@ The orchestrator works these out by hand from [`docs/engine-contract.md`](../../
 
 ## Format
 
-- `_base.json`: `{about, S}`, the base engine state.
+- `_base.json`: `{about, S}`, the base engine state. Menu items are objects `{name, price, dealItem, markup?}` (D-036); a receipt that changes the menu gives the whole array.
 - `rNN-*.json`: `{id, title, refs, dataNote?, patch, cases}`.
   - The receipt's state is `merge(base.S, patch)`, and each case's state is `merge(thatState, case.patch)`.
   - **merge:** objects merge key by key, except `cart`, `creditOptIn` and `markup`, which replace whole (their keys are data). Anything else (numbers, strings, arrays, null) replaces.
