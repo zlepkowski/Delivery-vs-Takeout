@@ -196,6 +196,12 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** a broken deal block would ship unnoticed until the first chain with a direct-only deal is profiled (BUILD.md §1: deals are usually the biggest lever).
 - **Next step:** either research direct-only deals for the profiled chains (needs the chains' hosts on the network allowlist, a user decision) or give the e2e temp site a test-only profile with a deal (helpers.buildSite already writes its own copy of `src/`). A delayed tile (a slow-loading fixture) would cover the loading wording.
 
+### ISS-036 — Per-item markup has no data yet, and the user can't type an app's item price (D-036)
+- **Opened:** 2026-11-14 by orchestrator · **Phase:** 6 · **Status:** open
+- **What:** D-036 models a per-item markup (`menu[i].markup[p]`) and the generator accepts one with a source, but no published, citable per-item markup exists for any of the 9 profiled chains (all use their category default, ISS-012), so on real data every item falls back to the chain's rate. The other source would be the user: the price an app shows for an item ("DoorDash: $25.99 for this pizza"), the way D-032 has the user type their checkout's fees.
+- **Why it matters:** the per-item path is exercised by receipts r14/r15 and the fuzzer, but it doesn't change a real total until one of the two sources exists. BOGO already works on real data (it uses the chain's rate for the free item).
+- **Next step:** the user decides whether to add per-item app prices typed by the user (a state field such as `itemPrices[p][i]`, an override that `forEngine` puts on its copy of `rest.menu`, inputs on the order rows; contract changes first) or wait for researched per-item data. Never scrape the apps (D-027).
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
