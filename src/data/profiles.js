@@ -18,46 +18,46 @@
       "markup": {},
       "markupEst": true,
       "menu": [
-        [
-          "10 Boneless Wings + Fries",
-          14.79,
-          false
-        ],
-        [
-          "10 Bone-In Wings + Fries",
-          17.39,
-          false
-        ],
-        [
-          "Classic Chicken Sandwich + Fries",
-          9.49,
-          false
-        ],
-        [
-          "Buffalo Ranch Chicken Sandwich + Fries",
-          11.49,
-          false
-        ],
-        [
-          "All-American Cheeseburger + Fries",
-          13.29,
-          false
-        ],
-        [
-          "Original Chicken Dippers + Fries",
-          10.99,
-          false
-        ],
-        [
-          "Buffalo Chips",
-          3.74,
-          false
-        ],
-        [
-          "Pepsi\u00ae Bottle",
-          2.99,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "10 Boneless Wings + Fries",
+          "price": 14.79
+        },
+        {
+          "dealItem": false,
+          "name": "10 Bone-In Wings + Fries",
+          "price": 17.39
+        },
+        {
+          "dealItem": false,
+          "name": "Classic Chicken Sandwich + Fries",
+          "price": 9.49
+        },
+        {
+          "dealItem": false,
+          "name": "Buffalo Ranch Chicken Sandwich + Fries",
+          "price": 11.49
+        },
+        {
+          "dealItem": false,
+          "name": "All-American Cheeseburger + Fries",
+          "price": 13.29
+        },
+        {
+          "dealItem": false,
+          "name": "Original Chicken Dippers + Fries",
+          "price": 10.99
+        },
+        {
+          "dealItem": false,
+          "name": "Buffalo Chips",
+          "price": 3.74
+        },
+        {
+          "dealItem": false,
+          "name": "Pepsi\u00ae Bottle",
+          "price": 2.99
+        }
       ],
       "platforms": []
     },
@@ -72,41 +72,41 @@
       },
       "markupEst": true,
       "menu": [
-        [
-          "Chicken Burrito",
-          10.4,
-          false
-        ],
-        [
-          "Steak Burrito",
-          12.55,
-          false
-        ],
-        [
-          "Chicken Burrito Bowl",
-          10.4,
-          false
-        ],
-        [
-          "Chips",
-          2.25,
-          false
-        ],
-        [
-          "Chips & Guacamole",
-          5.2,
-          false
-        ],
-        [
-          "Side of Guacamole",
-          2.95,
-          false
-        ],
-        [
-          "Mexican Coca-Cola",
-          3.75,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "Chicken Burrito",
+          "price": 10.4
+        },
+        {
+          "dealItem": false,
+          "name": "Steak Burrito",
+          "price": 12.55
+        },
+        {
+          "dealItem": false,
+          "name": "Chicken Burrito Bowl",
+          "price": 10.4
+        },
+        {
+          "dealItem": false,
+          "name": "Chips",
+          "price": 2.25
+        },
+        {
+          "dealItem": false,
+          "name": "Chips & Guacamole",
+          "price": 5.2
+        },
+        {
+          "dealItem": false,
+          "name": "Side of Guacamole",
+          "price": 2.95
+        },
+        {
+          "dealItem": false,
+          "name": "Mexican Coca-Cola",
+          "price": 3.75
+        }
       ],
       "platforms": [
         "dd",
@@ -124,46 +124,46 @@
       },
       "markupEst": true,
       "menu": [
-        [
-          "Large (14\") ExtravaganZZa",
-          21.99,
-          false
-        ],
-        [
-          "Large (14\") The People's Pizza - Deluxe",
-          21.99,
-          false
-        ],
-        [
-          "Hot Buffalo Wings (8 pc)",
-          11.99,
-          false
-        ],
-        [
-          "Stuffed Cheesy Bread (8 pc)",
-          9.99,
-          false
-        ],
-        [
-          "Parmesan Bread Bites (16 pc)",
-          6.99,
-          false
-        ],
-        [
-          "5-Cheese Mac & Cheese",
-          9.49,
-          false
-        ],
-        [
-          "Coke\u00ae (2 L)",
-          4.99,
-          false
-        ],
-        [
-          "Domino's Marbled Cookie Brownie",
-          9.99,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "Large (14\") ExtravaganZZa",
+          "price": 21.99
+        },
+        {
+          "dealItem": false,
+          "name": "Large (14\") The People's Pizza - Deluxe",
+          "price": 21.99
+        },
+        {
+          "dealItem": false,
+          "name": "Hot Buffalo Wings (8 pc)",
+          "price": 11.99
+        },
+        {
+          "dealItem": false,
+          "name": "Stuffed Cheesy Bread (8 pc)",
+          "price": 9.99
+        },
+        {
+          "dealItem": false,
+          "name": "Parmesan Bread Bites (16 pc)",
+          "price": 6.99
+        },
+        {
+          "dealItem": false,
+          "name": "5-Cheese Mac & Cheese",
+          "price": 9.49
+        },
+        {
+          "dealItem": false,
+          "name": "Coke\u00ae (2 L)",
+          "price": 4.99
+        },
+        {
+          "dealItem": false,
+          "name": "Domino's Marbled Cookie Brownie",
+          "price": 9.99
+        }
       ],
       "platforms": [
         "dd",
@@ -181,41 +181,41 @@
       },
       "markupEst": true,
       "menu": [
-        [
-          "Original Blend Iced Coffee",
-          3.99,
-          false
-        ],
-        [
-          "Original Blend Hot Coffee",
-          3.24,
-          false
-        ],
-        [
-          "Dozen Donuts",
-          17.99,
-          false
-        ],
-        [
-          "Half Dozen Donuts",
-          10.99,
-          false
-        ],
-        [
-          "Butter Croissant",
-          2.59,
-          false
-        ],
-        [
-          "Hash Browns",
-          1.79,
-          false
-        ],
-        [
-          "Bacon, Egg and Cheese",
-          5.59,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "Original Blend Iced Coffee",
+          "price": 3.99
+        },
+        {
+          "dealItem": false,
+          "name": "Original Blend Hot Coffee",
+          "price": 3.24
+        },
+        {
+          "dealItem": false,
+          "name": "Dozen Donuts",
+          "price": 17.99
+        },
+        {
+          "dealItem": false,
+          "name": "Half Dozen Donuts",
+          "price": 10.99
+        },
+        {
+          "dealItem": false,
+          "name": "Butter Croissant",
+          "price": 2.59
+        },
+        {
+          "dealItem": false,
+          "name": "Hash Browns",
+          "price": 1.79
+        },
+        {
+          "dealItem": false,
+          "name": "Bacon, Egg and Cheese",
+          "price": 5.59
+        }
       ],
       "platforms": [
         "dd",
@@ -233,36 +233,36 @@
       },
       "markupEst": true,
       "menu": [
-        [
-          "Classic Pepperoni (Large)",
-          10.99,
-          false
-        ],
-        [
-          "Classic Cheese (Large)",
-          10.99,
-          false
-        ],
-        [
-          "Crazy Bread",
-          4.49,
-          false
-        ],
-        [
-          "Italian Cheese Bread",
-          6.99,
-          false
-        ],
-        [
-          "Cookie Dough Brownie with M&M'S Minis",
-          4.89,
-          false
-        ],
-        [
-          "Pepsi-Cola 20 oz",
-          2.49,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "Classic Pepperoni (Large)",
+          "price": 10.99
+        },
+        {
+          "dealItem": false,
+          "name": "Classic Cheese (Large)",
+          "price": 10.99
+        },
+        {
+          "dealItem": false,
+          "name": "Crazy Bread",
+          "price": 4.49
+        },
+        {
+          "dealItem": false,
+          "name": "Italian Cheese Bread",
+          "price": 6.99
+        },
+        {
+          "dealItem": false,
+          "name": "Cookie Dough Brownie with M&M'S Minis",
+          "price": 4.89
+        },
+        {
+          "dealItem": false,
+          "name": "Pepsi-Cola 20 oz",
+          "price": 2.49
+        }
       ],
       "platforms": [
         "dd",
@@ -279,41 +279,41 @@
       },
       "markupEst": true,
       "menu": [
-        [
-          "Large Original Crust Pepperoni",
-          16.99,
-          false
-        ],
-        [
-          "Large Original Crust The Works Pizza",
-          19.99,
-          false
-        ],
-        [
-          "Large Original Crust Sausage Pizza",
-          16.99,
-          false
-        ],
-        [
-          "6 Piece Spicy Buffalo Wings",
-          8.99,
-          false
-        ],
-        [
-          "8 Piece Garlic Knots",
-          7.49,
-          false
-        ],
-        [
-          "2 Liter Pepsi",
-          3.99,
-          false
-        ],
-        [
-          "8 Inch Chocolate Chip Cookie",
-          8.79,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "Large Original Crust Pepperoni",
+          "price": 16.99
+        },
+        {
+          "dealItem": false,
+          "name": "Large Original Crust The Works Pizza",
+          "price": 19.99
+        },
+        {
+          "dealItem": false,
+          "name": "Large Original Crust Sausage Pizza",
+          "price": 16.99
+        },
+        {
+          "dealItem": false,
+          "name": "6 Piece Spicy Buffalo Wings",
+          "price": 8.99
+        },
+        {
+          "dealItem": false,
+          "name": "8 Piece Garlic Knots",
+          "price": 7.49
+        },
+        {
+          "dealItem": false,
+          "name": "2 Liter Pepsi",
+          "price": 3.99
+        },
+        {
+          "dealItem": false,
+          "name": "8 Inch Chocolate Chip Cookie",
+          "price": 8.79
+        }
       ],
       "platforms": [
         "dd",
@@ -331,41 +331,41 @@
       },
       "markupEst": true,
       "menu": [
-        [
-          "Italian B.M.T. Footlong",
-          11.49,
-          false
-        ],
-        [
-          "Italian B.M.T. 6-inch",
-          7.59,
-          false
-        ],
-        [
-          "Oven-Roasted Turkey Footlong",
-          11.79,
-          false
-        ],
-        [
-          "Oven-Roasted Turkey 6-inch",
-          7.59,
-          false
-        ],
-        [
-          "Lay's Classic Chips",
-          1.59,
-          false
-        ],
-        [
-          "Cookie",
-          0.89,
-          false
-        ],
-        [
-          "Fountain Drink (Medium)",
-          2.89,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "Italian B.M.T. Footlong",
+          "price": 11.49
+        },
+        {
+          "dealItem": false,
+          "name": "Italian B.M.T. 6-inch",
+          "price": 7.59
+        },
+        {
+          "dealItem": false,
+          "name": "Oven-Roasted Turkey Footlong",
+          "price": 11.79
+        },
+        {
+          "dealItem": false,
+          "name": "Oven-Roasted Turkey 6-inch",
+          "price": 7.59
+        },
+        {
+          "dealItem": false,
+          "name": "Lay's Classic Chips",
+          "price": 1.59
+        },
+        {
+          "dealItem": false,
+          "name": "Cookie",
+          "price": 0.89
+        },
+        {
+          "dealItem": false,
+          "name": "Fountain Drink (Medium)",
+          "price": 2.89
+        }
       ],
       "platforms": [
         "dd",
@@ -382,36 +382,36 @@
       },
       "markupEst": true,
       "menu": [
-        [
-          "Chicken Madeira",
-          28.95,
-          false
-        ],
-        [
-          "Louisiana Chicken Pasta",
-          27.5,
-          false
-        ],
-        [
-          "Cobb Salad",
-          23.5,
-          false
-        ],
-        [
-          "Fried Macaroni and Cheese",
-          17.95,
-          false
-        ],
-        [
-          "Original Cheesecake (slice)",
-          11.5,
-          false
-        ],
-        [
-          "To Go Arnold Palmer",
-          4.5,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "Chicken Madeira",
+          "price": 28.95
+        },
+        {
+          "dealItem": false,
+          "name": "Louisiana Chicken Pasta",
+          "price": 27.5
+        },
+        {
+          "dealItem": false,
+          "name": "Cobb Salad",
+          "price": 23.5
+        },
+        {
+          "dealItem": false,
+          "name": "Fried Macaroni and Cheese",
+          "price": 17.95
+        },
+        {
+          "dealItem": false,
+          "name": "Original Cheesecake (slice)",
+          "price": 11.5
+        },
+        {
+          "dealItem": false,
+          "name": "To Go Arnold Palmer",
+          "price": 4.5
+        }
       ],
       "platforms": [
         "dd"
@@ -427,46 +427,46 @@
       },
       "markupEst": true,
       "menu": [
-        [
-          "5 Classic Wings",
-          6.59,
-          false
-        ],
-        [
-          "5 Boneless Wings",
-          4.59,
-          false
-        ],
-        [
-          "10 Boneless Wings",
-          11.59,
-          false
-        ],
-        [
-          "5 pc Crispy Tender Combo",
-          12.99,
-          false
-        ],
-        [
-          "Chicken Sandwich Combo",
-          8.99,
-          false
-        ],
-        [
-          "Chicken Sandwich",
-          5.99,
-          false
-        ],
-        [
-          "Triple Chocolate Chunk Brownie",
-          2.69,
-          false
-        ],
-        [
-          "Dasani Bottled Water",
-          2.79,
-          false
-        ]
+        {
+          "dealItem": false,
+          "name": "5 Classic Wings",
+          "price": 6.59
+        },
+        {
+          "dealItem": false,
+          "name": "5 Boneless Wings",
+          "price": 4.59
+        },
+        {
+          "dealItem": false,
+          "name": "10 Boneless Wings",
+          "price": 11.59
+        },
+        {
+          "dealItem": false,
+          "name": "5 pc Crispy Tender Combo",
+          "price": 12.99
+        },
+        {
+          "dealItem": false,
+          "name": "Chicken Sandwich Combo",
+          "price": 8.99
+        },
+        {
+          "dealItem": false,
+          "name": "Chicken Sandwich",
+          "price": 5.99
+        },
+        {
+          "dealItem": false,
+          "name": "Triple Chocolate Chunk Brownie",
+          "price": 2.69
+        },
+        {
+          "dealItem": false,
+          "name": "Dasani Bottled Water",
+          "price": 2.79
+        }
       ],
       "platforms": [
         "dd"

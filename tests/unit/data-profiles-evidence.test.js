@@ -79,7 +79,7 @@ function zipStates() {
 }
 
 function menuItem(id, name) {
-  const item = load().PROFILES[id].menu.find((m) => m[0] === name);
+  const item = load().PROFILES[id].menu.find((m) => m.name === name);
   assert.ok(item, `${id}: no menu item "${name}"`);
   return item;
 }
@@ -90,23 +90,23 @@ test('D-027 each evidence file is named <id>.json for its own id', () => {
 });
 
 test('D-027 pinned: little_caesars "Crazy Bread" median is 4.49', () => {
-  assert.equal(menuItem('little_caesars', 'Crazy Bread')[1], 4.49);
+  assert.equal(menuItem('little_caesars', 'Crazy Bread').price, 4.49);
 });
 
 test('D-027 pinned: dominos "5-Cheese Mac & Cheese" median is 9.49 (even count, rounds up)', () => {
-  assert.equal(menuItem('dominos', '5-Cheese Mac & Cheese')[1], 9.49);
+  assert.equal(menuItem('dominos', '5-Cheese Mac & Cheese').price, 9.49);
 });
 
 test('D-027 pinned: subway "Italian B.M.T. Footlong" median is 11.49', () => {
-  assert.equal(menuItem('subway', 'Italian B.M.T. Footlong')[1], 11.49);
+  assert.equal(menuItem('subway', 'Italian B.M.T. Footlong').price, 11.49);
 });
 
 test('D-027 pinned: papa_johns "6 Piece Spicy Buffalo Wings" median is 8.99', () => {
-  assert.equal(menuItem('papa_johns', '6 Piece Spicy Buffalo Wings')[1], 8.99);
+  assert.equal(menuItem('papa_johns', '6 Piece Spicy Buffalo Wings').price, 8.99);
 });
 
 test('D-027 pinned: chipotle "Chicken Burrito" median is 10.40', () => {
-  assert.equal(menuItem('chipotle', 'Chicken Burrito')[1], 10.40);
+  assert.equal(menuItem('chipotle', 'Chicken Burrito').price, 10.40);
 });
 
 test('D-027 pinned: wingstop directFee is 2.99', () => {
@@ -133,7 +133,7 @@ test('D-027 every profile menu matches its evidence: same names, order and dealI
   const problems = [];
   for (const { data } of evidence()) {
     const want = data.menu.map((m) => [m.name, m.dealItem]);
-    const got = PROFILES[data.id].menu.map((m) => [m[0], m[2]]);
+    const got = PROFILES[data.id].menu.map((m) => [m.name, m.dealItem]);
     if (JSON.stringify(got) !== JSON.stringify(want)) problems.push(data.id);
   }
   assert.deepEqual(problems, []);
@@ -145,7 +145,7 @@ test('D-027 every menu price equals the integer-cent median of its evidence obse
   for (const { data } of evidence()) {
     data.menu.forEach((item, i) => {
       const want = medianCents(item.prices.map((p) => p.price));
-      const got = toCents(PROFILES[data.id].menu[i][1]);
+      const got = toCents(PROFILES[data.id].menu[i].price);
       if (got !== want) problems.push(`${data.id} "${item.name}": got ${got} cents, want ${want}`);
     });
   }

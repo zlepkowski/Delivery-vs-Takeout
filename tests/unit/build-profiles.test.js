@@ -50,9 +50,9 @@ function build(caseName) {
 
 /** Menu price of the named item in a built profile. */
 function priceOf(profiles, name) {
-  const item = profiles.chipotle.menu.find((m) => m[0] === name);
+  const item = profiles.chipotle.menu.find((m) => m.name === name);
   assert.ok(item, `no menu item "${name}"`);
-  return item[1];
+  return item.price;
 }
 
 test('D-027 build-profiles: the valid fixture builds, with the hand-computed medians', () => {
@@ -62,11 +62,11 @@ test('D-027 build-profiles: the valid fixture builds, with the hand-computed med
   // Item A 4.00/5.00/6.00 (odd) -> 5.00; B 7.10/8.20 (even, 15.30/2) -> 7.65;
   // C 12.00/13.00 -> 12.50; D 2.50/3.00/2.50 (odd) -> 2.50; E 1.10/1.20 -> 1.15.
   assert.deepEqual(p.menu, [
-    ['Item A', 5.00, false],
-    ['Item B', 7.65, false],
-    ['Item C', 12.50, false],
-    ['Item D', 2.50, false],
-    ['Item E', 1.15, false],
+    { name: 'Item A', price: 5.00, dealItem: false },
+    { name: 'Item B', price: 7.65, dealItem: false },
+    { name: 'Item C', price: 12.50, dealItem: false },
+    { name: 'Item D', price: 2.50, dealItem: false },
+    { name: 'Item E', price: 1.15, dealItem: false },
   ]);
   assert.equal(p.deal, null);
   assert.equal(p.directDelivery, false);
@@ -147,4 +147,61 @@ test('D-027 build-profiles: platform evidence with no https URL is rejected', ()
   assert.equal(r.ok, false, 'generator should exit non-zero');
   assert.notEqual(r.status, 0);
   assert.match(r.stderr, /platform dd evidence needs an https URL/);
+});
+
+test('D-036 build-profiles: a valid per-item markup is kept on that item, as platform keys only, never estimated', () => {
+  const r = build('item-markup');
+  assert.equal(r.status, 0, r.stderr);
+  const item = r.PROFILES.chipotle.menu.find((m) => m.name === 'Item A');
+  // Fixture: Item A has markup {"dd": 30, "source": ...}. Output keeps dd only; no source, no est flag.
+  assert.deepEqual(item.markup, { dd: 30 });
+  assert.equal('source' in item.markup, false);
+  assert.equal('markup' in r.PROFILES.chipotle.menu.find((m) => m.name === 'Item B'), false);
+  // The chain-level markup is still the category default (est), untouched by the item override.
+  assert.equal(r.PROFILES.chipotle.markupEst, true);
+});
+
+test('D-036 build-profiles: an item markup with no source URL is rejected', () => {
+  const r = build('reject-item-markup-no-source');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /markup needs a source url/);
+});
+
+test('D-036 build-profiles: an item markup for a platform the chain is not listed on is rejected', () => {
+  const r = build('reject-item-markup-unlisted-platform');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /platform ue is not listed in platforms/);
+});
+
+test('D-036 build-profiles: an item markup above 60 is rejected', () => {
+  const r = build('reject-item-markup-out-of-range');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /markup\.dd out of range 0-60: 61/);
+});
+
+test('D-036 build-profiles: an item markup that is a boolean is rejected (bool is not a number)', () => {
+  const r = build('reject-item-markup-bool');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /markup\.dd must be a number/);
+});
+
+test('D-036 build-profiles: an item markup with a source and no platform key is rejected', () => {
+  const r = build('reject-item-markup-empty');
+  assert.equal(r.ok, false, 'generator should exit non-zero');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /chipotle/);
+  assert.match(r.stderr, /Item A/);
+  assert.match(r.stderr, /markup has no platform key/);
 });

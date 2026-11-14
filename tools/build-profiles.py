@@ -85,6 +85,23 @@ def brand_info(path):
     return {i: cats.get(i) for i in ids}
 
 
+def item_markup(pid, name, m, plats):
+    """D-036: an optional per-item markup, sourced, for platforms the chain is listed on. Never estimated."""
+    where = "%s menu %r markup" % (pid, name)
+    need(isinstance(m, dict), "%s must be an object" % where)
+    for k in m:
+        need(k in PLATS or k == "source", "%s: key %r is not dd, ue, gh or source" % (where, k))
+    keys = [k for k in PLATS if k in m]
+    need(keys, "%s has no platform key (dd, ue or gh)" % where)
+    for k in keys:
+        need(k in plats, "%s: platform %s is not listed in platforms" % (where, k))
+        v = m[k]
+        need(isinstance(v, (int, float)) and not isinstance(v, bool), "%s.%s must be a number, got %r" % (where, k, v))
+        need(0 <= v <= 60, "%s.%s out of range 0-60: %r" % (where, k, v))
+    need(isinstance(m.get("source"), str) and URL_RE.match(m["source"]), "%s needs a source url" % where)
+    return {k: m[k] for k in PLATS if k in m}
+
+
 def build_profile(raw, ids, cat_markup):
     pid = raw.get("id")
     need(pid in PROFILED, "profile id %r is not one of the D-026 chains" % pid)
@@ -92,6 +109,8 @@ def build_profile(raw, ids, cat_markup):
     need(DATE_RE.match(str(raw.get("asOf", ""))), "%s: bad asOf" % pid)
     menu = raw.get("menu")
     need(isinstance(menu, list) and 5 <= len(menu) <= 10, "%s: menu needs 5-10 items" % pid)
+    plats = raw.get("platforms") or {}
+    need(isinstance(plats, dict), "%s: platforms must be an object" % pid)
     out_menu, names = [], set()
     for i, item in enumerate(menu):
         name = item.get("name")
@@ -99,7 +118,10 @@ def build_profile(raw, ids, cat_markup):
         names.add(name)
         need(isinstance(item.get("dealItem"), bool), "%s: %s dealItem must be true/false" % (pid, name))
         price = check_obs(item.get("prices"), "price", "%s menu %r" % (pid, name))
-        out_menu.append([name, price, item["dealItem"]])
+        out_item = {"name": name, "price": price, "dealItem": item["dealItem"]}
+        if "markup" in item:
+            out_item["markup"] = item_markup(pid, name, item["markup"], plats)
+        out_menu.append(out_item)
     deal = raw.get("deal")
     out_deal = None
     if deal is not None:
@@ -109,11 +131,11 @@ def build_profile(raw, ids, cat_markup):
         need(deal.get("scope") in SCOPES, "%s: deal scope" % pid)
         need(isinstance(deal.get("url"), str) and URL_RE.match(deal["url"]), "%s: deal url" % pid)
         need(isinstance(deal.get("terms"), str) and deal["terms"].strip(), "%s: deal terms" % pid)
-        need(any(m[2] for m in out_menu), "%s: a deal needs at least one dealItem on the menu" % pid)
+        need(any(m["dealItem"] for m in out_menu), "%s: a deal needs at least one dealItem on the menu" % pid)
         out_deal = {"label": deal["label"], "price": money(deal["price"]),
                     "minItems": deal["minItems"], "scope": deal["scope"]}
     else:
-        need(not any(m[2] for m in out_menu), "%s: dealItem set but no deal" % pid)
+        need(not any(m["dealItem"] for m in out_menu), "%s: dealItem set but no deal" % pid)
     dd = raw.get("directDelivery")
     need(isinstance(dd, bool), "%s: directDelivery must be true/false" % pid)
     out = {"menu": out_menu, "deal": out_deal, "directDelivery": dd}
@@ -123,8 +145,7 @@ def build_profile(raw, ids, cat_markup):
         out["directFee"] = fee
     else:
         need(raw.get("directFee") in (None, {}), "%s: directFee given but directDelivery is false" % pid)
-    plats = raw.get("platforms") or {}
-    need(isinstance(plats, dict) and set(plats) <= set(PLATS), "%s: platforms keys must be dd/ue/gh" % pid)
+    need(set(plats) <= set(PLATS), "%s: platforms keys must be dd/ue/gh" % pid)
     for k, ev in plats.items():
         # Evidence must cite a source someone can re-read, not just describe one (review of 1.7).
         need(isinstance(ev, str) and ev.strip(), "%s: platform %s needs evidence" % (pid, k))

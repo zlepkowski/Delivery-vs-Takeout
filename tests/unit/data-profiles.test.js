@@ -81,22 +81,28 @@ test('D-027 no profile has a profiled or name key', () => {
   assert.deepEqual(bad, []);
 });
 
-test('D-027 menu has 5 to 10 entries, each [name, price, isDealItem] with 0 < price < 200', () => {
+test('D-036 menu has 5 to 10 entries, each {name, price, dealItem} with 0 < price < 200 and no keys besides those and an optional markup object', () => {
   const problems = [];
+  const ITEM_KEYS = ['dealItem', 'name', 'price'];
   for (const [id, p] of profileEntries()) {
     if (!Array.isArray(p.menu) || p.menu.length < 5 || p.menu.length > 10) {
       problems.push(`${id}: menu length ${p.menu && p.menu.length}`);
       continue;
     }
     p.menu.forEach((item, i) => {
-      if (!Array.isArray(item) || item.length !== 3) {
-        problems.push(`${id}[${i}]: not a 3-tuple`);
+      if (item === null || typeof item !== 'object' || Array.isArray(item)) {
+        problems.push(`${id}[${i}]: not an object`);
         return;
       }
-      const [name, price, isDeal] = item;
+      const keys = Object.keys(item).filter((k) => k !== 'markup').sort();
+      if (keys.join(',') !== ITEM_KEYS.join(',')) problems.push(`${id}[${i}]: keys ${Object.keys(item).sort().join(',')}`);
+      if ('markup' in item && (item.markup === null || typeof item.markup !== 'object' || Array.isArray(item.markup))) {
+        problems.push(`${id}[${i}]: markup is not an object`);
+      }
+      const { name, price, dealItem } = item;
       if (typeof name !== 'string' || name === '') problems.push(`${id}[${i}]: name`);
       if (typeof price !== 'number' || !(price > 0 && price < 200)) problems.push(`${id}[${i}]: price ${price}`);
-      if (typeof isDeal !== 'boolean') problems.push(`${id}[${i}]: isDealItem ${isDeal}`);
+      if (typeof dealItem !== 'boolean') problems.push(`${id}[${i}]: dealItem ${dealItem}`);
     });
   }
   assert.deepEqual(problems, []);
@@ -105,7 +111,7 @@ test('D-027 menu has 5 to 10 entries, each [name, price, isDealItem] with 0 < pr
 test('D-027 menu prices have at most 2 decimals', () => {
   const bad = [];
   for (const [id, p] of profileEntries()) {
-    for (const [name, price] of p.menu) {
+    for (const { name, price } of p.menu) {
       if (typeof price === 'number' && !atMost2(price)) bad.push(`${id}: ${name} ${price}`);
     }
   }
@@ -115,7 +121,7 @@ test('D-027 menu prices have at most 2 decimals', () => {
 test('D-027 menu item names are unique within each profile', () => {
   const bad = [];
   for (const [id, p] of profileEntries()) {
-    const names = p.menu.map((item) => item[0]);
+    const names = p.menu.map((item) => item.name);
     if (new Set(names).size !== names.length) bad.push(id);
   }
   assert.deepEqual(bad, []);
@@ -147,7 +153,7 @@ test('D-027 a non-null deal has price > 0 (at most 2 decimals), integer minItems
 test('D-027 a non-null deal has a deal item on the menu, and a null deal has none', () => {
   const problems = [];
   for (const [id, p] of profileEntries()) {
-    const hasDealItem = p.menu.some((item) => item[2] === true);
+    const hasDealItem = p.menu.some((item) => item.dealItem === true);
     if (p.deal !== null && !hasDealItem) problems.push(`${id}: deal with no deal item`);
     if (p.deal === null && hasDealItem) problems.push(`${id}: deal item with no deal`);
   }
