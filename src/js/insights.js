@@ -34,6 +34,11 @@
     return Array.isArray(v) ? v : [];
   }
 
+  /** True when F.creditOptIn has its own key `key` set to exactly true (§9.1). */
+  function optedIn(F, key) {
+    return isObj(F.creditOptIn) && has(F.creditOptIn, key) && F.creditOptIn[key] === true;
+  }
+
   function round1(x) {
     return Math.round(x * 10) / 10;
   }
@@ -156,7 +161,7 @@
 
   /** 3.4 counterfactual, unprofiled: a manual subtotal, up to 5 tries of +$0.01. */
   function counterUnprofiled(F, r, min) {
-    var plat = F.plats[r.plat];
+    var plat = isObj(F.plats) && has(F.plats, r.plat) ? F.plats[r.plat] : null;
     var mk = isObj(plat) ? plat.markup : undefined;
     if (!isNum(mk)) { return null; }
     var ms = Math.ceil(min / (1 + mk / 100) * 100) / 100;
@@ -222,7 +227,9 @@
     }
     var c = null;
     for (var i = 0; i < credits.length; i++) {
-      if (isObj(credits[i]) && credits[i].goldPartner === true && credits[i].locked !== true) {
+      var w = credits[i];
+      if (isObj(w) && w.goldPartner === true && w.locked !== true &&
+          !(w.restricted === true && !optedIn(F, w.key))) {
         c = credits[i];
         break;
       }
@@ -283,7 +290,8 @@
       if (!isObj(c)) { continue; }
       if (c.locked === true || c.used === true) { continue; }
       if (!validCadence(c.cadence)) { continue; }
-      var plats = (Array.isArray(c.plats) && c.plats.length > 0) || (c.goldPartner === true && rentOk);
+      var plats = (Array.isArray(c.plats) && c.plats.length > 0) ||
+        (c.goldPartner === true && rentOk && !(c.restricted === true && !optedIn(F, c.key)));
       if (!plats) { continue; }
       items.push({ key: c.key, name: c.name, amount: c.amount, days: daysLeft(y, m, d, c.cadence) });
     }

@@ -24,6 +24,17 @@ if (!POD.insights || typeof POD.insights.build !== 'function') {
   process.exit(3);
 }
 const requests = JSON.parse(fs.readFileSync(inFile, 'utf8'));
+/** JSON would turn -0 into 0, so look for it before the round trip. */
+function negZero(v, at) {
+  if (typeof v === 'number') return Object.is(v, -0) ? at : null;
+  if (v !== null && typeof v === 'object') {
+    for (const k of Object.keys(v)) {
+      const hit = negZero(v[k], at + '.' + k);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
 const trap = new Proxy({}, { get() { throw new Error('purity: read POD.data or POD.S'); } });
 
 const out = requests.map((r) => {
@@ -45,6 +56,8 @@ const out = requests.map((r) => {
     if (JSON.stringify([r.F, R]) !== before || !Object.is(now.getTime(), t0)) {
       return { ok: false, err: 'purity: build changed F, R or now' };
     }
+    const nz = negZero(v, 'build');
+    if (nz) return { ok: false, err: 'a -0 at ' + nz + ' (contract §0: data numbers are x + 0)' };
     return { ok: true, v: JSON.parse(JSON.stringify(v === undefined ? '__undefined__' : v)) };
   } catch (e) {
     return { ok: false, err: String((e && e.stack) || e) };

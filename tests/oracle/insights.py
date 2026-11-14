@@ -72,6 +72,12 @@ def _cart_plus(cart, j, k):
     return c
 
 
+def _blocked(F, c):
+    """A restricted credit not opted in (§9.1)."""
+    opt = F.get("creditOptIn") if _obj(F.get("creditOptIn")) else {}
+    return c.get("restricted") is True and opt.get(c.get("key")) is not True
+
+
 def _ins(iid, label, cls, text, data):
     return {"id": iid, "label": label, "cls": cls, "text": text,
             "data": {k: ([dict((a, z(b)) for a, b in it.items()) for it in v] if isinstance(v, list) and v and isinstance(v[0], dict) else z(v))
@@ -175,7 +181,11 @@ def minimum(F, R):
                 continue
             add_qty, add_item, add_amount = k, menu[j][0], E.round2(k * menu[j][1])
         else:
-            ms = math.ceil(mn / (1 + F["plats"][r["plat"]]["markup"] / 100) * 100) / 100
+            pl = (F.get("plats") if _obj(F.get("plats")) else {}).get(r["plat"])
+            mk = pl.get("markup") if _obj(pl) else None
+            if not _num(mk):
+                continue
+            ms = math.ceil(mn / (1 + mk / 100) * 100) / 100
             for _ in range(5):
                 t = E.calc(F, r["id"], {"manualSubtotal": ms})
                 if t["parts"]["food"] >= mn:
@@ -210,7 +220,8 @@ def wallet(F, R):
     credits = F.get("credits")
     if not isinstance(credits, list):
         return None
-    c = _first(credits, lambda c: _obj(c) and c.get("goldPartner") is True and c.get("locked") is not True)
+    c = _first(credits, lambda c: _obj(c) and c.get("goldPartner") is True and c.get("locked") is not True
+               and not _blocked(F, c))
     if c is None:
         return None
     used = c.get("used") is True
@@ -243,7 +254,7 @@ def timing(F, R, now):
         if not _obj(c) or c.get("locked") is True or c.get("used") is True or c.get("cadence") not in CADENCES:
             continue
         pl = c.get("plats")
-        if not ((isinstance(pl, list) and len(pl) > 0) or (c.get("goldPartner") is True and gold_here)):
+        if not ((isinstance(pl, list) and len(pl) > 0) or (c.get("goldPartner") is True and gold_here and not _blocked(F, c))):
             continue
         items.append({"key": c["key"], "name": c["name"], "amount": c["amount"], "days": days_until_reset(c["cadence"], now)})
     if not items:
@@ -270,7 +281,7 @@ def _js_str_key(s):
 
 def locked(F, R):
     credits = [c for c in (F.get("credits") or []) if _obj(c)]
-    opt = F.get("creditOptIn") or {}
+    opt = F.get("creditOptIn") if _obj(F.get("creditOptIn")) else {}
     lk = [c for c in credits if c.get("locked") is True]
     rs = [c for c in credits if c.get("restricted") is True and c.get("locked") is not True and opt.get(c["key"]) is not True]
     if not lk and not rs:
@@ -317,6 +328,8 @@ def spread(F, R):
 def build(F, R, now):
     """now: (year, month0, day), or None for an invalid date."""
     if not _obj(F) or not _obj(F.get("rest")) or not isinstance(R, list) or not R:
+        return []
+    if F["rest"].get("profiled") is True and not isinstance(F["rest"].get("menu"), list):
         return []
     ms = E.cart_info(F)["menuSub"]
     if not (_num(ms) and ms > 0):

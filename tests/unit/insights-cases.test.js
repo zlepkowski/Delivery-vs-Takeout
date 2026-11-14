@@ -54,10 +54,10 @@ function negZero(v, at) {
 
 const dateOf = (now) => (now ? new Date(now[0], now[1], now[2], 12) : new Date(NaN));
 
-test('D-034 the insight fixtures are all loaded (at least 34 cases, 118 insights)', () => {
-  assert.ok(FIX.cases.length >= 34, 'only ' + FIX.cases.length + ' cases');
+test('D-034 the insight fixtures are all loaded (at least 41 cases, 145 insights)', () => {
+  assert.ok(FIX.cases.length >= 41, 'only ' + FIX.cases.length + ' cases');
   const n = FIX.cases.reduce((s, c) => s + c.expect.length, 0);
-  assert.ok(n >= 118, 'only ' + n + ' expected insights');
+  assert.ok(n >= 145, 'only ' + n + ' expected insights');
   const ids = new Set();
   for (const c of FIX.cases) for (const x of c.expect) ids.add(x.id);
   for (const id of ['unlock', 'distance', 'fuel', 'minimum', 'wallet', 'timing', 'locked', 'nuance', 'spread']) {

@@ -3352,6 +3352,636 @@
      }
     }
    ]
+  },
+  {
+   "id": "distance-equal",
+   "title": "Break-even exactly at the trip length: pickup still counts as cheaper (>=)",
+   "refs": [
+    "§3.2"
+   ],
+   "patch": {
+    "mpg": 25,
+    "gas": 2.5,
+    "wear": 0.15,
+    "miles": 4,
+    "minutes": 9,
+    "credits": [
+     {
+      "key": "c.dd",
+      "name": "DD credit",
+      "amount": 15.82,
+      "cadence": "monthly",
+      "plats": [
+       "dd"
+      ],
+      "modes": [
+       "d"
+      ]
+     }
+    ]
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "distance.breakEven": 4.0,
+    "distance.cls": "good",
+    "distance.text": "Picking up stays cheaper than delivery up to a 4.0 mi round trip. Yours is 4.0 mi."
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 4.0 mi round trip. Yours is 4.0 mi.",
+     "data": {
+      "breakEven": 4.0,
+      "miles": 4.0,
+      "pickup": "direct-p",
+      "delivery": "dd-d"
+     }
+    },
+    {
+     "id": "timing",
+     "label": "Timing",
+     "cls": "",
+     "text": "Unused this period: DD credit ($15.82, resets in 17 days).",
+     "data": {
+      "items": [
+       {
+        "key": "c.dd",
+        "name": "DD credit",
+        "amount": 15.82,
+        "days": 17
+       }
+      ],
+      "total": 15.82
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $30.28 (Order direct · pickup) to $45.10 (Uber Eats · delivery): a $14.82 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "ue-d",
+      "gap": 14.82
+     }
+    }
+   ]
+  },
+  {
+   "id": "distance-negative-zero",
+   "title": "A break-even just below 0 rounds to -0, written as 0",
+   "refs": [
+    "§0",
+    "§3.2"
+   ],
+   "patch": {
+    "credits": [
+     {
+      "key": "c.dd",
+      "name": "DD credit",
+      "amount": 16.83,
+      "cadence": "monthly",
+      "plats": [
+       "dd"
+      ],
+      "modes": [
+       "d"
+      ]
+     }
+    ]
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "distance.breakEven": 0,
+    "distance.cls": "",
+    "distance.text": "Delivery (DoorDash · delivery, $29.27) costs less than picking up, even from next door."
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "",
+     "text": "Delivery (DoorDash · delivery, $29.27) costs less than picking up, even from next door.",
+     "data": {
+      "breakEven": 0.0,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "dd-d"
+     }
+    },
+    {
+     "id": "timing",
+     "label": "Timing",
+     "cls": "",
+     "text": "Unused this period: DD credit ($16.83, resets in 17 days).",
+     "data": {
+      "items": [
+       {
+        "key": "c.dd",
+        "name": "DD credit",
+        "amount": 16.83,
+        "days": 17
+       }
+      ],
+      "total": 16.83
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $29.27 (DoorDash · delivery) to $45.10 (Uber Eats · delivery): a $15.83 spread.",
+     "data": {
+      "lo": "dd-d",
+      "hi": "ue-d",
+      "gap": 15.83
+     }
+    }
+   ]
+  },
+  {
+   "id": "minimum-freedel-pickup-excluded",
+   "title": "Free delivery is never a pickup candidate, even when pickup's delta would be smaller",
+   "refs": [
+    "§3.4"
+   ],
+   "patch": {
+    "plats": {
+     "ue": {
+      "delFee": 0
+     }
+    },
+    "tipDel": 30,
+    "promos": {
+     "ue": {
+      "type": "freedel",
+      "value": 0,
+      "cap": 0,
+      "min": 35
+     }
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "minimum.channel": "ue-d"
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 78.0 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 78.0,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 89.47,
+      "capped": true
+     }
+    },
+    {
+     "id": "minimum",
+     "label": "Minimum",
+     "cls": "",
+     "text": "Uber Eats · delivery is $3.89 short of its $35.00 promo minimum. Adding 1 × Coke® (2 L) ($4.99) brings it to $56.60: $8.83 more than now.",
+     "data": {
+      "channel": "ue-d",
+      "min": 35,
+      "short": 3.89,
+      "addQty": 1,
+      "addItem": "Coke® (2 L)",
+      "addAmount": 4.99,
+      "net": 56.6,
+      "was": 47.77,
+      "delta": 8.83
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $30.70 (Order direct · pickup) to $50.76 (DoorDash · delivery): a $20.06 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 20.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "minimum-twentieth",
+   "title": "The 20th added item is the first that reaches the minimum",
+   "refs": [
+    "§3.4"
+   ],
+   "patch": {
+    "promos": {
+     "dd": {
+      "type": "dollar",
+      "value": 5,
+      "cap": 0,
+      "min": 146.18
+     }
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "minimum.addQty": 20,
+    "minimum.addAmount": 99.8,
+    "minimum.channel": "dd-p"
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 66.7 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 66.7,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 76.12,
+      "capped": true
+     }
+    },
+    {
+     "id": "minimum",
+     "label": "Minimum",
+     "cls": "",
+     "text": "DoorDash · pickup is $115.07 short of its $146.18 promo minimum. Adding 20 × Coke® (2 L) ($99.80) brings it to $154.66: $119.47 more than now.",
+     "data": {
+      "channel": "dd-p",
+      "min": 146.18,
+      "short": 115.07,
+      "addQty": 20,
+      "addItem": "Coke® (2 L)",
+      "addAmount": 99.8,
+      "net": 154.66,
+      "was": 35.19,
+      "delta": 119.47
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $30.70 (Order direct · pickup) to $46.10 (DoorDash · delivery): a $15.40 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 15.4
+     }
+    }
+   ]
+  },
+  {
+   "id": "minimum-unprofiled-second-try",
+   "title": "Rounding to the cent falls short once: the second try reaches the minimum",
+   "refs": [
+    "§3.4"
+   ],
+   "patch": {
+    "rest": {
+     "id": "taco_bell",
+     "name": "Taco Bell",
+     "profiled": false,
+     "menu": [],
+     "deal": null,
+     "directDelivery": false,
+     "directSvc": null,
+     "amexGoldDirect": false,
+     "platforms": [
+      "dd",
+      "ue",
+      "gh"
+     ],
+     "markup": {
+      "dd": 12.6,
+      "ue": 12.6,
+      "gh": 12.6
+     },
+     "markupEst": true
+    },
+    "manualSubtotal": 20,
+    "plats": {
+     "dd": {
+      "markup": 12.6
+     },
+     "ue": {
+      "markup": 12.6
+     },
+     "gh": {
+      "markup": 12.6
+     }
+    },
+    "promos": {
+     "gh": {
+      "type": "dollar",
+      "value": 5,
+      "cap": 0,
+      "min": 25.053
+     }
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "minimum.addAmount": 2.26,
+    "minimum.channel": "gh-p"
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 48.4 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 48.4,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 54.42,
+      "capped": true
+     }
+    },
+    {
+     "id": "minimum",
+     "label": "Minimum",
+     "cls": "good",
+     "text": "Grubhub · pickup is $2.53 short of its $25.05 promo minimum. Adding $2.26 of food brings it to $23.19: $2.67 less than now.",
+     "data": {
+      "channel": "gh-p",
+      "min": 25.053,
+      "short": 2.53,
+      "addQty": null,
+      "addItem": null,
+      "addAmount": 2.26,
+      "net": 23.19,
+      "was": 25.86,
+      "delta": -2.67
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $23.13 (Order direct · pickup) to $34.19 (DoorDash · delivery): a $11.06 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 11.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "wallet-restricted-partner",
+   "title": "A restricted gold-partner credit not opted in: no Wallet, no Timing; Locked lists it",
+   "refs": [
+    "§3.5",
+    "§3.6",
+    "§9.1"
+   ],
+   "patch": {
+    "rest": {
+     "amexGoldDirect": true
+    },
+    "credits": [
+     {
+      "key": "x.gold",
+      "name": "Partner credit",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [],
+      "restricted": true,
+      "goldPartner": true
+     }
+    ]
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "#ids": [
+     "distance",
+     "fuel",
+     "locked",
+     "spread"
+    ],
+    "locked.restricted": [
+     "x.gold"
+    ]
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 66.7 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 66.7,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 76.12,
+      "capped": true
+     }
+    },
+    {
+     "id": "locked",
+     "label": "Locked",
+     "cls": "",
+     "text": "Only at some restaurants (tick “Qualifies here” if this one takes it): Partner credit.",
+     "data": {
+      "locked": [],
+      "restricted": [
+       "x.gold"
+      ]
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $30.70 (Order direct · pickup) to $46.10 (DoorDash · delivery): a $15.40 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 15.4
+     }
+    }
+   ]
+  },
+  {
+   "id": "wallet-restricted-partner-opted-in",
+   "title": "Opted in, the same credit shows in Wallet and Timing",
+   "refs": [
+    "§3.5",
+    "§3.6"
+   ],
+   "patch": {
+    "rest": {
+     "amexGoldDirect": true
+    },
+    "credits": [
+     {
+      "key": "x.gold",
+      "name": "Partner credit",
+      "amount": 10,
+      "cadence": "monthly",
+      "plats": [
+       "gh"
+      ],
+      "restricted": true,
+      "goldPartner": true
+     }
+    ],
+    "creditOptIn": {
+     "x.gold": true
+    }
+   },
+   "now": [
+    2026,
+    10,
+    14
+   ],
+   "hand": {
+    "#ids": [
+     "distance",
+     "fuel",
+     "wallet",
+     "timing",
+     "spread"
+    ],
+    "wallet.credit": "x.gold",
+    "spread.gap": 25.4
+   },
+   "expect": [
+    {
+     "id": "distance",
+     "label": "Distance",
+     "cls": "good",
+     "text": "Picking up stays cheaper than delivery up to a 108.9 mi round trip. Yours is 6.0 mi.",
+     "data": {
+      "breakEven": 108.9,
+      "miles": 6.0,
+      "pickup": "direct-p",
+      "delivery": "ue-d"
+     }
+    },
+    {
+     "id": "fuel",
+     "label": "Fuel",
+     "cls": "",
+     "text": "Even at $12.00/gal, picking up still wins.",
+     "data": {
+      "gas": 4.116,
+      "breakEven": 126.12,
+      "capped": true
+     }
+    },
+    {
+     "id": "wallet",
+     "label": "Wallet",
+     "cls": "good",
+     "text": "Domino's is an Amex Gold dining partner, so your $10.00 Partner credit works when you order direct.",
+     "data": {
+      "credit": "x.gold",
+      "amount": 10,
+      "used": false
+     }
+    },
+    {
+     "id": "timing",
+     "label": "Timing",
+     "cls": "",
+     "text": "Unused this period: Partner credit ($10.00, resets in 17 days).",
+     "data": {
+      "items": [
+       {
+        "key": "x.gold",
+        "name": "Partner credit",
+        "amount": 10,
+        "days": 17
+       }
+      ],
+      "total": 10.0
+     }
+    },
+    {
+     "id": "spread",
+     "label": "Spread",
+     "cls": "",
+     "text": "The same order costs $20.70 (Order direct · pickup) to $46.10 (DoorDash · delivery): a $25.40 spread.",
+     "data": {
+      "lo": "direct-p",
+      "hi": "dd-d",
+      "gap": 25.4
+     }
+    }
+   ]
   }
  ]
 }

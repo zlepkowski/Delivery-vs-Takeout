@@ -513,8 +513,8 @@ def insights_checks(failures):
             failures.append("insights fixture %s is stale vs the python reference: %s" % (c["id"], d))
         reqs.append({"F": F, "now": c["now"]})
     print("oracle: insights fixtures %d/%d cases match the python reference" % (len(doc["cases"]) - bad, len(doc["cases"])))
-    if len(doc["cases"]) < 34:
-        failures.append("insights: only %d fixture cases (at least 34 expected)" % len(doc["cases"]))
+    if len(doc["cases"]) < 41:
+        failures.append("insights: only %d fixture cases (at least 41 expected)" % len(doc["cases"]))
     if not os.path.exists(os.path.join(ROOT, "src", "js", "insights.js")):
         print("oracle: src/js/insights.js is not built yet, so the JS insights comparison is skipped")
         return

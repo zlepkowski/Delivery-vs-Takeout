@@ -2,6 +2,8 @@
 
 The exact definition of `POD.insights` in `src/js/insights.js`: the nine advice cards of BUILD.md §4.5. **Where this file and BUILD.md §4.5 differ, this file wins** (D-034). `src/js/insights.js` and the Python reference `tests/oracle/insights.py` both implement it. Change it only by a decision: the reference and the fixtures (`tests/fixtures/insights/`) change first, the code after.
 
+*Amended 2026-11-14 after the 5.2 review:* a restricted gold-partner credit counts for Wallet and Timing only once opted in (§3.5, §3.6); the never-throw guards are written out (§1, §3.4).
+
 ## 0. Rules
 
 - **Pure.** `build` reads only its arguments and calls only `POD.engine` (`calc`, `cartInfo`, `perMile`) and `POD.util` (`round2`, `money`). No `POD.S`, no `POD.data`, no DOM, no `Date` (neither `new Date()` nor `Date.now()`: the clock comes in as `now`). It never changes `F`, `R` or `now`.
@@ -19,7 +21,7 @@ The exact definition of `POD.insights` in `src/js/insights.js`: the nine advice 
 - `R`: `POD.engine.allResults(F)`.
 - `now`: a `Date` (only `getFullYear`, `getMonth`, `getDate` and `getTime` are read).
 
-Returns `[]` when `F` isn't an object, `F.rest` isn't an object, `R` isn't an array or is empty, or `POD.engine.cartInfo(F).menuSub` isn't a finite number > 0 (an empty order gets no advice).
+Returns `[]` when `F` isn't an object, `F.rest` isn't an object, `F.rest.profiled === true` and `F.rest.menu` isn't an array, `R` isn't an array or is empty, or `POD.engine.cartInfo(F).menuSub` isn't a finite number > 0 (an empty order gets no advice). Every read of a nested field checks its parent is an object first (a missing `F.plats`, `F.promos` or `F.credits` means none), so a malformed `F` never throws.
 
 An insight is `{ id, label, cls, text, data }`: `id` as in §3, `label` its title, `cls` one of `""`, `"good"`, `"hot"`, `text` the sentence(s), `data` the numbers behind it (the tests compare `data` exactly and `text` exactly).
 
@@ -71,7 +73,7 @@ A **candidate** is each entry `r` of `R`, in order, with all of: `r.plat !== "di
 
 For a candidate, the counterfactual:
 - **Profiled** (`F.rest.profiled === true`): `j` = the cheapest item of the whole menu (none → not a candidate). For `k` = 1, 2, … 20: `a = calc(F, r.id, {cart: cart plus k of j})`; stop at the first `k` with `a.parts.food >= min`. None by 20 → not a candidate. `addQty = k`, `addItem = menu[j][0]`, `addAmount = round2(k * menu[j][1])`.
-- **Unprofiled:** `ms = Math.ceil(min / (1 + F.plats[r.plat].markup / 100) * 100) / 100`. Up to 5 tries: `a = calc(F, r.id, {manualSubtotal: ms})`; stop when `a.parts.food >= min`, else `ms = round2(ms + 0.01)`. None in 5 → not a candidate. `addQty = null`, `addItem = null`, `addAmount = round2(ms - F.manualSubtotal)`.
+- **Unprofiled:** when `F.plats[r.plat].markup` isn't a finite number, not a candidate. Otherwise `ms = Math.ceil(min / (1 + markup / 100) * 100) / 100`. Up to 5 tries (two always suffice: the ceiling puts `ms × (1 + markup)` at or above `min`, so only rounding to the cent can fall short, by less than one step; the cap is a guard): `a = calc(F, r.id, {manualSubtotal: ms})`; stop when `a.parts.food >= min`, else `ms = round2(ms + 0.01)`. None in 5 → not a candidate. `addQty = null`, `addItem = null`, `addAmount = round2(ms - F.manualSubtotal)`.
 - `delta = round2(a.net - r.net)`.
 
 Shows the candidate with the **smallest `delta`** (a tie keeps the earlier in `R`). None → no insight.
@@ -81,7 +83,7 @@ Shows the candidate with the **smallest `delta`** (a tie keeps the earlier in `R
 
 ### 3.5 `wallet` · label `Wallet`: an Amex Gold dining partner
 
-Shows when `F.rest.amexGoldDirect === true`, `F.plats.direct` is an object with `on === true`, and `F.credits` (an array) has a credit `c` with `c.goldPartner === true` and `c.locked !== true`: the first such `c`.
+Shows when `F.rest.amexGoldDirect === true`, `F.plats.direct` is an object with `on === true`, and `F.credits` (an array) has a credit `c` with `c.goldPartner === true`, `c.locked !== true`, and not (`c.restricted === true` and `F.creditOptIn[c.key] !== true`) (a restricted credit counts only once opted in, §9.1, as in engine contract §5.9): the first such `c`.
 
 - `data = {credit: c.key, amount: c.amount, used: c.used === true}`
 - not used: `cls "good"`, `text` = `F.rest.name + " is an Amex Gold dining partner, so your " + money(c.amount) + " " + c.name + " works when you order direct."`
@@ -89,7 +91,7 @@ Shows when `F.rest.amexGoldDirect === true`, `F.plats.direct` is an object with 
 
 ### 3.6 `timing` · label `Timing`: unused credits and when they reset
 
-Needs `now` to be an object whose `getTime` is a function returning a finite number (anything else, including `null`, `{}` or an invalid `Date`: no Timing, and no throw). The **items** are the credits `c` of `F.credits`, in order, with all of: `c.locked !== true`; `c.used !== true`; `c.cadence` is `"monthly"`, `"quarterly"`, `"semiannual"` or `"annual"`; and `c.plats` is a non-empty array **or** (`c.goldPartner === true` and `F.rest.amexGoldDirect === true`). No items → no insight.
+Needs `now` to be an object whose `getTime` is a function returning a finite number (anything else, including `null`, `{}` or an invalid `Date`: no Timing, and no throw). The **items** are the credits `c` of `F.credits`, in order, with all of: `c.locked !== true`; `c.used !== true`; `c.cadence` is `"monthly"`, `"quarterly"`, `"semiannual"` or `"annual"`; and `c.plats` is a non-empty array **or** (`c.goldPartner === true` and `F.rest.amexGoldDirect === true` and not (`c.restricted === true` and `F.creditOptIn[c.key] !== true`)). No items → no insight.
 
 - `days(c)`: with `y = now.getFullYear()`, `m = now.getMonth()` (0–11), `d = now.getDate()`, the next period starts on the 1st of month `s`: monthly `s = m + 1`; quarterly `s = (Math.floor(m / 3) + 1) * 3`; semiannual `s = (Math.floor(m / 6) + 1) * 6`; annual `s = 12` (months past 11 run into the next year). `days = dim(y, m) - d + 1 + Σ dim(y, t)` for `t = m + 1 … s - 1`, where `dim(y, t)` is the number of days in month `t` of year `y` (`t` ≤ 11 here), with February 29 days when `y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)`. Pure arithmetic: no `Date` is built.
 - Sort the items by `days` ascending, then `key` ascending (plain string order).

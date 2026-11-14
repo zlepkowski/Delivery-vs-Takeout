@@ -244,6 +244,52 @@ case("pickup-only", "Apps without delivery (D-033): no distance or fuel, but nua
     "plats": {"dd": {"noDelivery": True}, "ue": {"noDelivery": True}}}, {
     "#ids": ["spread"], "spread.gap": 4.49}, refs=["§3.2", "§3.9", "D-033"])
 
+# ---- edge cases added after the 5.2 review (each pins a boundary a mutant survived)
+# rate = 2.5/25 + 0.15 = 0.25; miles 4: direct-p = 26.98 + 2.30 + (0.40 + 0.60) = 30.28, fixed 29.28;
+# dd-d 46.10 - 15.82 = 30.28; be = (30.28 - 29.28) / 0.25 = 4.0 == miles exactly -> the "stays cheaper" branch (>=)
+case("distance-equal", "Break-even exactly at the trip length: pickup still counts as cheaper (>=)", {
+    "mpg": 25, "gas": 2.5, "wear": 0.15, "miles": 4, "minutes": 9,
+    "credits": [{"key": "c.dd", "name": "DD credit", "amount": 15.82, "cadence": "monthly", "plats": ["dd"], "modes": ["d"]}]}, {
+    "distance.breakEven": 4.0, "distance.cls": "good",
+    "distance.text": "Picking up stays cheaper than delivery up to a 4.0 mi round trip. Yours is 4.0 mi.",
+}, refs=["§3.2"])
+# dd-d 46.10 - 16.83 = 29.27 = fixed - 0.01: be = -0.01 / 0.2372 = -0.042 -> Math.round(-0.42) = -0 -> written as 0
+case("distance-negative-zero", "A break-even just below 0 rounds to -0, written as 0", {
+    "credits": [{"key": "c.dd", "name": "DD credit", "amount": 16.83, "cadence": "monthly", "plats": ["dd"], "modes": ["d"]}]}, {
+    "distance.breakEven": 0, "distance.cls": "",
+    "distance.text": "Delivery (DoorDash · delivery, $29.27) costs less than picking up, even from next door.",
+}, refs=["§0", "§3.2"])
+# ue freedel, min 35, delFee 0, delivery tip 30%: + 1 Coke, ue-d's delta (food +5.75, service +0.86, tax +0.49, tip +1.72, nothing
+# waived) is larger than ue-p's would be (food +5.75, tax +0.49), so if pickup weren't excluded it would win.
+case("minimum-freedel-pickup-excluded", "Free delivery is never a pickup candidate, even when pickup's delta would be smaller", {
+    "plats": {"ue": {"delFee": 0}}, "tipDel": 30, "promos": {"ue": {"type": "freedel", "value": 0, "cap": 0, "min": 35}}}, {
+    "minimum.channel": "ue-d",
+}, refs=["§3.4"])
+# k = 20 Cokes is the first hit: menuSub 21.99 + 21 x 4.99 = 126.78, dd food 126.78 x 1.153 = 146.17734 -> 146.18;
+# 19 Cokes: 121.79 x 1.153 = 140.42387 -> 140.42 < 146.18
+case("minimum-twentieth", "The 20th added item is the first that reaches the minimum", {
+    "promos": {"dd": {"type": "dollar", "value": 5, "cap": 0, "min": 146.18}}}, {
+    "minimum.addQty": 20, "minimum.addAmount": 99.8, "minimum.channel": "dd-p",
+}, refs=["§3.4"])
+# min 25.053 (not a cent value): ms = ceil(25.053 / 1.126 x 100) / 100 = 22.25, food 22.25 x 1.126 = 25.0535 -> 25.05 < 25.053;
+# second try 22.26: 25.06476 -> 25.06 >= 25.053. addAmount 22.26 - 20 = 2.26
+case("minimum-unprofiled-second-try", "Rounding to the cent falls short once: the second try reaches the minimum", merge(UNPROF, {
+    "promos": {"gh": {"type": "dollar", "value": 5, "cap": 0, "min": 25.053}}}), {
+    "minimum.addAmount": 2.26, "minimum.channel": "gh-p",
+}, refs=["§3.4"])
+PARTNER_R = [{"key": "x.gold", "name": "Partner credit", "amount": 10, "cadence": "monthly", "plats": [], "restricted": True, "goldPartner": True}]
+case("wallet-restricted-partner", "A restricted gold-partner credit not opted in: no Wallet, no Timing; Locked lists it", {
+    "rest": {"amexGoldDirect": True}, "credits": PARTNER_R}, {
+    "#ids": ["distance", "fuel", "locked", "spread"], "locked.restricted": ["x.gold"],
+}, refs=["§3.5", "§3.6", "§9.1"])
+PARTNER_O = copy.deepcopy(PARTNER_R)
+PARTNER_O[0]["plats"] = ["gh"]
+# opted in: the engine applies it at direct (amexGoldDirect): direct-p 30.70 - 10 = 20.70
+case("wallet-restricted-partner-opted-in", "Opted in, the same credit shows in Wallet and Timing", {
+    "rest": {"amexGoldDirect": True}, "credits": PARTNER_O, "creditOptIn": {"x.gold": True}}, {
+    "#ids": ["distance", "fuel", "wallet", "timing", "spread"], "wallet.credit": "x.gold", "spread.gap": 25.40,
+}, refs=["§3.5", "§3.6"])
+
 doc = {
     "about": ("Expected POD.insights.build(F, allResults(F), now) for docs/insights-contract.md. F = the receipts' _base.json S "
               "with speed 27, merged with `patch` (objects merge key by key, except cart, creditOptIn, markup, credits, deal and "
