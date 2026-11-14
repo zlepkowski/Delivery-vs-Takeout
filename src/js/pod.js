@@ -36,6 +36,17 @@
     return (n < 0 ? "−$" : "$") + parts.join(".");
   };
 
+  /** Escapes a value for HTML text or a quoted attribute. null and undefined give "". */
+  POD.util.esc = function (s) {
+    if (s === null || s === undefined) { return ""; }
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  };
+
   /** Clamp n into [lo, hi]. */
   POD.util.clamp = function (n, lo, hi) {
     return n < lo ? lo : (n > hi ? hi : n);
