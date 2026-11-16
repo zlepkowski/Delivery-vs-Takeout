@@ -160,9 +160,10 @@
     switch (action) {
       case "address": POD.state.setAddress(S, D, el.value, opts); break;
       case "brand": POD.state.setBrand(S, D, el.value === "" ? null : el.value, opts); break;
-      case "make": POD.state.setCar(S, D, el.value, "", null); view.vinMsg = ""; break;
-      case "model": POD.state.setCar(S, D, S.make, el.value, S.year); view.vinMsg = ""; break;
+      case "make": vinSeq++; POD.state.setCar(S, D, el.value, "", null); view.vinMsg = ""; break;
+      case "model": vinSeq++; POD.state.setCar(S, D, S.make, el.value, S.year); view.vinMsg = ""; break;
       case "year":
+        vinSeq++;
         POD.state.setCar(S, D, S.make, S.model, el.value === "" ? null : parseInt(el.value, 10));
         view.vinMsg = "";
         break;
@@ -209,6 +210,8 @@
 
   function runExample() {
     var S = POD.S, D = POD.data, opts = POD.opts;
+    vinSeq++;          // the latest action wins (ui-contract §6b): a pending VIN answer can't land after this
+    view.vinMsg = "";
     POD.state.setAddress(S, D, "10118", opts);
     POD.state.setCar(S, D, "Toyota", "Camry");
     POD.state.setBrand(S, D, "dominos", opts);
