@@ -146,27 +146,54 @@
     return out;
   }
 
-  /** The independents block (D-040, ui-contract §5.2): '' when there are none, else one wrapped block. */
-  function indieHtml(S, rows) {
-    if (rows.length === 0) { return ""; }
-    var list = '<ol class="near-list indie-list" data-testid="indie-list">';
+  /**
+   * The monogram (ui-contract §5.2, D-043): decoration only. The first character of the shown name, upper-cased;
+   * the hue from the brand id's character codes: sum × 37 mod 360.
+   */
+  function monogram(name, brandId) {
+    var s = String(brandId), sum = 0, i;
+    for (i = 0; i < s.length; i++) { sum += s.charCodeAt(i); }
+    return '<span class="mono" aria-hidden="true" style="--h:' + (sum * 37) % 360 + '">' +
+      esc(String(name).charAt(0).toUpperCase()) + "</span>";
+  }
+
+  /** The search query as the filter reads it: trimmed and lower-cased ("" when there's none, ui-contract §5.2). */
+  function queryOf(c) {
+    return c.view && typeof c.view.q === "string" ? c.view.q.replace(/^\s+|\s+$/g, "").toLowerCase() : "";
+  }
+
+  /** The independents block (D-040, ui-contract §5.2): '' when none is left after the search, else one wrapped block. */
+  function indieHtml(S, rows, q) {
+    var list = '<ol class="near-list indie-list" data-testid="indie-list">', n = 0;
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
+      if (!matches(row.name, q)) { continue; }
+      n++;
       var on = !!S.store && S.store.id === row.id;
       list += '<li><button type="button" data-action="pick-place" data-place="' + i + '" data-brand="' + esc(row.brand) +
-        '" aria-pressed="' + (on ? "true" : "false") + '">' +
+        '" aria-pressed="' + (on ? "true" : "false") + '">' + monogram(row.name, row.brand) +
         '<span class="indie-name">' + esc(row.name) + ' <span class="tag">Estimate</span></span>' +
         '<span class="num">' + mi1(row.mi) + " mi</span></button></li>";
     }
+    if (n === 0) { return ""; }
     list += "</ol>";
     return '<div class="indie"><h3>Independent restaurants</h3>' + list +
       '<p class="muted" data-testid="indie-note">' + esc("From OpenStreetMap. We don't know which apps list these places: " +
       "turn off any app that doesn't.") + "</p></div>";
   }
 
+  /** The search box (ui-contract §5.2, D-043): its HTML never depends on the query, so typing never replaces it. */
+  var SEARCH_BOX = '<input id="search" type="search" data-action="search" autocomplete="off" spellcheck="false" ' +
+    'placeholder="Search restaurants near you" aria-label="Search restaurants near you">';
+
+  /** Whether a shown name matches the query (q is trimmed and lower-cased; "" matches everything). */
+  function matches(name, q) {
+    return q === "" || String(name).toLowerCase().indexOf(q) >= 0;
+  }
+
   function secNear(c, places) {
-    var S = c.S, D = c.D, view = c.view;
-    var msg = "", list = "", more = "";
+    var S = c.S, D = c.D, view = c.view, q = queryOf(c);
+    var msg = "", list = "", more = "", search = "", found = 0;
     nearRows = [];
     indieRows = places;
     if (!S.pos) {
@@ -186,27 +213,37 @@
         if (n === 0) {
           msg += '<p class="muted" data-testid="near-status">No restaurants found within ' + res.radius + " miles.</p>";
         } else {
-          var shown = view.moreStores ? n : Math.min(n, SHOWN_NEAR);
-          list = '<ol class="near-list" data-testid="near-list">';
-          for (var i = 0; i < shown; i++) {
-            var st = stores[i];
+          search = SEARCH_BOX;
+          // Each row keeps its index in the whole list (POD.ui.storeAt); the cap counts the matching rows.
+          var rows = "", cap = view.moreStores ? n : SHOWN_NEAR;
+          for (var i = 0; i < n; i++) {
+            var st = stores[i], label = st.name || st.brand;
+            if (!matches(label, q)) { continue; }
+            found++;
+            if (found > cap) { continue; }
             var on = !!S.store && S.store.id === st.id;
-            list += "<li><button type=\"button\" data-action=\"pick-store\" data-store=\"" + i +
+            rows += "<li><button type=\"button\" data-action=\"pick-store\" data-store=\"" + i +
               '" data-brand="' + esc(st.brand) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
-              "<span>" + esc(st.name || st.brand) + (st.profiled ? "" : ' <span class="tag">Estimate</span>') + "</span>" +
+              monogram(label, st.brand) +
+              "<span>" + esc(label) + (st.profiled ? "" : ' <span class="tag">Estimate</span>') + "</span>" +
               '<span class="num">' + mi1(st.mi) + " mi</span></button></li>";
           }
-          list += "</ol>";
-          if (!view.moreStores && n > SHOWN_NEAR) {
-            more = '<p><button type="button" data-action="more-stores">Show all ' + n + "</button></p>";
+          if (found === 0) {
+            list = '<p class="muted" data-testid="near-empty">Nothing near you matches “' + esc(c.view.q.replace(/^\s+|\s+$/g, "")) + "”.</p>";
+          } else {
+            list = '<ol class="near-list" data-testid="near-list">' + rows + "</ol>";
+          }
+          if (!view.moreStores && found > SHOWN_NEAR) {
+            more = '<p><button type="button" data-action="more-stores">Show all ' + found + "</button></p>";
           }
         }
       }
     }
     // D-040 (UI contract §5.2): the independents are the last block, and written only when there are rows.
-    var h = '<div>' + msg + "</div>" + none(list) + none(more) +
+    // D-043: the search box is the slot right after the heading, always one block (an empty div when absent).
+    var h = none(search) + '<div>' + msg + "</div>" + none(list) + none(more) +
       '<label for="brand">Restaurant chain</label><select id="brand" data-action="brand">' + brandOptions(c) + "</select>" +
-      indieHtml(S, places);
+      indieHtml(S, places, q);
     return section("near", "What are you getting?", h);
   }
 
@@ -245,6 +282,15 @@
     } else {
       var ind = placeOf(D, S.brand);
       var cat = hasOwn(D.BRANDS, S.brand) ? D.BRANDS[S.brand].category : (ind !== null ? ind.category : "");
+      // D-043: quick totals first, the user's own choice of total (not data).
+      h += '<div class="chips">';
+      var amounts = [15, 25, 40];
+      for (var ai = 0; ai < amounts.length; ai++) {
+        var on2 = S.manualSubtotal === amounts[ai];
+        h += '<button type="button" class="chip" data-action="chip" data-amount="' + amounts[ai] + '" aria-pressed="' +
+          (on2 ? "true" : "false") + '">$' + amounts[ai] + "</button>";
+      }
+      h += "</div>";
       h += '<label for="manualSubtotal">Your order\'s menu total ($)</label>' +
         '<input id="manualSubtotal" type="number" step="0.01" min="0" value="' +
         (isNum(S.manualSubtotal) ? String(S.manualSubtotal) : "") + '" data-bind="manualSubtotal">';

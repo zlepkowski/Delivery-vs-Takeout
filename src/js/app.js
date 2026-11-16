@@ -194,11 +194,11 @@
       return;
     }
     var action = el.getAttribute("data-action");
-    if (!action) { return; }
+    if (!action || action === "search") { return; }     // the search box commits nothing (D-043)
     var now = new Date();
     view.mcError = false;
     switch (action) {
-      case "address": POD.state.setAddress(S, D, el.value, opts); break;
+      case "address": resetQuery(); POD.state.setAddress(S, D, el.value, opts); break;
       case "brand": POD.state.setBrand(S, D, el.value === "" ? null : el.value, opts); break;
       case "make": vinSeq++; POD.state.setCar(S, D, el.value, "", null); view.vinMsg = ""; break;
       case "model": vinSeq++; POD.state.setCar(S, D, S.make, el.value, S.year); view.vinMsg = ""; break;
@@ -216,8 +216,19 @@
     afterChange(derive());
   }
 
-  function onInput() {
-    // Nothing commits while typing; values commit on change (ui-contract §3).
+  /** D-043: the search box's text is page-only (view.q): render, never save. Other inputs commit on change. */
+  function onInput(e) {
+    var el = e.target;
+    if (!el || !el.getAttribute || el.getAttribute("data-action") !== "search") { return; }
+    view.q = String(el.value);
+    drawOnly();
+  }
+
+  /** A new place starts with an empty search box and an unfiltered list (ui-contract §3). */
+  function resetQuery() {
+    view.q = "";
+    var box = document.getElementById("search");
+    if (box) { box.value = ""; }
   }
 
   // ---- geolocation (§6) -------------------------------------------------------------------------
@@ -239,6 +250,7 @@
     }
     g.getCurrentPosition(function (p) {
       view.geoError = false;
+      resetQuery();
       afterChange(POD.state.setPosition(POD.S, POD.data, p.coords.latitude, p.coords.longitude, POD.opts));
     }, function () {
       view.geoError = true;
@@ -252,6 +264,7 @@
     var S = POD.S, D = POD.data, opts = POD.opts;
     vinSeq++;          // the latest action wins (ui-contract §6b): a pending VIN answer can't land after this
     view.vinMsg = "";
+    resetQuery();
     POD.state.setAddress(S, D, "10118", opts);
     POD.state.setCar(S, D, "Toyota", "Camry");
     POD.state.setBrand(S, D, "dominos", opts);
@@ -289,11 +302,11 @@
     POD.state.setCar(POD.S, POD.data, m.make, m.model, m.year);
     var car = dec.year + " " + dec.make + " " + dec.model;
     if (m.make === "Other") {
-      view.vinMsg = "NHTSA says " + car + ". That make isn't in the EPA list: enter its fuel and mpg below.";
+      view.vinMsg = "NHTSA says " + car + ". That make isn't in the EPA list, so we use a typical car (est.) until you enter its fuel and mpg below.";
     } else if (m.model === "") {
       view.vinMsg = "NHTSA says " + car + ". Pick the model below: EPA's list names it differently.";
     } else if (POD.state.carLookup(POD.data, m.make, m.model, m.year) === null) {
-      view.vinMsg = "NHTSA says " + car + ". EPA's list has no " + dec.year + " figure for it: enter its mpg below.";
+      view.vinMsg = "NHTSA says " + car + ". EPA's list has no " + dec.year + " figure for it, so we use a typical car (est.) until you enter its mpg below.";
     } else {
       view.vinMsg = "NHTSA says " + car + ".";
     }
@@ -360,6 +373,9 @@
     view.mcError = false;
     switch (action) {
       case "example": runExample(); break;
+      case "chip":
+        POD.state.setPath(S, "manualSubtotal", parseFloat(el.getAttribute("data-amount")));
+        break;
       case "pick-store":
         store = POD.ui.storeAt(parseInt(el.getAttribute("data-store"), 10));
         if (!store) { return; }
