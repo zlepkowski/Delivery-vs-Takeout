@@ -1,27 +1,26 @@
 # Progress
 
-**Current phase:** 6 (Phase B: per-item markup, D-036) is **done**. Next is **Phase 7 (Phase A static: VIN lookup, weekly gas + store refresh)**, to start in a **fresh session**, with the user's `/goal`
-**Last updated:** 2026-11-14
-**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/awesome-goodall-4qdauw` (the Phase 6 session branch, fast-forwarded from `claude/hopeful-clarke-omoss1` at `77495f1`, the Phase 5 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
+**Current phase:** 7 (Phase A static: VIN lookup, model-year mpg, weekly gas + store refresh) is **done**. Next is **Phase 8 (Phase A backend: Worker behind the seam)**, to start in a **fresh session**, with the user's `/goal`
+**Last updated:** 2026-11-16
+**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/phase-7-vin-lookup-refresh-3kq5sh` (the Phase 7 session branch, fast-forwarded from `claude/awesome-goodall-4qdauw` at `02db8d6`, the Phase 6 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
 ## Resume here
 
 1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **Phase 7 (Phase A static, BUILD.md §11 Phase A, D-004):** a VIN box (NHTSA vPIC from the browser: year, make, model → the car's mpg from `cars.js`), a weekly gas refresh (EIA) and the weekly store-tile refresh in CI. Done when: Big Timber → Domino's ≈ the real ~33 mi (D-005); the scheduled refresh passes a dry run. Same pattern: contract by a decision, references and fixtures first, then the builder.
-4. **What Phase 7 inherits from Phase 6:**
-   - Six contracts now: engine (D-029, amended by D-033, D-036), state (D-031, amended by D-033, D-036), geo (D-030), insights (D-034, amended by D-036), UI (D-035, amended by D-036).
-   - Menu items are objects `{name, price, dealItem, markup?}` everywhere (`PROFILES`, `S.rest`, fixtures). App food for a profiled brand is a sum over cart lines at each item's markup, rounded once. `promos[p]` has `item` for the `bogo` type.
-   - The generator `tools/build-profiles.py` accepts a per-item markup only with an https source; a profile refresh in Phase 7 keeps that rule.
-   - e2e: `tests/e2e/bogo.e2e.js` beside `checklist.e2e.js`; both build their own temp site.
+3. **Phase 8 (Phase A backend, BUILD.md §11 Phase A, D-004):** a Cloudflare Worker under `worker/` behind the browser seam `src/js/api.js`, used only when it's configured. Done when: fixture tests pass, and the site is identical with the Worker off. Same pattern: an API contract by a decision first (which endpoints: `/nearest` driving distance instead of straight line × 1.25, `/geocode`, maybe `/fuel`; `/vehicle` is already done in the browser by D-038), recorded fixtures, then the api-builder (backend skill).
+4. **What Phase 8 inherits from Phase 7:**
+   - Seven contracts: engine (D-029, D-033, D-036), state (D-031, D-033, D-036, D-037), geo (D-030), insights (D-034, D-036), UI (D-035, D-036, D-037, D-038, D-039), VIN (D-038). The geo contract §11 already names Phase 8's seam: driving distance from a routing API through `api.js`.
+   - The car is `(make, model, year)`; `CAR_YEARS` gives EPA figures for model years 2000 on (D-037). The VIN goes from the browser to NHTSA and isn't saved (D-038).
+   - The Pages build (D-039, amended) rebuilds `states.js` (EIA gas, `GAS_WEEK`) and the store tiles every Monday, runs 5 gates in `tools/check-site.js`, and falls back over up to 3 ATP runs. `pages.yml` has a `dry_run` dispatch input.
+   - Tests: `--test-name-pattern` with a negative lookahead doesn't filter on this Node; use `--test-skip-pattern`.
 5. **Open questions carried forward:**
-   - **ISS-036 (needs the user):** per-item markup has no data source yet. Either the user types an app's item price (new state field and inputs, contracts first) or researched per-item data appears.
-   - **ISS-032 (needs the user):** stacked ZIP coordinates; the data fix (a, b or c) is the user's call.
-   - **ISS-034:** app delivery fees are typed by the user (D-032); labeled estimates would change that.
-   - **ISS-035:** no profiled chain has a direct-only deal, so the deal block and Unlock never show on real data.
-   - D-028, ISS-030 (platform evidence dates: Phase 7's refresh is the natural place), ISS-031 (direct service fees per chain).
-6. **Network:** the environment **Delivery-vs-Takeout** is limited to the 20 hosts in ISS-001 (at the cap). Phase 7 needs `vpic.nhtsa.dot.gov` (VIN) and EIA's weekly data (`www.eia.gov` is allowed; `api.eia.gov` isn't) and `data.alltheplaces.xyz` (allowed): ask the user which hosts to swap before the work starts.
-7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
+   - **ISS-004 (needs the user for deploys only):** a Cloudflare account and a Mapbox token or Google key. Build and test against recorded fixtures without them.
+   - **ISS-036, ISS-032 (need the user):** per-item app prices; stacked ZIP coordinates.
+   - ISS-034 (app fees typed by the user), ISS-035 (no direct-only deals), ISS-030, ISS-031, D-028.
+   - **New:** ISS-037 (`setPath` can bypass `setCar`; latent), ISS-039 (ATP's 2026-11-07 run has a cut-off Taco Bell file; the weekly build falls back to 2026-10-31 until ATP republishes).
+6. **Network:** the environment **Delivery-vs-Takeout** is at the 20-host cap. On 2026-11-16 `about.grubhub.com` (it refused every connection) was swapped for `vpic.nhtsa.dot.gov` (ISS-001). Recording Phase 8 fixtures may need a routing or geocoding host (e.g. `router.project-osrm.org`, `api.mapbox.com`): ask the user which host to swap before the work starts.
+7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). The weekly schedule runs only from the default branch, and the site deploys only from `main`. Merge to `main` only by a PR the user asks for.
 
 ### Goal template
 
@@ -41,7 +40,7 @@
 | 5 | UI + 9 insights + "Near you" picker | Opus (contracts, e2e) → builder | ✅ done | The §13 manual checklist is automated in Playwright (19 checklist tests + 2 smoke, 0 console errors); phone and desktop screenshots reviewed; insights match a Python reference on 41 fixtures and 500 seeded scenarios |
 | — | **v4 parity milestone** | | | |
 | 6 | Phase B: per-item markup | Opus (oracle) → builder | ✅ done | Oracle updated first (`0b2d290`, before any code); BOGO cases pass (receipt r15, 17 cases; 4 insight fixtures; 4 e2e); profiles migrated to object items (`1359cf6`, shape only) |
-| 7 | Phase A static: VIN lookup, weekly gas + store refresh | researcher + builder | ⬜ | Big Timber → Domino's ≈ the real ~33 mi; the scheduled refresh passes a dry run |
+| 7 | Phase A static: VIN lookup, weekly gas + store refresh | Opus (contracts, references, e2e) → researcher + builder | ✅ done | Big Timber → Domino's ≈ the real ~33 mi (38.6 mi one way from the Livingston store, +17%; the old estimator said 10.4); the scheduled refresh passes a dry run (live sources, fresh caches, every gate) |
 | 8 | Phase A backend: Worker behind the seam | api-builder | ⬜ | Fixture tests pass; the site is identical with the Worker off |
 | 9 | Phase E: deep links | builder | ⬜ | Link-builder tests pass; every result row hands off |
 | 10 | Ship | tester + Opus | ⬜ | CI green; BUILD.md updated to v5; live on Pages after the merge to `main` |
@@ -65,6 +64,44 @@
 - Workers are dispatched as `general-purpose` Haiku agents that read their agent file and skill first, until a fresh session loads them by name (D-019).
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
+
+### Phase 7: Phase A static: VIN lookup, model-year mpg, weekly gas + store refresh (2026-11-16, done)
+
+Branch `claude/phase-7-vin-lookup-refresh-3kq5sh` (this session's; fast-forwarded to `claude/awesome-goodall-4qdauw` at `02db8d6`, the Phase 6 tip).
+
+| Task | Status | Commit |
+|---|---|---|
+| 7.1 D-037 (fuel economy by model year, **user decision**), D-038 (VIN lookup from the browser), D-039 (weekly refresh: gas + stores at deploy, gates, dry run); state and UI contracts amended; `docs/vin-contract.md` | ✅ | `5305c8a` |
+| 7.2 References first: `tests/oracle/vin.py` (VIN contract + the car-table helpers), 117 hand-worked cases, 10 vPIC answers recorded 2026-11-16 (`tests/fixtures/vin/`), `run.py` VIN checks (+ 4,000 seeded calls); 27 year scenarios; tester: `build-states.test.js` (21, ISS-011) | ✅ references 117/117 before any code | `9347c12` |
+| 7.3 Tester: `build-cars.test.js` (28: D-023 + D-037 rules) and `data-car-years.test.js` (14, EPA figures worked by hand); researcher: `build-cars.py` writes `CAR_YEARS` (86 makes, 1,030 models, 3,554 runs, 55 KB; `CAR_DATA` unchanged) | ✅ 53/53; ISS-011 closed | `d573421`, `9f1d2e2` |
+| 7.4 Builder: `state.js` (`year`, `carMakes`/`carModels`/`carYears`/`carLookup`, `setCar` 5th argument) and `src/js/vin.js` | ✅ scenarios 134/134; VIN 117/117 + 4,000/4,000 vs the reference; reviewer APPROVE, should-fix logged (ISS-037) | `022089e` |
+| 7.5 Orchestrator e2e `tests/e2e/vin.e2e.js` first; builder: VIN box, year select, EPA-year line, fine print; fix round (the latest action wins; the example clears the VIN message) | ✅ vin.e2e 17/17; reviewer APPROVE + 2 should-fixes done | `12d34d3`, `8b27bc4`, `5b49390` |
+| 7.6 Researcher: `tools/check-site.js` (5 gates + report), `build-site.sh` rebuilds `states.js` (with `GAS_WEEK`), `pages.yml` `dry_run`; fix rounds: `latest.json` run resolution (ISS-038), store-run fallback (D-039 amendment); tester: `check-site.test.js` (28) + `pages-workflow.test.js` (10) | ✅ 31/32 mutants caught (1 equivalent) | `e31bb4e`, `93eadd2` |
+| 7.7 Dry run: `bash tools/build-site.sh` against the live sources, fresh caches, `ATP_RUN` = latest | ✅ exit 0. Candidates 2026-11-07 / 10-31 / 10-24; 11-07 skipped (`taco_bell_us.geojson isn't valid JSON`, ISS-039); 10-31: `check-site: OK` brands, drift, canary, states, es5; 273 brands, 847 tiles, 182,567 stores; canary 82 brands within 5 mi of 10118; GAS_WEEK 2026-11-09; Big Timber `dominos@45670,-110546`, 30.9 mi straight, trip 77.2, one way 38.6. The built site opened in Chromium (network blocked): 59011 + Domino's shows "77.2 mi round trip", the fine print "(week of 2026-11-09)", 0 console errors. A live VIN lookup from the repo's `index.html` over `file://` decoded NHTSA's sample (24 mpg), 0 errors | — |
+| 7.8 Close: full suite in a clean worktree at `93eadd2` with its own `npm ci` (es5 16 files; unit 860/860; oracle receipts 91/91, 0 of 500 scenarios, geo 129/71/330, insights 47/47 + 0 of 500, VIN 117/117 + 4,000/4,000; e2e 42/42); screenshots reviewed (car section after a lookup and with an unlisted year, phone and desktop; the first-visit page with the new fine print); reflector approved with three changes (decisions.md, Skill updates; `bd6cd48`) | ✅ | latest |
+
+**Done-when, as measured.** Big Timber (59011) → Domino's: the nearest store is `dominos@45670,-110546` in Livingston, MT, 30.9 mi straight, trip 77.2 mi, 38.6 mi one way: +17% on the real ~33 mi drive (inside D-039's 25%; the 1.25 winding factor overshoots on an interstate), against the old estimator's 10.4 mi (−69%). The scheduled refresh passed its dry run: `ATP_CACHE=<fresh> bash tools/build-site.sh <scratch>` with `ATP_RUN` = latest and a fresh EIA cache exited 0 with every gate OK, after skipping the newest run for a cut-off upstream file (the D-039 fallback working as designed).
+
+**Phase 7 notes for a resuming session.**
+- Seven contracts now: engine, state (amended by D-037), geo, insights, UI (amended by D-037/D-038/D-039), VIN (D-038). Each changes only by a decision, with references and fixtures first.
+- The car is `(make, model, year)`. `year === null` means the model's newest EPA year (today's figures for a listed car); an integer year uses that year's figure or none (manual inputs). `CAR_YEARS` covers model years 2000 on.
+- The VIN goes from the browser to NHTSA (vPIC sends `Access-Control-Allow-Origin: *`; checked live from `file://`) and is never saved. The e2e never reaches the network.
+- The weekly Pages build tries up to 3 ATP runs, newest first, and deploys the first that passes every gate; gas is rebuilt every time. On 2026-11-16 it skips `2026-11-07` (ISS-039) and builds `2026-10-31`.
+- `--test-name-pattern` with a negative lookahead doesn't filter on this Node: use `--test-skip-pattern`.
+
+**Review evidence for the Phase 7 reflector** (all fixed unless noted):
+- **Measuring before deciding found the product question.** NHTSA's own sample VIN is a 2003 Accord: EPA's 2003 records give 24 mpg, `CAR_DATA` (newest year) gave 38, so a VIN would have made driving ~40% cheaper. The orchestrator measured the year table's size (EPA file already allowed) and asked the user, who chose year-aware data (D-037).
+- **Only a dry run against the scheduled inputs found the refresh's real failures.** Pinned runs passed; `ATP_RUN=latest` with a fresh cache found ATP's `history.json` a week behind `latest.json` (ISS-038), replicas of `latest.json` disagreeing, and a cut-off spider file in the newest run (ISS-039). The design changed (D-039 amendment): per-source fallback, so a broken store run can't block the weekly gas. Lesson: a dry run of a scheduled job uses exactly the schedule's inputs (latest, fresh caches), never a pinned stand-in.
+- **The orchestrator's e2e assumed the page could keep a clean console on an HTTP 500.** Chromium logs its own resource error for a failed XHR, as for a missing tile. The builder reported BLOCKED with the evidence instead of bending the test; the UI contract §0 now names both browser-made errors, each allowed exactly and only in its test (`12d34d3`).
+- **The orchestrator's DONE WHENs used `--test-name-pattern='^(?!D-037)'`, which this Node doesn't filter on.** Two workers diagnosed it independently and used `--test-skip-pattern` (tester report, 7.3b).
+- **A tester pinned a real figure under the wrong record and wrote a false justification.** "Chevrolet BOLT 2020 = 35e (the baseModel is BOLT)": EPA files the 2017–2023 car as `Bolt EV`; `BOLT` exists only for 2027. The value was right, the key wasn't. The orchestrator checked the raw records and fixed it (`d573421`). Lesson: a pinned figure's key (make, model, year) is checked in the source as carefully as the number.
+- **A guard floor was impossible:** `checked > 1000` counted `CAR_DATA`'s 344 models against `CAR_YEARS`' 1,030. The researcher reported BLOCKED and didn't edit the test; the floor is now ≥ 340 (`9f1d2e2`).
+- **Writing the e2e found a contract flaw before the builder did:** "a model change resets the year" would lose the VIN's year after "Pick the model below" (vPIC's `330i` vs EPA's `3 Series`). Amended before any UI code (`d573421`). Lesson: walk each message's suggested next action through the contract.
+- **A builder's deviation was better than the contract:** bumping the lookup sequence on a refused VIN (listed under ASSUMPTIONS). The review then found a hand-picked car could be overwritten by a pending answer, and the example didn't clear the message. The contract now says "the latest action wins" (`8b27bc4`, `5b49390`).
+- **An API-enumerating test table blocked a correct builder:** `state.test.js`'s junk-argument `CALLS` must list every `POD.state` function, and the card didn't mention it. Lesson: a card that adds exports names the tables that enumerate the API.
+- **Latent, logged:** `setPath` can write `make`/`model`/`year` without `setCar`'s rules (ISS-037, review of 7.4; not reachable from the page).
+- **Stop hooks:** asked to commit and push 8 times while workers were mid-edit. Only verified files were staged by name. Commits whose tests were red by design (tests first) were pushed for durability, each saying so in its message; CI was red on the branch for those pushes.
+- **Process:** a reviewer wrote a scratch file under `/tmp` instead of the scratchpad (deleted). A researcher ran `npm ci` in the repo when `node_modules` was missing (harmless).
 
 ### Phase 6: Phase B, per-item markup and BOGO (2026-11-14, done)
 
