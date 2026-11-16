@@ -758,6 +758,26 @@ a.cta-alt:hover { border-color: var(--accent); }
 
 #fine h2 { margin-bottom: 4px; font-size: .875rem; }
 
+/* The fold (ui-contract §5.10, D-043 amendment): a small muted toggle; its chevron turns when open. */
+.fine-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-s);
+  color: var(--muted);
+  font-size: .8125rem;
+  text-align: left;
+}
+
+.fine-toggle:hover { border: 0; }
+.fine-toggle[aria-expanded="true"] .chevron { transform: rotate(-135deg); }
+.fine-body[hidden] { display: none; }
+
 #fine p {
   margin: 0 0 4px;
   font-size: .75rem;

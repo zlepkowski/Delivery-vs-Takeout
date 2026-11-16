@@ -891,8 +891,8 @@
 
   // ---- fine --------------------------------------------------------------------------------------
 
-  function secFine(D, fromWorker) {
-    var asOf = "";
+  function secFine(c, fromWorker) {
+    var D = c.D, open = c.view.fine === true, asOf = "";
     for (var i = 0; i < D.CARDS.length; i++) {
       var card = D.CARDS[i];
       if (typeof card.asOf === "string" && card.asOf > asOf) { asOf = card.asOf; }
@@ -921,7 +921,11 @@
       h += '<p data-testid="fine-osm">' + esc("Road distances, street addresses and independent restaurants: " +
         "OpenStreetMap (© OpenStreetMap contributors, ODbL), through this site's server.") + "</p>";
     }
-    return section("fine", "Where the numbers come from", h);
+    // D-043 (ui-contract §5.10): the fine print folds. The toggle depends only on view.fine; the body is hidden unless open.
+    return '<section id="fine"><button type="button" class="fine-toggle" id="fine-toggle" data-action="fine" aria-expanded="' +
+      (open ? "true" : "false") + '"><span>Where the numbers come from</span>' +
+      '<span class="chevron" aria-hidden="true"></span></button>' +
+      '<div class="fine-body" data-testid="fine-body"' + (open ? "" : " hidden") + ">" + h + "</div></section>";
   }
 
   // ---- the page ----------------------------------------------------------------------------------
@@ -968,7 +972,7 @@
     var res = secResults(ctx);
     var html = secLoc(ctx) + secNear(ctx, places) + secOrder(ctx) +
       '<div id="side">' + res.html + secInsights(ctx, res.F, res.R) + "</div>" +
-      secMore(ctx) + secFine(ctx.D, fromWorker);
+      secMore(ctx) + secFine(ctx, fromWorker);
 
     var was = doc.activeElement;
     var inApp = !!was && app.contains(was);

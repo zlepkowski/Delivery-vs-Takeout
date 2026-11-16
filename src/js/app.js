@@ -11,7 +11,7 @@
   // Page-only flags (not saved): see ui-contract §3 and §6.
   // drawer: Personalize is open; open[ch]: route ch's receipt is open; q: the search box's text (D-043).
   var view = { moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false, vin: "", vinMsg: "",
-    drawer: false, open: {}, q: "" };
+    drawer: false, open: {}, q: "", fine: false };
   var requested = {};   // tile cells asked for in this page load
   var pending = 0;      // tile scripts in flight
   var storage = null;
@@ -363,6 +363,7 @@
     if (action === "vin") { vinLookup(); return; }
     // D-043: page-only view flags. S is unchanged, so nothing is saved; render only.
     if (action === "drawer") { view.drawer = !view.drawer; drawOnly(); return; }
+    if (action === "fine") { view.fine = !view.fine; drawOnly(); return; }   // D-043 §5.10: page-only, nothing saved
     if (action === "receipt") {
       var ch = el.getAttribute("data-channel");
       if (typeof ch === "string" && ch !== "") { view.open[ch] = view.open[ch] !== true; }
