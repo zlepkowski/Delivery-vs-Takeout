@@ -36,6 +36,8 @@ async function setUp(page) {
   const row = '[data-testid="near-list"] [data-action="pick-store"][data-brand="dominos"]';
   if (await page.locator(row).count() === 0) await page.click('[data-action="more-stores"]');
   await page.click(row);
+  // The trip, the car and the promo settings are in the Personalize drawer (D-043); it stays open across renders.
+  await H.openDrawer(page);
   await H.waitText(page, '[data-testid="trip"]', 'mi round trip');
   await page.selectOption('#make', 'Toyota');
   await page.selectOption('#model', 'Camry');
@@ -93,9 +95,10 @@ test('D-036 BOGO on Uber Eats: pick the type, then the item; the free pizza show
   assert.equal((await tagsOf(page, 'dd-p')).filter((t) => t.startsWith('BOGO')).length, 0, 'the BOGO is Uber Eats\' own');
   await page.screenshot({ path: path.join(H.SHOTS, 'bogo-desktop.png'), fullPage: true });
 
-  // Persists over a reload.
+  // Persists over a reload. A reload closes the drawer (D-043), so it's opened again to read the settings.
   const shown = await H.shownResults(page);
   await page.reload();
+  await H.openDrawer(page);
   await page.waitForSelector('#promos-ue-item');
   assert.equal(await page.inputValue('#promos-ue-type'), 'bogo');
   assert.equal(await page.inputValue('#promos-ue-item'), '0');
@@ -141,6 +144,7 @@ test('D-036 type then click in the app settings: the box commits on mouse down a
   const { ctx, page, errors } = await H.openPage(browser, site.url);
   await page.click('[data-action="example"]');
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);                       // the promo and the fee boxes are in Personalize (D-043)
   await page.selectOption('#promos-ue-type', 'bogo');
   await page.waitForSelector('#promos-ue-item');
   for (const [box, value, select] of [['#promos-ue-value', '5', '#promos-ue-item'], ['#plats-ue-delFee', '2.49', '#promos-ue-type']]) {
