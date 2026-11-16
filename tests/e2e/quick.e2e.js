@@ -309,7 +309,8 @@ test('search: typing filters the near list by name, keeps focus and the same box
   assert.equal(await box.getAttribute('value'), null, 'no value attribute');
   await page.focus('#search');
   await page.keyboard.type('pi', { delay: 30 });
-  const want = near.stores.map((s, i) => ({ i, brand: s.brand })).filter((x) => nameOf(x.brand).toLowerCase().includes('pi')).slice(0, 15);
+  // JSON round trip: near comes from the vm realm of tests/helpers/load.js, and deepEqual compares prototypes (ISS-008).
+  const want = JSON.parse(JSON.stringify(near.stores.map((s, i) => ({ i, brand: s.brand })).filter((x) => nameOf(x.brand).toLowerCase().includes('pi')).slice(0, 15)));
   assert.ok(want.length > 0, 'the fixture has a match for "pi"');
   const shown = await page.$$eval('[data-testid="near-list"] [data-action="pick-store"]', (bs) => bs.map((b) => ({ i: Number(b.getAttribute('data-store')), brand: b.getAttribute('data-brand') })));
   assert.deepEqual(shown, want, 'rows matching "pi", each keeping its index in the whole list');
