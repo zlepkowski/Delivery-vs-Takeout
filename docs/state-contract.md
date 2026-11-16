@@ -2,6 +2,8 @@
 
 *Amended 2026-11-14 (D-036, Phase 6):* `promos[p].item` (§2, §8), and `setBrand` clears it (§6).
 
+*Amended 2026-11-16 (D-037, Phase 7):* the car's model `year` (§2, §8), the car-table helpers `carMakes`, `carModels`, `carYears`, `carLookup` (§4.0), `applyCar` through `carLookup` (§4.1), and `setCar`'s fifth argument (§6).
+
 The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, the derivation cascade, the wallet, and persistence. It fills in BUILD.md §3 and §5. **Where this file and BUILD.md §5 differ, this file wins** (D-031). Change it only by a decision; the hand-worked scenarios (`tests/fixtures/state/`) change first, the code after.
 
 ## 0. Rules for every function
@@ -19,6 +21,10 @@ The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, 
 | `fresh(D)` | a new blank state (§2) | `S` |
 | `getPath(S, path)` | reads a dotted path (§3) | the value, or `undefined` |
 | `setPath(S, path, v)` | writes a dotted path that `fresh` has (§3) | `true`, or `false` (nothing written) |
+| `carMakes(D)` | the makes in `CAR_DATA` and `CAR_YEARS` (§4.0) | an array of strings |
+| `carModels(D, make)` | one make's models in both tables (§4.0) | an array of strings |
+| `carYears(D, make, model)` | one model's `CAR_YEARS` runs (§4.0) | an array of runs |
+| `carLookup(D, make, model, year)` | the figure for a car (§4.0) | `{fuel, mpg, miPerKwh, year}`, or `null` |
 | `applyCar(S, D)` | car → `fuel`, `mpg`, `miPerKwh`, then `applyState` (§4.1) | — |
 | `applyState(S, D)` | `state` + `fuel` → `tax`, `gas` (§4.2) | — |
 | `applyAddress(S, D)` | `address` or a GPS `pos` → `zip`, `zipRec`, `state`, `pos`, then `applyState` (§4.3) | — |
@@ -29,7 +35,7 @@ The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, 
 | `derive(S, D, now, opts)` | every derived field, in cascade order (§4.7) | a trip status |
 | `setAddress(S, D, text, opts)` | user typed an address (§6) | a trip status |
 | `setPosition(S, D, lat, lon, opts)` | the browser gave a position (§6) | a trip status, or `null` |
-| `setCar(S, D, make, model)` | user picked a car (§6) | — |
+| `setCar(S, D, make, model, year)` | user picked a car, or a VIN was decoded (§6) | — |
 | `setBrand(S, D, brandId, opts)` | user picked a restaurant brand (§6) | a trip status |
 | `pickStore(S, D, store, opts)` | user picked one store from `storesNear` (§6) | a trip status, or `null` |
 | `setQty(S, index, qty)` | a menu item's quantity in the cart (§6) | `true` / `false` |
@@ -54,7 +60,7 @@ A **trip status** is `{ status, need, partial }`: `status` is `"ok"`, `"need"` (
 ```
 {
   address: "",  pos: null,  zip: null,  zipRec: null,  state: null,  tax: null,  gas: null,
-  make: "",  model: "",  fuel: "regular",  mpg: null,  miPerKwh: null,  kwh: T.kwh,
+  make: "",  model: "",  year: null,  fuel: "regular",  mpg: null,  miPerKwh: null,  kwh: T.kwh,
   brand: null,  rest: null,  store: null,  storePicked: false,
   cart: {},  manualSubtotal: 0,  dealOn: true,
   miles: null,  minutes: null,  speed: T.speed,  milesAuto: true,  milesSrc: null,  milesBy: {},
@@ -86,13 +92,26 @@ A path is a non-empty string of `.`-separated segments, e.g. `"plats.dd.delFee"`
 
 ## 4. The derivation cascade
 
+### 4.0 The car tables (D-023, D-037)
+
+`D.CAR_DATA` and `D.CAR_YEARS` are arrays of strings, one row per make (a table that isn't an array counts as empty; a row that isn't a string, or has no `|`, is skipped). A row's **make** is the text before its first `|`; the rest splits on `,` into **entries**, and an entry's **model** is the text before its first `:` and its **value text** the rest (an entry with no `:` is skipped). An empty make or model is skipped.
+
+- `carMakes(D)`: every make of both tables, each once, sorted by plain string order (`<` on strings; the data is ASCII).
+- `carModels(D, make)`: every model of every row of either table whose make equals `make` (exact), each once, sorted the same way. `make` not a string → `[]`.
+- `carYears(D, make, model)`: for every `CAR_YEARS` row whose make equals `make` and each of its entries whose model equals `model` (exact strings), in written order: the value text split on single spaces into **runs**. A run is used when it fully matches `/^([0-9]+)([*de]?)@([0-9]{4})(-([0-9]{4}))?$/`, its value `v = parseInt(group 1, 10)` is > 0, and `from = parseInt(group 3)` ≤ `to` (`parseInt(group 5)`, or `from` when absent). It gives a new object `{from, to, fuel, mpg, miPerKwh}`: suffix none → `"regular"`, `*` → `"premium"`, `d` → `"diesel"` with `mpg = v`, `miPerKwh = null`; `e` → `"ev"` with `miPerKwh = v / 10`, `mpg = null`. Other runs are skipped. The result keeps written order (newest first in real data); not strings → `[]`.
+- `carLookup(D, make, model, year)`: `null` unless `make` and `model` are strings. Then:
+  - `year` an integer in 1900–2100: the **first** run of `carYears(D, make, model)` with `from <= year <= to` → `{fuel, mpg, miPerKwh, year: year}` (new object); none → `null`. `CAR_DATA` is not consulted: a 2010 car never gets the newest model's figure.
+  - `year === null`: if `carYears` isn't empty, the **newest** run (the largest `to`; the first in written order on a tie) → `{fuel, mpg, miPerKwh, year: its to}`. Else `CAR_DATA`: the first row whose make equals `make`, its first entry whose model equals `model`, whose value text fully matches `/^([0-9]+)([*de]?)$/` → `{fuel, mpg, miPerKwh, year: null}` with the suffix meanings above (BUILD.md §6; the value as written, `e` divided by 10). Else `null`.
+  - any other `year` → `null`.
+
+In the real data each `CAR_DATA` pair's newest `CAR_YEARS` run has the same value and suffix (D-037; a data test pins it), so `year === null` prices a listed car exactly as before. `CAR_DATA` is the fallback for a pair `CAR_YEARS` lacks (the state scenarios' small tables).
+
 ### 4.1 `applyCar(S, D)`
 
-Parse `D.CAR_DATA` (BUILD.md §6): each row `"Make|Model:val,Model:val…"`; a value is digits with an optional suffix `*` (premium), `d` (diesel), `e` (electric, value = mi/kWh × 10), none = regular. Find the row whose make equals `S.make` and the model equal to `S.model` (exact strings).
+`r = carLookup(D, S.make, S.model, S.year)`.
 
-- Found, not electric: `fuel` = `"regular"`, `"premium"` or `"diesel"`; `mpg` = the value; `miPerKwh = null`.
-- Found, electric: `fuel = "ev"`; `miPerKwh` = value / 10; `mpg = null`.
-- Not found (including `make` `"Other"` or empty): `fuel`, `mpg` and `miPerKwh` are the user's own and are **left unchanged**.
+- `r` not null: `fuel = r.fuel`, `mpg = r.mpg`, `miPerKwh = r.miPerKwh` (one of the two is `null`: electric sets `miPerKwh`, the others `mpg`).
+- `r` null (including `make` `"Other"` or empty, a model the tables don't list, and a year they have no figure for): `fuel`, `mpg` and `miPerKwh` are the user's own and are **left unchanged**.
 
 Then `applyState(S, D)`.
 
@@ -176,7 +195,7 @@ For each app `p`: `plats[p].member = plats[p].memberOwn === true || (cardHas(p) 
 
 - `setAddress(S, D, text, opts)`: `address = text` if it's a string, else `""`; `pos = null` (a typed address replaces a GPS position); `applyAddress`; then the trip (as in `derive`'s last step).
 - `setPosition(S, D, lat, lon, opts)`: lat in [−90, 90] and lon in [−180, 180], finite, else return `null` and change nothing. `pos = {lat, lon, src: "gps"}`; `applyAddress`; the trip.
-- `setCar(S, D, make, model)`: `make` and `model` are each the argument if it's a string, else `""`. If the new pair differs from the previous `(S.make, S.model)` and isn't in `D.CAR_DATA` (the §4.1 lookup), `mpg = null` and `miPerKwh = null` (`fuel` is kept): they belonged to the previous car, and the user now enters their own. Then `applyCar`. *(Amended 2026-11-14, review of 5.3: "Other" kept the previous car's 46 mpg, so the page priced the old car without asking. `applyCar` itself is unchanged, so a reload keeps the user's own values.)*
+- `setCar(S, D, make, model, year)`: `make` and `model` are each the argument if it's a string, else `""`; `year` is the argument if it's an integer in 1900–2100, else `null` (so the four-argument call of Phase 5 means `null`). If the new `(make, model, year)` differs from the previous `(S.make, S.model, S.year)` and `carLookup(D, make, model, year)` is `null`, `mpg = null` and `miPerKwh = null` (`fuel` is kept): they belonged to the previous car, and the user now enters their own. Then `S.make`, `S.model`, `S.year` are set and `applyCar` runs. *(D-037: the year is part of the car; picking a year the tables don't list clears the old figure.)* *(Amended 2026-11-14, review of 5.3: "Other" kept the previous car's 46 mpg, so the page priced the old car without asking. `applyCar` itself is unchanged, so a reload keeps the user's own values.)*
 - `setBrand(S, D, brandId, opts)`: `brand` = the string, or `null`; `cart = {}`; `dealOn = true`; every app's `promos[p].item = null` (D-036: an index into the old menu would name a different item in the new one; the promo's type and numbers stay); `store = null`; `storePicked = false`; `applyBrand`. Then, if `milesBy` has an own key `brand` with a finite number ≥ 0: `miles` = it, `milesAuto = false`, `milesSrc = "pinned"`, `applyMinutes`, return `{status: "off", …}`. Else `milesAuto = true` and return `autoMiles`. (`manualSubtotal` is kept.)
 - `pickStore(S, D, store, opts)`: `store` must be an object with a string `brand`, a string `id` that starts with `brand + "@"`, and finite `lat` and `lon` in range (a `storesNear` row), else return `null` and change nothing. If `store.brand !== S.brand`, run `setBrand(S, D, store.brand, opts)` first. Then `S.store = {id, lat, lon}`, `storePicked = true`, `milesAuto = true`, delete `milesBy[brand]`; return `autoMiles` (which takes step 3).
 - `setQty(S, index, qty)`: `S.rest` must be profiled, `index` an integer with `0 <= index < rest.menu.length`, and `qty` an integer ≥ 0, else `false`. `qty > 0` sets `cart[String(index)] = qty`; `0` deletes the key. `true`. (`setPath` can't do this: it never creates keys.)
@@ -215,13 +234,14 @@ A missing `pickDisc` switches the whole app off, delivery included, although del
 
 The key is `POD.STORAGE_KEY` (`"pod.v5"`, D-010). `storage` is any object with `getItem`/`setItem` (in the app, `window.localStorage`).
 
-**The user fields** (everything else is derived and never saved): `address`, `pos` (only when `src` is `"gps"`), `make`, `model`, `fuel`, `mpg`, `miPerKwh`, `kwh`, `brand`, `store`, `storePicked`, `cart`, `manualSubtotal`, `dealOn`, `miles`, `speed`, `milesAuto`, `milesBy`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`, `cards`, `creditOptIn`, `usedIn`, `manualCredits`, `plats` (per app: `on`, `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `pickDisc`, `memberOwn`, `cardMember`; `direct.on`), `promos`.
+**The user fields** (everything else is derived and never saved): `address`, `pos` (only when `src` is `"gps"`), `make`, `model`, `year`, `fuel`, `mpg`, `miPerKwh`, `kwh`, `brand`, `store`, `storePicked`, `cart`, `manualSubtotal`, `dealOn`, `miles`, `speed`, `milesAuto`, `milesBy`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`, `cards`, `creditOptIn`, `usedIn`, `manualCredits`, `plats` (per app: `on`, `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `pickDisc`, `memberOwn`, `cardMember`; `direct.on`), `promos`.
 
 - `save(S, storage)`: `storage.setItem(key, JSON.stringify(those fields))` inside try/catch. `pos` is written only when it's a GPS position; otherwise the key is left out. `plats` is written with only the fields listed above (never `markup` or `member`). `true` on success; `false` if anything throws or `storage` has no `setItem`.
 - `load(storage, D, now, opts)`: `S = fresh(D)`. Read `storage.getItem(key)` and `JSON.parse` it inside try/catch; if anything throws, the value isn't a string, or the parse isn't an object, use `{}`. Then **merge field by field**: a saved field replaces the fresh one only when it has the right type, else the fresh value stays:
   - strings: `address`, `make`, `model`; `brand` a string or `null`; `fuel` one of the four.
   - numbers (finite, ≥ 0): `mpg`, `miPerKwh`, `kwh`, `manualSubtotal`, `miles`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`; `speed` > 0. (`mpg`, `miPerKwh` and `miles` may also be `null`.)
   - booleans: `dealOn`, `milesAuto`, `storePicked`.
+  - `year`: an integer in 1900–2100, or `null` (D-037).
   - `pos`: `{lat, lon, src: "gps"}` with a valid position. `store`: `{id: string, lat, lon}` with finite numbers (or `null`).
   - `cart`: an object; keep each key that is a canonical non-negative integer (`"0"`, `"12"`) with an integer value ≥ 0. `milesBy`: keep string keys with finite numbers ≥ 0. `creditOptIn`: keep keys whose value is `true`. `usedIn`: keep keys whose value is a string.
   - `cards`: an array; keep the strings. `manualCredits`: an array; keep each entry `addManualCredit` would accept that also has a `key` matching `/^manual\.[1-9][0-9]{0,8}$/` (at most 9 digits, so the next key stays an exact integer), the first one with a given key only, stored as `addManualCredit` stores it (`{key, name, amount, cadence, plats, modes?}`, `cadence` defaulting to `"once"`, nothing else).

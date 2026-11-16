@@ -4,6 +4,8 @@ What the page shows and what each control calls: `src/js/render.js` (`POD.ui`), 
 
 *Amended 2026-11-14 after slice A:* `#side` wraps `results` + `insights` (no desktop gap, nothing clipped); `render` writes only the blocks that changed, so a click isn't lost when a text box commits on the same mouse press; `render(ctx)`; texts for no position, no routes, and "item"/"items"; manual car inputs only for "Other" or an unknown pair.
 
+*Amended 2026-11-16 (Phase 7, D-037, D-038, D-039):* the car section gains the VIN box (§5.7, §6b), the model-year select and the EPA-year line (§5.7); the make and model lists come from both car tables; the fine print shows the EIA week and the VIN note (§5.10).
+
 ## 0. Rules
 
 - **ES5, no framework, no runtime dependencies, `file://` works** (CLAUDE.md, D-007). Only `app.js` touches `document`, and only after `DOMContentLoaded`. `render.js` builds HTML strings from its arguments and holds no state of its own; `POD.ui.render(ctx)` (`ctx = {S, D, opts, view, now}`, where `view` holds the page-only flags of `app.js`) is the one function that writes the DOM.
@@ -54,8 +56,9 @@ One `<main id="app">` holding these sections in this DOM order, each a `<section
 |---|---|---|
 | `address` | `input#address` | `setAddress(S, D, value, opts)` |
 | `brand` | `select#brand` | `setBrand(S, D, value === "" ? null : value, opts)` |
-| `make` | `select#make` | `setCar(S, D, value, "")` |
-| `model` | `select#model` | `setCar(S, D, S.make, value)` |
+| `make` | `select#make` | `setCar(S, D, value, "", null)` |
+| `model` | `select#model` | `setCar(S, D, S.make, value, null)` |
+| `year` | `select#year` | `setCar(S, D, S.make, S.model, value === "" ? null : parseInt(value, 10))` |
 | `toggle-card` | checkbox, `data-card` | `toggleCard(S, D, card, checked, new Date())` |
 | `opt-in` | checkbox, `data-key` | `setOptIn(S, D, key, checked, new Date())` |
 | `used` | checkbox, `data-key` | `markUsed(S, D, key, checked, new Date())` |
@@ -73,6 +76,7 @@ One `<main id="app">` holding these sections in this DOM order, each a `<section
 | `add-credit` | | `addManualCredit(S, D, credit from the form, new Date())` (§5.8) |
 | `remove-credit` | `data-key` | `removeManualCredit(S, D, key, new Date())` |
 | `more-stores` | | shows every row of the "Near you" list (page-only flag, not saved) |
+| `vin` | | the VIN lookup (§6b) |
 
 - **`input`**: nothing is committed while typing (values commit on `change`). The listener exists only so the count stays three; it may stay empty.
 - **`afterChange(status)`** runs after every one of these: when `status` is a trip status with `status === "need"`, load its cells (§4). Also run `POD.geo.storesNear(S.pos.lat, S.pos.lon, D, opts)` when `S.pos` is a position, and load its `need` cells if its status is `"need"`. Then `POD.state.save(S, storage)` and `POD.ui.render()`.
@@ -141,9 +145,16 @@ When step 3 of §5.5 showed results: `POD.insights.build(F, R, new Date())`, eac
 
 ### 5.7 `car`
 
-- `select#make` (`data-action="make"`): `""` `"Choose a make…"`, every make of `D.CAR_DATA` in its order, then `"Other"`. `select#model` (`data-action="model"`): `""` `"Choose a model…"` then the make's models in data order; shown when a listed make is chosen.
-- When the make is `"Other"`, or a make and a model are chosen and the pair isn't in `D.CAR_DATA`: `select#fuel` (`data-bind="fuel"`, `data-type="text"`: `regular`, `premium`, `diesel`, `ev` labeled "Regular", "Premium", "Diesel", "Electric"), and `input#mpg` (`data-bind="mpg"`) or, for `ev`, `input#miPerKwh` (`data-bind="miPerKwh"`).
-- `[data-testid="car-summary"]`: `S.fuel === "ev"` and `miPerKwh`: `"{miPerKwh} mi/kWh · electric"`; else when `mpg`: `"{mpg} mpg · {fuel}"`; else `"No car yet."`.
+The section's top-level blocks, in this order; an optional block keeps its slot as an empty `<div></div>` when absent, so the number of blocks never changes (§2: a changed count replaces the whole section, which would take the VIN button from under a click).
+
+1. **VIN** `div.vin`: `label for="vin"` `"VIN (optional)"`, `input#vin` (`type="text"`, `autocomplete="off"`, `spellcheck="false"`, `maxlength="24"`, **no** `data-bind`: the VIN isn't state and isn't saved, D-038) whose `value` is the page's `view.vin` (the cleaned VIN of the last lookup, `""` at first), and `button data-action="vin"` `"Look up"`. The block's HTML depends only on `view.vin`, so typing never re-renders it.
+2. `[data-testid="vin-status"]` (a `<p>`): the page's current VIN message (§6b), when there is one.
+3. `[data-testid="car-summary"]`: `S.fuel === "ev"` and `miPerKwh`: `"{miPerKwh} mi/kWh · electric"`; else when `mpg`: `"{mpg} mpg · {fuel}"`; else `"No car yet."` (unchanged).
+4. `[data-testid="car-epa"]` (a `<p>`): when `r = POD.state.carLookup(D, S.make, S.model, S.year)` isn't `null` and `r.year` is an integer: `"EPA figure for the {r.year} model."`.
+5. `select#make` (`data-action="make"`): `""` `"Choose a make…"`, every make of `POD.state.carMakes(D)` in its order, then `"Other"`.
+6. `select#model` (`data-action="model"`), when `S.make` is one of `carMakes(D)`: `""` `"Choose a model…"` then `POD.state.carModels(D, S.make)` in order.
+7. `select#year` (`data-action="year"`, label `"Model year"`), when `runs = POD.state.carYears(D, S.make, S.model)` isn't empty: first `value=""` `"Newest ({newest})"` (`newest` = the largest `to` of the runs), then every year the runs cover, each once, newest first (`value` and text = the year); when `S.year` is an integer the runs don't cover, a last option `value="{S.year}"` `"{S.year} (no EPA figure)"`. The option equal to `S.year` (or `""` for `null`) is selected.
+8. The manual inputs, when the make is `"Other"`, or `S.make` is one of `carMakes(D)`, `S.model !== ""` and `carLookup(D, S.make, S.model, S.year)` is `null` (an unlisted model, or a year with no figure): `select#fuel` (`data-bind="fuel"`, `data-type="text"`: `regular`, `premium`, `diesel`, `ev` labeled "Regular", "Premium", "Diesel", "Electric"), and `input#mpg` (`data-bind="mpg"`) or, for `ev`, `input#miPerKwh` (`data-bind="miPerKwh"`).
 
 ### 5.8 `wallet`
 
@@ -158,11 +169,26 @@ Each a labeled `input type="number"` with `data-bind` and `id` = the path with `
 
 ### 5.10 `fine`
 
-Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {BRANDS_RUN}."`, `"App listings come from the chains' and apps' own announcements, some several years old: check the app."` (ISS-030), `"Card credits: each issuer's card page, as of {the latest asOf in D.CARDS}."`, `"Gas: U.S. EIA weekly retail prices. Meal tax: state rates. Fuel economy: EPA."`, and `"Every app fee left blank is one the app doesn't publish (D-032): enter what your checkout shows."`.
+Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {BRANDS_RUN}."`, `"App listings come from the chains' and apps' own announcements, some several years old: check the app."` (ISS-030), `"Card credits: each issuer's card page, as of {the latest asOf in D.CARDS}."`, `"Gas: U.S. EIA weekly retail prices (week of {GAS_WEEK}). Meal tax: state rates. Fuel economy: EPA, by model year."` (when `D.GAS_WEEK` is a string matching `/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/`; otherwise the same without the parenthesis: `"Gas: U.S. EIA weekly retail prices. Meal tax: state rates. Fuel economy: EPA, by model year."`, D-039), `"A VIN lookup goes from your browser to NHTSA's free decoder (vPIC). The VIN isn't saved."` (D-038), and `"Every app fee left blank is one the app doesn't publish (D-032): enter what your checkout shows."`.
 
 ## 6. Geolocation (BUILD.md §10)
 
 `data-action="locate"`: when `navigator.geolocation` and its `getCurrentPosition` exist, call it (`{timeout: 10000, maximumAge: 600000}`). Success: `afterChange(POD.state.setPosition(S, D, coords.latitude, coords.longitude, opts))` (a `null` status, for an out-of-range position, renders unchanged). Failure (or no geolocation): `[data-testid="geo-error"]` `"Couldn't get your location. Type your ZIP instead."` (a page-only message, cleared by the next change). Never a console error.
+
+## 6b. The VIN lookup (D-038, vin contract)
+
+`data-action="vin"`: `v = POD.vin.clean(document.getElementById("vin").value)`; `view.vin = v`; `c = POD.vin.check(v)`.
+
+- `c !== "ok"`: the message is `"length"` → `"A VIN has 17 letters and digits."`, `"chars"` → `"A VIN uses only digits and the letters A–Z except I, O and Q."`, `"digit"` → `"That VIN's check digit (its 9th character) doesn't match: check for a typo."`. **No request is made.** Render.
+- Otherwise: `seq` = a page counter + 1; the message `"Looking up {v} with NHTSA…"`; render; then one `XMLHttpRequest`: `open("GET", POD.vin.url(v), true)`, `timeout = 10000`, no `withCredentials`, no request headers (a simple CORS request: no preflight). When it ends, if `seq` isn't the latest lookup's, the answer is ignored (a newer lookup started). Else:
+  - `onload` with `status === 200`: `body` = `JSON.parse(responseText)` inside `try` (a throw → the failure below); `dec = POD.vin.decode(body)`. `dec === null` → `"NHTSA couldn't decode that VIN. Pick your car below."`. Else `m = POD.vin.match(dec, D)`; `POD.state.setCar(S, D, m.make, m.model, m.year)`; then the message, with `{car}` = `dec.year + " " + dec.make + " " + dec.model` (vPIC's own words):
+    - `m.make === "Other"` → `"NHTSA says {car}. That make isn't in the EPA list: enter its fuel and mpg below."`
+    - `m.model === ""` → `"NHTSA says {car}. Pick the model below: EPA's list names it differently."`
+    - `POD.state.carLookup(D, m.make, m.model, m.year) === null` → `"NHTSA says {car}. EPA's list has no {dec.year} figure for it: enter its mpg below."`
+    - else → `"NHTSA says {car}."`
+    Then `afterChange(POD.state.derive(S, D, new Date(), opts))`.
+  - Any other status, `onerror`, `ontimeout`, or a parse failure: `"Couldn't reach NHTSA's VIN decoder. Pick your car below."`, and render. `S` is unchanged.
+- The message lives in `view` (page-only, not saved) and is cleared by the next `make`, `model` or `year` change. Never a console error, whatever vPIC answers.
 
 ## 7. The first-visit example
 
@@ -170,7 +196,7 @@ Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {B
 
 ## 8. What the page leaves to later phases
 
-Deep links on result rows (Phase 9), the Worker (Phase 8), a VIN box (Phase 7). Per-item markup (Phase 6, D-036) has no control of its own: an override comes from the profile data and shows only through the results; per-item app prices typed by the user are ISS-036.
+Deep links on result rows (Phase 9), the Worker (Phase 8). Per-item markup (Phase 6, D-036) has no control of its own: an override comes from the profile data and shows only through the results; per-item app prices typed by the user are ISS-036.
 
 ## 9. `POD.util.esc`
 
