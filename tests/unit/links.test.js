@@ -52,8 +52,17 @@ const REAL_D = POD.data;
 
 // ------------------------------------------------------------------ the case table
 
-test('§5 cases.json has at least 85 hand-worked cases (an emptied file cannot pass)', () => {
-  assert.ok(FIX.cases.length >= 85, 'only ' + FIX.cases.length + ' cases');
+test('§5 cases.json has at least 88 hand-worked cases (an emptied file cannot pass)', () => {
+  assert.ok(FIX.cases.length >= 88, 'only ' + FIX.cases.length + ' cases');
+  // The https-without-// cases the orchestrator added in 03ca191 must stay in the file by name.
+  const ids = FIX.cases.map((c) => c.id);
+  for (const id of [
+    'a search starting https: without // falls back home',
+    'a home page starting https: without //: nothing',
+    'a site and directions starting https: without //: only the map search',
+  ]) {
+    assert.ok(ids.includes(id), 'missing case: ' + id);
+  }
   for (const c of FIX.cases) {
     assert.equal(c.fn, 'forChannel');
     assert.ok(c.data === null || own(FIX.datasets, c.data), 'unknown dataset ' + c.data);
@@ -182,10 +191,22 @@ test('§0 an inherited order entry for the brand is not the chain\'s site', () =
   assert.deepStrictEqual(plain(POD.links.forChannel('direct-d', S, D)), []);
 });
 
-test('§0 a __proto__ brand with no own entry gets nothing, and "constructor" as a brand gets nothing', () => {
+test('§0 a __proto__ brand with no own order entry gets no site link (the map search only)', () => {
+  // T's order has dominos, wingstop and an own "__proto__" entry. Remove that own key, so the
+  // brand lookup itself must refuse the inherited Object.prototype.__proto__ (the reach the
+  // contract's own-property rule covers). The other entries stay, so the order object is real.
+  const D = dataset('T');
+  delete D.LINKS.order.__proto__;
+  assert.equal(Object.prototype.hasOwnProperty.call(D.LINKS.order, '__proto__'), false);
+  assert.ok(own(D.LINKS.order, 'dominos'), 'the dataset lost dominos');
   const S1 = { brand: '__proto__', rest: { name: 'P' }, store: null };
+  assert.deepStrictEqual(plain(POD.links.forChannel('direct-d', S1, D)), []);
+  assert.deepStrictEqual(plain(POD.links.forChannel('direct-p', S1, D)),
+    [{ kind: 'map', label: 'Find P in Google Maps', href: 'https://www.google.com/maps/search/?api=1&query=P' }]);
+});
+
+test('§0 "constructor" as a brand gets no site link', () => {
   const S2 = { brand: 'constructor', rest: { name: 'C' }, store: null };
-  assert.deepStrictEqual(plain(POD.links.forChannel('direct-d', S1, dataset('T:no-links'))), []);
   assert.deepStrictEqual(plain(POD.links.forChannel('direct-d', S2, dataset('T'))), []);
 });
 

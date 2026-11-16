@@ -28,6 +28,12 @@ function isRealDate(s) {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
 
+/** The domain as a whole-label match: no letter, digit or '-' on either side (a '.' before it is a label boundary). */
+function domainRe(domain) {
+  const esc = domain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp('(^|[^a-z0-9-])' + esc + '([^a-z0-9-]|$)', 'i');
+}
+
 function isHttps(s) {
   return typeof s === 'string' && s.indexOf('https://') === 0;
 }
@@ -127,6 +133,7 @@ test('D-041 each chain\'s link is on its own domain: the last two host labels ap
     const text = fs.readFileSync(file, 'utf8');
     const host = new URL(LINKS.order[id].url).hostname;
     const domain = host.split('.').slice(-2).join('.');
-    assert.ok(text.indexOf(domain) >= 0, id + ': ' + domain + ' is not in its own profile evidence');
+    // Whole-label match: "dominos.co" must not match inside "dominos.com", "ominos.com" not inside "dominos.com".
+    assert.ok(domainRe(domain).test(text), id + ': ' + domain + ' is not in its own profile evidence');
   }
 });
