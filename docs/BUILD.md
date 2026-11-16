@@ -243,7 +243,7 @@ An empty order gets no advice. The bar for a new insight is unchanged: it must s
 }
 ```
 
-Defaults come from `src/data/defaults.js`: an app's published number where there is one, and otherwise a **labeled estimate** (D-042, which supersedes D-032's "official numbers only" for app fees and the car). Each estimate cites the app's page, the user's own dated checkouts, or a published survey, and the page marks it "est." (`POD.state.sourceOf`, state contract §4.8). `mpg` starts at the typical car's (`DEFAULTS.trip.mpg`, the U.S. on-road fleet average from EIA), so a first visit is priced without picking a car. A value the user clears is still `null`, the page asks for it, and that app's delivery row waits until it's filled (D-033). *Phase 11 task 11.2 fills the estimates; until then the shipped data keeps D-032's nulls.*
+Defaults come from `src/data/defaults.js`: an app's published number where there is one, and otherwise a **labeled estimate** (D-042, which supersedes D-032's "official numbers only" for app fees and the car). Each estimate cites the app's page, the user's own dated checkouts, or a published survey, and the page marks it "est." (`POD.state.sourceOf`, state contract §4.8). `mpg` starts at the typical car's (`DEFAULTS.trip.mpg`, the U.S. on-road fleet average from EIA), so a first visit is priced without picking a car. A value the user clears is still `null`, the page asks for it, and that app's delivery row waits until it's filled (D-033). *Task 11.2a set `trip.mpg` to 23.0 (EIA AEO2026 Table 7, the light-duty stock's on-road average for 2025, est.). The app-fee estimates wait for checkout evidence (task 11.2); until then the shipped data keeps D-032's fee nulls.*
 
 ### 5.2 The derivation cascade
 
@@ -319,7 +319,7 @@ CATEGORY_DEFAULTS[category] = { markup: { dd, ue, gh }, est }
 A brand in `BRANDS` whose category has no default can't be priced: `restFor` returns `null`, because a missing markup must never become 0% (§9.6).
 
 ### `DEFAULTS`
-`{fees, plats, tips, trip}`: the sourced starting values (D-032). Wear $0.1104/mi (AAA 2025), home electricity $0.1816/kWh (EIA), speed 27 mph (FHWA NHTS, `est`), tips 15% delivery / 0% pickup (the user's product choice, ISS-033), and DoorDash's published service rates. Unpublished fees, and the typical car's `trip.mpg`, are labeled estimates (D-042; `null` until task 11.2 lands).
+`{fees, plats, tips, trip}`: the sourced starting values (D-032). Wear $0.1104/mi (AAA 2025), home electricity $0.1816/kWh (EIA), speed 27 mph (FHWA NHTS, `est`), tips 15% delivery / 0% pickup (the user's product choice, ISS-033), and DoorDash's published service rates. The typical car's `trip.mpg` is 23.0 mpg (EIA AEO2026, light-duty stock on-road average, `est`, D-042). Unpublished fees become labeled estimates when task 11.2 lands; until then they're `null`.
 
 ### `LINKS`
 Where each result row hands off ([`links-contract.md`](links-contract.md), D-041): each app's home page and confirmed search format, Google Maps' directions and search formats, and each profiled chain's home page, every URL with how and when it was seen working.

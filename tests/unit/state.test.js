@@ -100,8 +100,8 @@ function readyState() {
 
 // ---- A: the done-when conditions of the cascade (real POD.data) --------------------------------
 
-test('done-when: the cascade: a fresh state asks for rest, tax, mpg, gas, miles and minutes', () => {
-  assert.deepEqual(J(ST.missing(ST.fresh(REAL))), ['rest', 'tax', 'mpg', 'gas', 'miles', 'minutes']);
+test('done-when: the cascade: a fresh state asks for rest, tax, gas, miles and minutes (D-042: the typical car)', () => {
+  assert.deepEqual(J(ST.missing(ST.fresh(REAL))), ['rest', 'tax', 'gas', 'miles', 'minutes']);
 });
 
 test('done-when: the cascade: setAddress takes tax and gas from the ZIP state row', () => {
@@ -355,7 +355,7 @@ function evidenceField(S, key) {
 test('done-when: fresh(D) copies the sourced defaults exactly and leaves the nulls null', () => {
   const S = ST.fresh(REAL);
   const all = Object.assign({}, EVID.plats, EVID.trip);
-  assert.equal(Object.keys(all).length, 26, 'the two evidence files hold 26 values');
+  assert.equal(Object.keys(all).length, 27, 'the two evidence files hold 27 values');
   for (const key of Object.keys(all)) {
     const got = evidenceField(S, key);
     assert.strictEqual(got, all[key].value, 'fresh ' + key + ' equals its evidence value');

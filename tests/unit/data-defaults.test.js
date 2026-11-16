@@ -27,7 +27,7 @@ const LEAVES = [
   'plats.gh.delFee', 'plats.gh.memberMin', 'plats.gh.memberSvc', 'plats.gh.pickDisc', 'plats.gh.svc', 'plats.gh.svcMin',
   'plats.ue.delFee', 'plats.ue.memberMin', 'plats.ue.memberSvc', 'plats.ue.pickDisc', 'plats.ue.svc', 'plats.ue.svcMin',
   'tips.tipDel', 'tips.tipPick',
-  'trip.kwh', 'trip.speed', 'trip.wear'
+  'trip.kwh', 'trip.mpg', 'trip.speed', 'trip.wear'
 ];
 const CAPPED = new Set(['svc', 'memberSvc', 'pickDisc', 'tipDel', 'tipPick']);
 const HEADER_END = TEXT.indexOf(' */');
@@ -55,7 +55,7 @@ function pathOfEvidence(key) {
   if (m) return 'plats.' + m[1] + '.' + m[2];
   if (['regFee', 'smallFee', 'smallMin'].includes(key)) return 'fees.' + key;
   if (['tipDel', 'tipPick'].includes(key)) return 'tips.' + key;
-  if (['wear', 'kwh', 'speed'].includes(key)) return 'trip.' + key;
+  if (['wear', 'kwh', 'speed', 'mpg'].includes(key)) return 'trip.' + key;
   return null;
 }
 
@@ -63,12 +63,29 @@ const EVID_ALL = Object.assign({}, EVID.plats, EVID.trip);
 const EVID_BY_PATH = {};
 for (const key of Object.keys(EVID_ALL)) EVID_BY_PATH[pathOfEvidence(key)] = EVID_ALL[key];
 
-test('D-032 §2 defaults: DEFAULTS has exactly the 26 leaf paths of D-032', () => {
+test('D-032 §2 defaults: DEFAULTS has exactly the 27 leaf paths of D-032 and D-042 (trip.mpg added)', () => {
   assert.deepEqual(leafPaths(DATA.DEFAULTS).sort(), LEAVES.slice().sort());
-  assert.equal(LEAVES.length, 26);
+  assert.equal(LEAVES.length, 27);
 });
 
-test('D-032 §2 defaults: the two evidence files map onto exactly those 26 paths', () => {
+test('D-042 defaults: trip.mpg is pinned literally (value, source, read, est, decision) in DEFAULTS and DEFAULT_SOURCES', () => {
+  assert.strictEqual(DATA.DEFAULTS.trip.mpg, 23);
+  const src = DATA.DEFAULT_SOURCES['trip.mpg'];
+  assert.strictEqual(src.source, 'https://www.eia.gov/outlooks/aeo/excel/aeotab7.xlsx');
+  assert.strictEqual(src.read, '2026-11-16');
+  assert.strictEqual(src.est, true);
+  assert.strictEqual(src.decision, 'D-042');
+  const ev = EVID.trip.mpg;
+  assert.strictEqual(ev.value, 23);
+  assert.strictEqual(ev.source, 'https://www.eia.gov/outlooks/aeo/excel/aeotab7.xlsx');
+  assert.strictEqual(ev.read, '2026-11-16');
+  assert.strictEqual(ev.est, true);
+  assert.strictEqual(ev.decision, 'D-042');
+  assert.match(ev.quote, /Light-Duty Stock 6\/': 2025 = 23\.04509353637695/);
+  assert.match(ev.reason, /rounded DOWN to 23\.0/);
+});
+
+test('D-032 §2 defaults: the two evidence files map onto exactly those 27 paths', () => {
   const mapped = Object.keys(EVID_ALL).map(pathOfEvidence);
   assert.ok(mapped.every((p) => p !== null), 'every evidence key maps to a path');
   assert.deepEqual(mapped.slice().sort(), LEAVES.slice().sort());
@@ -85,7 +102,7 @@ test('D-032 §2 defaults: each value is null or a finite number >= 0, and the pe
   }
 });
 
-test('D-032 §2 defaults: DEFAULT_SOURCES has exactly the 26 dotted keys, each with the four fields', () => {
+test('D-032 §2 defaults: DEFAULT_SOURCES has exactly the 27 dotted keys, each with the four fields', () => {
   assert.deepEqual(Object.keys(DATA.DEFAULT_SOURCES).sort(), LEAVES.slice().sort());
   for (const p of LEAVES) {
     assert.deepEqual(Object.keys(DATA.DEFAULT_SOURCES[p]).sort(), ['decision', 'est', 'read', 'source'], p + ': fields');
