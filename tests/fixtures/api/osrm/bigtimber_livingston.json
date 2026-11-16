@@ -1,0 +1,54 @@
+{
+  "provider": "osrm",
+  "case": "bigtimber_livingston",
+  "recorded": "2026-11-16",
+  "request": {
+    "method": "GET",
+    "url": "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false"
+  },
+  "response": {
+    "status": 200,
+    "contentType": "application/json; charset=UTF-8",
+    "bodyKind": "json",
+    "body": {
+      "code": "Ok",
+      "routes": [
+        {
+          "legs": [
+            {
+              "steps": [],
+              "weight": 2176.1,
+              "summary": "",
+              "duration": 2176.1,
+              "distance": 54552.2
+            }
+          ],
+          "weight_name": "routability",
+          "weight": 2176.1,
+          "duration": 2176.1,
+          "distance": 54552.2
+        }
+      ],
+      "waypoints": [
+        {
+          "hint": "aUkkgH7Q7YUXAAAAJgAAAAAAAAAAAAAApB-lQQKiB0IAAAAAAAAAABcAAAAmAAAAAAAAAAAAAADEfwAAkEty-UNfuwLQS3L5EF-7AgAADwMAAAAA",
+          "location": [
+            -109.950064,
+            45.834051
+          ],
+          "name": "East 4th Avenue",
+          "distance": 7.540932727
+        },
+        {
+          "hint": "IEEigCNBIoB6AAAATQAAAAAAAAAAAAAAkvWqQtiEU0IAAAAAAAAAAHoAAABNAAAAAAAAAAAAAADEfwAA1TNp-YTeuAKwM2n5cN64AgAALxQAAAAA",
+          "location": [
+            -110.545963,
+            45.67002
+          ],
+          "name": "North O Street",
+          "distance": 3.640364991
+        }
+      ]
+    }
+  }
+}

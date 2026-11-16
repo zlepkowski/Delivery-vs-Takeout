@@ -1,0 +1,54 @@
+{
+  "provider": "osrm",
+  "case": "nyc_empire_dominos",
+  "recorded": "2026-11-16",
+  "request": {
+    "method": "GET",
+    "url": "https://router.project-osrm.org/route/v1/driving/-73.986,40.749;-73.989,40.755?overview=false&alternatives=false&steps=false"
+  },
+  "response": {
+    "status": 200,
+    "contentType": "application/json; charset=UTF-8",
+    "bodyKind": "json",
+    "body": {
+      "code": "Ok",
+      "routes": [
+        {
+          "legs": [
+            {
+              "steps": [],
+              "weight": 186.2,
+              "summary": "",
+              "duration": 186.2,
+              "distance": 1377.8
+            }
+          ],
+          "weight_name": "routability",
+          "weight": 186.2,
+          "duration": 186.2,
+          "distance": 1377.8
+        }
+      ],
+      "waypoints": [
+        {
+          "hint": "cDsdgDlvhYycAAAAbwAAACQAAAAAAAAARBcMQ5uixEKYMgBCAAAAAJwAAABvAAAAJAAAAAAAAADEfwAAUxCX-_jHbQIwEJf7yMdtAgQAfwcAAAAA",
+          "location": [
+            -73.985965,
+            40.749048
+          ],
+          "name": "West 34th Street",
+          "distance": 6.095565591
+        },
+        {
+          "hint": "t0Lnjf___39KAAAAwgAAAAAAAAASAAAA5kRPQlB3pUIAAAAA-sZHQUoAAADCAAAAAAAAABIAAADEfwAA9QSX--LfbQJ4BJf7ON9tAgAAbwcAAAAA",
+          "location": [
+            -73.988875,
+            40.75517
+          ],
+          "name": "West 40th Street",
+          "distance": 21.62757278
+        }
+      ]
+    }
+  }
+}

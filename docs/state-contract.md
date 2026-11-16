@@ -4,11 +4,13 @@
 
 *Amended 2026-11-16 (D-037, Phase 7):* the car's model `year` (§2, §8), the car-table helpers `carMakes`, `carModels`, `carYears`, `carLookup` (§4.0), `applyCar` through `carLookup` (§4.1), and `setCar`'s fifth argument (§6).
 
+*Amended 2026-11-16 (D-040, Phase 8, `docs/api-contract.md` §7):* the Worker's answers in `opts.api`: a geocoded address (§4.3, `pos.src "addr"`), driving distance (§4.5, `milesSrc "drive"`), and the picked independent `place` (§2, §6, §8). **With `opts.api` absent (the Worker off), every function is exactly as before.**
+
 The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, the derivation cascade, the wallet, and persistence. It fills in BUILD.md §3 and §5. **Where this file and BUILD.md §5 differ, this file wins** (D-031). Change it only by a decision; the hand-worked scenarios (`tests/fixtures/state/`) change first, the code after.
 
 ## 0. Rules for every function
 
-- **Reads only its arguments.** The data tables come in as `D` (in the app, `POD.data`), the clock as `now` (a `Date`), storage as `storage`. No `POD.S`, no `POD.data`, no `Date` of its own, no DOM, no `localStorage` of its own. It may call `POD.engine.restFor` and the `POD.geo` functions, which follow the same rule.
+- **Reads only its arguments.** The data tables come in as `D` (in the app, `POD.data`), the clock as `now` (a `Date`), storage as `storage`. No `POD.S`, no `POD.data`, no `Date` of its own, no DOM, no `localStorage` of its own. It may call `POD.engine.restFor`, the `POD.geo` functions and the pure `POD.api` key helpers (`driveKey`, `geoKey`; api contract §6), which follow the same rule. It reads `opts` and never writes it.
 - **Mutates only `S`.** The derivation and action functions change the `S` they're given, in place, and nothing else: never `D`, `opts`, `storage` or an argument object (a store, a credit). Every object or array they put into `S` is new: it shares nothing with `D` or with an argument.
 - **Never throws.** Bad input leaves `S` as the section says (usually unchanged) and the function returns `false` or `null` where it has a return value.
 - Words as in the geography contract §0: "finite number" = `typeof x === "number" && isFinite(x)`; "object" = not null, `typeof "object"`, not an array; "own key" = `hasOwnProperty`; no `instanceof`.
@@ -27,7 +29,7 @@ The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, 
 | `carLookup(D, make, model, year)` | the figure for a car (§4.0) | `{fuel, mpg, miPerKwh, year}`, or `null` |
 | `applyCar(S, D)` | car → `fuel`, `mpg`, `miPerKwh`, then `applyState` (§4.1) | — |
 | `applyState(S, D)` | `state` + `fuel` → `tax`, `gas` (§4.2) | — |
-| `applyAddress(S, D)` | `address` or a GPS `pos` → `zip`, `zipRec`, `state`, `pos`, then `applyState` (§4.3) | — |
+| `applyAddress(S, D, opts)` | `address` or a GPS `pos` (or a geocoded address in `opts.api`, D-040) → `zip`, `zipRec`, `state`, `pos`, then `applyState` (§4.3) | — |
 | `applyBrand(S, D)` | `brand` → `rest`, the apps' `markup` (§4.4) | — |
 | `autoMiles(S, D, opts)` | the trip, from a store or the estimator (§4.5) | a trip status |
 | `applyMinutes(S)` | `minutes` from `miles` and `speed` (§4.6) | — |
@@ -61,7 +63,7 @@ A **trip status** is `{ status, need, partial }`: `status` is `"ok"`, `"need"` (
 {
   address: "",  pos: null,  zip: null,  zipRec: null,  state: null,  tax: null,  gas: null,
   make: "",  model: "",  year: null,  fuel: "regular",  mpg: null,  miPerKwh: null,  kwh: T.kwh,
-  brand: null,  rest: null,  store: null,  storePicked: false,
+  brand: null,  rest: null,  store: null,  storePicked: false,  place: null,
   cart: {},  manualSubtotal: 0,  dealOn: true,
   miles: null,  minutes: null,  speed: T.speed,  milesAuto: true,  milesSrc: null,  milesBy: {},
   tipDel: TIPS.tipDel,  tipPick: TIPS.tipPick,  wear: T.wear,  hourly: 0,
@@ -122,10 +124,12 @@ Find the `D.STATES` row `[code, name, gasRegular, mealTaxPct]` whose code equals
 - Found: `tax = row[3]`; `gas = Math.round((row[2] + add) * 1000) / 1000`, where `add` = `D.GRADE_ADD.premium` for `"premium"`, `D.GRADE_ADD.diesel` for `"diesel"`, else 0 (regular, and EV, whose `gas` is unused).
 - Not found (`null`, unknown): `tax = null`, `gas = null`.
 
-### 4.3 `applyAddress(S, D)`
+### 4.3 `applyAddress(S, D, opts)`
 
 - If `S.pos` is a GPS position (`src === "gps"` with finite `lat`, `lon`): `zipRec = geo.nearestZip(lat, lon, D)`, `zip = zipRec ? zipRec.z : null`, `state = zipRec ? zipRec.st : null`. `pos` is unchanged.
 - Otherwise the ZIP comes from `S.address`: the **last** run of exactly 5 digits that isn't part of a longer digit run, optionally followed by `-` and 4 digits (`"12345 Main St, Town MT 20003"` → `20003`; `"NY 10004-1234"` → `10004`). Then `zip` = that code or `null`; `zipRec = geo.zipByCode(zip, D)` (or `null`); `state = zipRec ? zipRec.st : null`; `pos = zipRec ? {lat: zipRec.la, lon: zipRec.lo, src: "zip"} : null`.
+
+- **A geocoded address (D-040).** In the non-GPS case, when `opts` is an object, `opts.api` is an object, `opts.api.geo` is an object, `k = POD.api.geoKey(S.address)` isn't `null`, and `g = opts.api.geo[k]` (own key) is an object with finite `lat` in [−90, 90] and `lon` in [−180, 180]: `pos = {lat: g.lat, lon: g.lon, src: "addr"}`; `rec` = the typed ZIP's `zipByCode` record when that's non-null, else `zipByCode(g.zip, D)` when `g.zip` is a string and that's non-null, else `geo.nearestZip(g.lat, g.lon, D)`; then `zipRec = rec`, `zip = rec ? rec.z : (the typed code or null)`, `state = rec ? rec.st : null`. (`false`, a failed lookup, is not an object: the ZIP path above applies.)
 
 Then `applyState(S, D)`. (An unknown ZIP keeps `zip` so the page can say "ZIP 99999 not found", with `zipRec`, `state` and `pos` `null`.)
 
@@ -139,13 +143,15 @@ Then `applyState(S, D)`. (An unknown ZIP keeps `zip` so the page can say "ZIP 99
 
 1. If `S.milesAuto` is not `true`: change nothing; return `{status: "off", need: [], partial: false}`.
 2. If `S.pos` isn't a position, or `S.brand` isn't a string, or `S.rest` is `null`: `miles = null`, `milesSrc = null`, and `store = null` unless `storePicked`; `applyMinutes`; return `{status: "ok", need: [], partial: false}`.
-3. **A picked store** (`storePicked` and `store` is `{id, lat, lon}` whose `id` starts with `S.brand + "@"`): `miles = geo.tripMiles(geo.distMi(pos.lat, pos.lon, store.lat, store.lon))`, `milesSrc = "store"`. `applyMinutes`; return `{status: "ok", need: [], partial: false}`.
+3. **A picked store** (`storePicked` and `store` is `{id, lat, lon}` whose `id` starts with `S.brand + "@"`): `miles = geo.tripMiles(geo.distMi(pos.lat, pos.lon, store.lat, store.lon))`, `milesSrc = "store"`, then **the drive rule** below. `applyMinutes`; return `{status: "ok", need: [], partial: false}`.
 4. Otherwise `r = geo.nearestStore(pos.lat, pos.lon, S.brand, D, opts)`, and `storePicked = false`.
    - `r` is `null` (no store index at all): go to step 5 with `partial = false`.
    - `r.status === "need"`: **clear the trip**: `store = null`, `miles = null`, `milesSrc = null`, `applyMinutes`; return `{status: "need", need: r.need (a copy), partial: false}`. A distance kept from before (another brand, another address, an unpinned pin) would be a made-up one for this trip, and `missing(S)` now holds the page back until the tiles arrive and `derive` runs again.
-   - `r.store` non-null: `store = {id, lat, lon}` of it, `miles = r.store.trip`, `milesSrc = "store"`; `applyMinutes`; return `{status: "ok", need: [], partial: r.partial}`.
+   - `r.store` non-null: `store = {id, lat, lon}` of it, `miles = r.store.trip`, `milesSrc = "store"`, then **the drive rule**; `applyMinutes`; return `{status: "ok", need: [], partial: r.partial}`.
    - `r.store` null: go to step 5 with `partial = r.partial`.
 5. **The estimator:** `store = null`; `e = geo.estimateMiles({la: pos.lat, lo: pos.lon}, S.brand, D)`; `miles = e ? e.round : null`; `milesSrc = e ? "estimate" : null`; `applyMinutes`; return `{status: "ok", need: [], partial}`.
+
+**The drive rule (D-040):** when `opts` is an object, `opts.api` is an object, `opts.api.drive` is an object, `k = POD.api.driveKey(S.pos, S.store)` isn't `null`, and `a = opts.api.drive[k]` (own key) is an object with a finite `miles` ≥ 0: `miles = Math.round(2 * a.miles * 10) / 10` and `milesSrc = "drive"`. Otherwise the straight-line trip stays. `minutes` still comes from `speed` (§4.6).
 
 ### 4.6 `applyMinutes(S)`
 
@@ -153,7 +159,7 @@ Then `applyState(S, D)`. (An unknown ZIP keeps `zip` so the page can say "ZIP 99
 
 ### 4.7 `derive(S, D, now, opts)`
 
-In this order: `applyCar`, `applyAddress` (which runs `applyState`), `applyBrand`, `syncCredits`, then the trip: if `milesAuto` is `true` run `autoMiles` and return its status; else `milesSrc = "pinned"` (it isn't saved, so a reload needs it back), `applyMinutes`, and return `{status: "off", need: [], partial: false}`. `derive` never resets a user field (cart, pins, picked store); that's what makes it safe to run after `load`.
+In this order: `applyCar`, `applyAddress(S, D, opts)` (which runs `applyState`), `applyBrand`, `syncCredits`, then the trip: if `milesAuto` is `true` run `autoMiles` and return its status; else `milesSrc = "pinned"` (it isn't saved, so a reload needs it back), `applyMinutes`, and return `{status: "off", need: [], partial: false}`. `derive` never resets a user field (cart, pins, picked store); that's what makes it safe to run after `load`.
 
 ## 5. The wallet
 
@@ -193,11 +199,11 @@ For each app `p`: `plats[p].member = plats[p].memberOwn === true || (cardHas(p) 
 
 ## 6. Actions (what a user change runs)
 
-- `setAddress(S, D, text, opts)`: `address = text` if it's a string, else `""`; `pos = null` (a typed address replaces a GPS position); `applyAddress`; then the trip (as in `derive`'s last step).
-- `setPosition(S, D, lat, lon, opts)`: lat in [−90, 90] and lon in [−180, 180], finite, else return `null` and change nothing. `pos = {lat, lon, src: "gps"}`; `applyAddress`; the trip.
+- `setAddress(S, D, text, opts)`: `address = text` if it's a string, else `""`; `pos = null` (a typed address replaces a GPS position); `applyAddress(S, D, opts)`; then the trip (as in `derive`'s last step).
+- `setPosition(S, D, lat, lon, opts)`: lat in [−90, 90] and lon in [−180, 180], finite, else return `null` and change nothing. `pos = {lat, lon, src: "gps"}`; `applyAddress(S, D, opts)`; the trip.
 - `setCar(S, D, make, model, year)`: `make` and `model` are each the argument if it's a string, else `""`; `year` is the argument if it's an integer in 1900–2100, else `null` (so the four-argument call of Phase 5 means `null`). If the new `(make, model, year)` differs from the previous `(S.make, S.model, S.year)` and `carLookup(D, make, model, year)` is `null`, `mpg = null` and `miPerKwh = null` (`fuel` is kept): they belonged to the previous car, and the user now enters their own. Then `S.make`, `S.model`, `S.year` are set and `applyCar` runs. *(D-037: the year is part of the car; picking a year the tables don't list clears the old figure.)* *(Amended 2026-11-14, review of 5.3: "Other" kept the previous car's 46 mpg, so the page priced the old car without asking. `applyCar` itself is unchanged, so a reload keeps the user's own values.)*
-- `setBrand(S, D, brandId, opts)`: `brand` = the string, or `null`; `cart = {}`; `dealOn = true`; every app's `promos[p].item = null` (D-036: an index into the old menu would name a different item in the new one; the promo's type and numbers stay); `store = null`; `storePicked = false`; `applyBrand`. Then, if `milesBy` has an own key `brand` with a finite number ≥ 0: `miles` = it, `milesAuto = false`, `milesSrc = "pinned"`, `applyMinutes`, return `{status: "off", …}`. Else `milesAuto = true` and return `autoMiles`. (`manualSubtotal` is kept.)
-- `pickStore(S, D, store, opts)`: `store` must be an object with a string `brand`, a string `id` that starts with `brand + "@"`, and finite `lat` and `lon` in range (a `storesNear` row), else return `null` and change nothing. If `store.brand !== S.brand`, run `setBrand(S, D, store.brand, opts)` first. Then `S.store = {id, lat, lon}`, `storePicked = true`, `milesAuto = true`, delete `milesBy[brand]`; return `autoMiles` (which takes step 3).
+- `setBrand(S, D, brandId, opts)`: `brand` = the string, or `null`; `cart = {}`; `dealOn = true`; every app's `promos[p].item = null` (D-036: an index into the old menu would name a different item in the new one; the promo's type and numbers stay); `store = null`; `storePicked = false`; `place = null` unless `place` is an object whose `id === brandId` (D-040); `applyBrand`. Then, if `milesBy` has an own key `brand` with a finite number ≥ 0: `miles` = it, `milesAuto = false`, `milesSrc = "pinned"`, `applyMinutes`, return `{status: "off", …}`. Else `milesAuto = true` and return `autoMiles`. (`manualSubtotal` is kept.)
+- `pickStore(S, D, store, opts)`: `store` must be an object with a string `brand`, a string `id` that starts with `brand + "@"`, and finite `lat` and `lon` in range (a `storesNear` row), else return `null` and change nothing. If `store.brand !== S.brand`, run `setBrand(S, D, store.brand, opts)` first. Then `S.store = {id, lat, lon}`, `storePicked = true`, `milesAuto = true`, delete `milesBy[brand]`. **An independent (D-040):** when `store.brand` isn't an own key of `D.BRANDS`, and `D.PLACES` is an object whose own key `store.brand` holds an object with a string `name`, a string `category` and a valid `lat`, `lon`: `S.place = {id: store.brand, name, category, lat, lon}` (a new object). Return `autoMiles` (which takes step 3).
 - `setQty(S, index, qty)`: `S.rest` must be profiled, `index` an integer with `0 <= index < rest.menu.length`, and `qty` an integer ≥ 0, else `false`. `qty > 0` sets `cart[String(index)] = qty`; `0` deletes the key. `true`. (`setPath` can't do this: it never creates keys.)
 - `pinMiles(S, miles)`: `miles` must be a finite number ≥ 0, else `false`. `S.miles = miles` (as given, not rounded), `milesAuto = false`, `milesSrc = "pinned"`; if `brand` is a string, `milesBy[brand] = miles`; `applyMinutes`; `true`.
 - `unpinMiles(S, D, opts)`: `milesAuto = true`; delete `milesBy[brand]`; return `autoMiles`.
@@ -234,7 +240,7 @@ A missing `pickDisc` switches the whole app off, delivery included, although del
 
 The key is `POD.STORAGE_KEY` (`"pod.v5"`, D-010). `storage` is any object with `getItem`/`setItem` (in the app, `window.localStorage`).
 
-**The user fields** (everything else is derived and never saved): `address`, `pos` (only when `src` is `"gps"`), `make`, `model`, `year`, `fuel`, `mpg`, `miPerKwh`, `kwh`, `brand`, `store`, `storePicked`, `cart`, `manualSubtotal`, `dealOn`, `miles`, `speed`, `milesAuto`, `milesBy`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`, `cards`, `creditOptIn`, `usedIn`, `manualCredits`, `plats` (per app: `on`, `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `pickDisc`, `memberOwn`, `cardMember`; `direct.on`), `promos`.
+**The user fields** (everything else is derived and never saved): `address`, `pos` (only when `src` is `"gps"`), `make`, `model`, `year`, `fuel`, `mpg`, `miPerKwh`, `kwh`, `brand`, `store`, `storePicked`, `place`, `cart`, `manualSubtotal`, `dealOn`, `miles`, `speed`, `milesAuto`, `milesBy`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`, `cards`, `creditOptIn`, `usedIn`, `manualCredits`, `plats` (per app: `on`, `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `pickDisc`, `memberOwn`, `cardMember`; `direct.on`), `promos`.
 
 - `save(S, storage)`: `storage.setItem(key, JSON.stringify(those fields))` inside try/catch. `pos` is written only when it's a GPS position; otherwise the key is left out. `plats` is written with only the fields listed above (never `markup` or `member`). `true` on success; `false` if anything throws or `storage` has no `setItem`.
 - `load(storage, D, now, opts)`: `S = fresh(D)`. Read `storage.getItem(key)` and `JSON.parse` it inside try/catch; if anything throws, the value isn't a string, or the parse isn't an object, use `{}`. Then **merge field by field**: a saved field replaces the fresh one only when it has the right type, else the fresh value stays:
@@ -243,6 +249,7 @@ The key is `POD.STORAGE_KEY` (`"pod.v5"`, D-010). `storage` is any object with `
   - booleans: `dealOn`, `milesAuto`, `storePicked`.
   - `year`: an integer in 1900–2100, or `null` (D-037).
   - `pos`: `{lat, lon, src: "gps"}` with a valid position. `store`: `{id: string, lat, lon}` with finite numbers (or `null`).
+  - `place` (D-040): `{id, name, category, lat, lon}` with `id` matching `/^osm:[nwr][1-9][0-9]{0,15}$/` and equal to the loaded `brand`, `name` a string of 1–120 characters, `category` a string, and a valid position; loaded as a new object with exactly those five fields. Anything else gives `null`.
   - `cart`: an object; keep each key that is a canonical non-negative integer (`"0"`, `"12"`) with an integer value ≥ 0. `milesBy`: keep string keys with finite numbers ≥ 0. `creditOptIn`: keep keys whose value is `true`. `usedIn`: keep keys whose value is a string.
   - `cards`: an array; keep the strings. `manualCredits`: an array; keep each entry `addManualCredit` would accept that also has a `key` matching `/^manual\.[1-9][0-9]{0,8}$/` (at most 9 digits, so the next key stays an exact integer), the first one with a given key only, stored as `addManualCredit` stores it (`{key, name, amount, cadence, plats, modes?}`, `cadence` defaulting to `"once"`, nothing else).
   - `plats`: per app and field as in `fresh`: numbers finite ≥ 0, booleans boolean (`markup` and `member` are derived and never loaded). `promos`: per app **and field**: `type` one of `none`, `percent`, `dollar`, `freedel`, `bogo`; `value`, `cap`, `min` finite ≥ 0; `item` an integer ≥ 0 (a finite number `x` with `Math.floor(x) === x`) or `null` (D-036). `load` doesn't check `item` against the menu: the engine gives no promo for an index past it. A bad field falls back alone (a bad `type` with a good `value` gives `{type: "none", value: …}`).

@@ -83,7 +83,7 @@ FR = st("fresh")
 sc("fresh: blank state with the defaults", ["§2"], [FR], {
     "address": "", "pos": None, "zip": None, "zipRec": None, "state": None, "tax": None, "gas": None,
     "make": "", "model": "", "year": None, "fuel": "regular", "mpg": None, "miPerKwh": None, "kwh": 0.17,
-    "brand": None, "rest": None, "store": None, "storePicked": False, "cart": {}, "manualSubtotal": 0, "dealOn": True,
+    "brand": None, "rest": None, "store": None, "storePicked": False, "place": None, "cart": {}, "manualSubtotal": 0, "dealOn": True,
     "miles": None, "minutes": None, "speed": SPEED, "milesAuto": True, "milesSrc": None, "milesBy": {},
     "tipDel": 15, "tipPick": 0, "wear": 0.11, "hourly": 0, "regFee": 0, "smallMin": 10, "smallFee": 2.5,
     "cards": [], "credits": [], "creditOptIn": {}, "usedIn": {}, "manualCredits": [],
@@ -545,7 +545,7 @@ round_trip = setup + [st("pinMiles", 7), st("toggleCard", "c_gold", True), st("s
     st("markUsed", "c_gold.dining", True), st("addManualCredit", {"name": "Gift card", "amount": 20, "plats": ["direct"]}),
     st("setPath", "tipDel", 20), st("setPath", "plats.dd.memberOwn", True), st("setPath", "promos.ue.type", "percent"),
     st("setPath", "promos.ue.value", 20), st("setPath", "plats.gh.delFee", 3.49), st("save", returns=True), st("load")]
-USER_KEYS = sorted(["address", "make", "model", "year", "fuel", "mpg", "miPerKwh", "kwh", "brand", "store", "storePicked", "cart",
+USER_KEYS = sorted(["address", "make", "model", "year", "fuel", "mpg", "miPerKwh", "kwh", "brand", "store", "storePicked", "place", "cart",
     "manualSubtotal", "dealOn", "miles", "speed", "milesAuto", "milesBy", "tipDel", "tipPick", "wear", "hourly", "regFee",
     "smallMin", "smallFee", "cards", "creditOptIn", "usedIn", "manualCredits", "plats", "promos"])
 sc("save then load: user fields come back, derived ones are rebuilt", ["§8", "§4.7"], round_trip, {
@@ -616,6 +616,125 @@ sc("load: a manual key over 9 digits is dropped; the next key counts on exactly"
    "manual.1234567890 has 10 digits: dropped. 123456789 + 1 = 123456790.",
    storage={"kind": "memory", "value": json.dumps(big)})
 
+# ---------------------------------------------------------------- D-040: the Worker's answers in opts.api
+# With opts undefined (every scenario above) each function is Phase 7's. These give opts.api answers.
+def API(drive=None, geo=None, nearby=None):
+    return {"failed": {}, "api": {"drive": drive or {}, "geo": geo or {}, "nearby": nearby or {}}}
+K_PZ = "40.000,-74.000;40.030,-74.000"          # driveKey(10001's centroid, the nearest pz store)
+sc("drive: a road distance replaces the straight-line trip (step 4)", ["§4.5", "D-040"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz", opts=API(drive={K_PZ: {"miles": 3.27, "minutes": 6.5}}), returns=ok())],
+   {"miles": 6.5, "minutes": 13, "milesSrc": "drive", "store": pz_store, "storePicked": False},
+   "driveKey = fmt3(40)+','+fmt3(-74)+';'+fmt3(40.03)+','+fmt3(-74) = %s. miles = round1(2 x 3.27 = 6.54) = 6.5 (not the straight-line %.1f); minutes from speed: 6.5/30 x 60 = 13 (OSRM's 6.5 min is not used)." % (K_PZ, m_pz))
+sc("drive: a picked store uses the road distance (step 3)", ["§4.5", "§6", "D-040"],
+   [FR, st("setAddress", "10001"),
+    st("pickStore", {"brand": "pz", "id": "pz@40050,-74000", "lat": 40.05, "lon": -74},
+       opts=API(drive={"40.000,-74.000;40.050,-74.000": {"miles": 4, "minutes": 9}}), returns=ok())],
+   {"miles": 8.0, "minutes": 16, "milesSrc": "drive", "storePicked": True, "store": {"id": "pz@40050,-74000", "lat": 40.05, "lon": -74}},
+   "round1(2 x 4) = 8; 8/30 x 60 = 16.")
+sc("drive: a GPS position is keyed at 3 decimals", ["§4.5", "D-040"],
+   [FR, st("setPosition", 40.0004, -74.0), st("setBrand", "pz", opts=API(drive={K_PZ: {"miles": 3.27, "minutes": 6.5}}), returns=ok())],
+   {"miles": 6.5, "milesSrc": "drive", "zip": "10001"},
+   "fmt3(40.0004): Math.round(40000.4) = 40000 -> '40.000', so the key is %s. The nearest pz store from 40.0004 is still 40.030." % K_PZ)
+for label, ans in [("a failed lookup (false)", False), ("negative miles", {"miles": -1, "minutes": 1}),
+                   ("miles as a string", {"miles": "3.27", "minutes": 6.5}), ("no miles", {"minutes": 6.5}),
+                   ("miles NaN-like null", {"miles": None, "minutes": 6.5})]:
+    sc("drive: %s keeps the straight-line trip" % label, ["§4.5", "D-040"],
+       [FR, st("setAddress", "10001"), st("setBrand", "pz", opts=API(drive={K_PZ: ans}), returns=ok())],
+       {"miles": m_pz, "minutes": mins(m_pz), "milesSrc": "store"}, "Not an object with a finite miles >= 0: the drive rule doesn't apply.")
+sc("drive: an answer for another store isn't used", ["§4.5", "D-040"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz", opts=API(drive={"40.000,-74.000;40.050,-74.000": {"miles": 1, "minutes": 2}}), returns=ok())],
+   {"miles": m_pz, "milesSrc": "store"}, "The answer is keyed for the 40.050 store; the nearest is 40.030.")
+sc("drive: opts.api without a drive object keeps the straight line", ["§4.5", "D-040"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz", opts={"failed": {}, "api": {"geo": {}, "nearby": {}}}, returns=ok())],
+   {"miles": m_pz, "milesSrc": "store"}, "")
+sc("drive: a pin still wins", ["§4.5", "§6", "D-040"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz"), st("pinMiles", 7, returns=True),
+    st("derive", opts=API(drive={K_PZ: {"miles": 3.27, "minutes": 6.5}}), returns=OFF)],
+   {"miles": 7, "milesSrc": "pinned"}, "milesAuto is false: autoMiles doesn't run.")
+
+GEO_Q = "1 main st, alpha ny 10004"
+sc("geocode: a typed ZIP keeps its state; the point moves", ["§4.3", "D-040"],
+   [FR, st("setAddress", "1 Main St, Alpha NY 10004", opts=API(geo={GEO_Q: {"lat": 40.031, "lon": -74.0, "zip": "10002", "state": "NY"}}))],
+   {"pos": {"lat": 40.031, "lon": -74.0, "src": "addr"}, "zip": "10004", "zipRec.z": "10004", "state": "NY", "tax": 8.875},
+   "geoKey = '%s'. The typed 10004 is known, so it sets zip and state (the answer's 10002 isn't used); pos is the answer's point." % GEO_Q)
+sc("geocode: no ZIP typed -> the answer's ZIP", ["§4.3", "D-040"],
+   [FR, st("setAddress", "  Beta   Town,  MT ", opts=API(geo={"beta town, mt": {"lat": 45.021, "lon": -110.0, "zip": "20003", "state": "MT"}}))],
+   {"pos": {"lat": 45.021, "lon": -110.0, "src": "addr"}, "zip": "20003", "zipRec.z": "20003", "state": "MT", "tax": 0.0},
+   "geoKey trims and collapses the spaces, then lowercases: 'beta town, mt'. 20003 is in the table.")
+for label, z in [("an unknown answer ZIP", "99999"), ("no answer ZIP", None)]:
+    sc("geocode: %s -> the nearest ZIP to the point" % label, ["§4.3", "D-040"],
+       [FR, st("setAddress", "Beta Town, MT", opts=API(geo={"beta town, mt": {"lat": 45.041, "lon": -110.0, "zip": z, "state": "MT"}}))],
+       {"pos.src": "addr", "zip": "20005", "zipRec.z": "20005", "state": "MT"},
+       "nearestZip(45.041, -110): 20005 at 45.040 is 0.001 deg away, 20006 at 45.050 is 0.009.")
+sc("geocode: a failed lookup -> the ZIP path (no ZIP, no position)", ["§4.3", "D-040"],
+   [FR, st("setAddress", "Beta Town, MT", opts=API(geo={"beta town, mt": False}))],
+   {"pos": None, "zip": None, "zipRec": None, "state": None}, "false isn't an object.")
+sc("geocode: an answer with a bad latitude is ignored", ["§4.3", "D-040"],
+   [FR, st("setAddress", "1 Main St, Alpha NY 10004", opts=API(geo={GEO_Q: {"lat": 91, "lon": -74.0, "zip": None, "state": None}}))],
+   {"pos": {"lat": 40.03, "lon": -74.0, "src": "zip"}, "zip": "10004"}, "Out of range: the typed ZIP's centroid (40.030).")
+sc("geocode: a bare ZIP is never looked up", ["§4.3", "D-040"],
+   [FR, st("setAddress", "10004", opts=API(geo={"10004": {"lat": 40.5, "lon": -74.0, "zip": None, "state": None}}))],
+   {"pos": {"lat": 40.03, "lon": -74.0, "src": "zip"}}, "geoKey('10004') is null (no letter), so the answer stored under '10004' is never read.")
+sc("geocode: a GPS position wins over an address answer", ["§4.3", "D-040"],
+   [FR, st("setAddress", "1 Main St, Alpha NY 10004", opts=API(geo={GEO_Q: {"lat": 40.031, "lon": -74.0, "zip": None, "state": None}})),
+    st("setPosition", 45.0, -110.0, opts=API(geo={GEO_Q: {"lat": 40.031, "lon": -74.0, "zip": None, "state": None}}))],
+   {"pos": {"lat": 45.0, "lon": -110.0, "src": "gps"}, "zip": "20001", "state": "MT"}, "")
+sc("geocode: the trip is measured from the geocoded point", ["§4.3", "§4.5", "D-040"],
+   [FR, st("setAddress", "1 Main St, Alpha NY 10004", opts=API(geo={GEO_Q: {"lat": 40.031, "lon": -74.0, "zip": None, "state": None}})),
+    st("setBrand", "pz", opts=API(geo={GEO_Q: {"lat": 40.031, "lon": -74.0, "zip": None, "state": None}}), returns=ok())],
+   {"miles": trip(0.001), "minutes": mins(trip(0.001)), "store": pz_store, "milesSrc": "store"},
+   "From 40.031 the pz store at 40.030 is 0.001 deg = %.6f mi; trip round1(x 2.5) = %.1f; minutes %d. (From 10004's centroid 40.030 it would be 0.)" % (K * 0.001, trip(0.001), mins(trip(0.001))))
+
+PL = {"osm:n7": {"name": "Corner Diner", "category": "burger", "lat": 40.02, "lon": -74.0},
+      "osm:w8": {"name": "Odd Spot", "category": "other", "lat": 40.04, "lon": -74.0}}
+N7 = {"brand": "osm:n7", "id": "osm:n7@40.020,-74.000", "lat": 40.02, "lon": -74.0}
+N7_PLACE = {"id": "osm:n7", "name": "Corner Diner", "category": "burger", "lat": 40.02, "lon": -74.0}
+m_n7 = trip(0.02)
+sc("independent: pickStore prices it as unprofiled and saves the place", ["§6", "§4.4", "D-040", "engine §2.1"],
+   [FR, st("setAddress", "10001"), st("pickStore", N7, returns=ok())],
+   {"brand": "osm:n7", "rest.id": "osm:n7", "rest.name": "Corner Diner", "rest.profiled": False, "rest.menu": [],
+    "rest.directDelivery": False, "rest.platforms": ["dd", "ue", "gh"], "rest.markupEst": True,
+    "plats.dd.markup": 15, "plats.ue.markup": 15, "plats.gh.markup": 15, "place": N7_PLACE,
+    "store": {"id": "osm:n7@40.020,-74.000", "lat": 40.02, "lon": -74.0}, "storePicked": True,
+    "miles": m_n7, "minutes": mins(m_n7), "milesSrc": "store"},
+   "osm:n7 is in neither BRANDS nor PROFILES; D.PLACES has it with category burger, whose default is 15%% on all three apps. Step 3: 0.020 deg = %.6f mi, trip %.1f, minutes %d." % (K * 0.02, m_n7, mins(m_n7)),
+   patch={"PLACES": PL})
+sc("independent: the road distance applies to it too", ["§4.5", "D-040"],
+   [FR, st("setAddress", "10001"), st("pickStore", N7, opts=API(drive={"40.000,-74.000;40.020,-74.000": {"miles": 1.66, "minutes": 4}}), returns=ok())],
+   {"miles": 3.3, "minutes": 7, "milesSrc": "drive"}, "round1(2 x 1.66 = 3.32) = 3.3; 3.3/30 x 60 = 6.6 -> 7.", patch={"PLACES": PL})
+sc("independent: a category with no default can't be priced", ["§4.4", "D-040", "engine §2.1"],
+   [FR, st("setAddress", "10001"), st("pickStore", {"brand": "osm:w8", "id": "osm:w8@40.040,-74.000", "lat": 40.04, "lon": -74.0}, returns=ok())],
+   {"rest": None, "place": {"id": "osm:w8", "name": "Odd Spot", "category": "other", "lat": 40.04, "lon": -74.0}, "miles": None, "$missing": ["rest", "mpg", "miles", "minutes"]},
+   "S1 has no 'other' default, so restFor is null (never 0%%) and autoMiles step 2 clears the trip. The place is still recorded.", patch={"PLACES": PL})
+sc("independent: one the page hasn't seen isn't priced", ["§6", "D-040"],
+   [FR, st("setAddress", "10001"), st("pickStore", {"brand": "osm:n9", "id": "osm:n9@40.020,-74.000", "lat": 40.02, "lon": -74.0}, returns=ok())],
+   {"brand": "osm:n9", "rest": None, "place": None}, "Not in D.PLACES: no rest and no place.", patch={"PLACES": PL})
+sc("independent: no PLACES table at all", ["§6", "D-040"],
+   [FR, st("setAddress", "10001"), st("pickStore", N7, returns=ok())], {"rest": None, "place": None}, "")
+sc("independent: picking a chain clears the place", ["§6", "D-040"],
+   [FR, st("setAddress", "10001"), st("pickStore", N7), st("setBrand", "bg", returns=ok())],
+   {"brand": "bg", "place": None, "rest.name": "Burger Co"}, "", patch={"PLACES": PL})
+sc("independent: re-selecting the same independent keeps the place", ["§6", "D-040"],
+   [FR, st("setAddress", "10001"), st("pickStore", N7), st("setBrand", "osm:n7")],
+   {"place": N7_PLACE, "store": None, "storePicked": False, "rest.name": "Corner Diner"},
+   "setBrand resets the store, but place.id equals the brand, so it stays.", patch={"PLACES": PL})
+sc("independent: save then load brings the place back", ["§8", "D-040"],
+   [FR, st("setAddress", "10001"), st("pickStore", N7), st("save", returns=True), st("load")],
+   {"brand": "osm:n7", "place": N7_PLACE, "rest.name": "Corner Diner", "storePicked": True, "miles": m_n7, "milesSrc": "store",
+    "$saved.place": N7_PLACE}, "", patch={"PLACES": PL}, storage={"kind": "memory"})
+for label, bad, brand in [("an id that isn't osm:[nwr]<digits>", dict(N7_PLACE, id="osm:x7"), "osm:x7"),
+                          ("a leading zero", dict(N7_PLACE, id="osm:n07"), "osm:n07"),
+                          ("an id that isn't the brand", N7_PLACE, "bg"),
+                          ("an empty name", dict(N7_PLACE, name=""), "osm:n7"),
+                          ("a 121-character name", dict(N7_PLACE, name="x" * 121), "osm:n7"),
+                          ("a non-string category", dict(N7_PLACE, category=3), "osm:n7"),
+                          ("a latitude out of range", dict(N7_PLACE, lat=91), "osm:n7"),
+                          ("an array", [1], "osm:n7")]:
+    sc("load: a place with %s is dropped" % label, ["§8", "D-040"], [st("load")], {"place": None},
+       "", storage={"kind": "memory", "value": json.dumps({"address": "10001", "brand": brand, "place": bad})})
+sc("load: a place keeps exactly its five fields", ["§8", "D-040"], [st("load")], {"place": N7_PLACE, "$has.place.extra": False},
+   "", storage={"kind": "memory", "value": json.dumps({"address": "10001", "brand": "osm:n7", "place": dict(N7_PLACE, extra=1)})})
+
 PERIODS = [["monthly", "2026-01-15T12:00:00", "2026-01"], ["monthly", "2026-12-31T12:00:00", "2026-12"],
            ["quarterly", "2026-03-31T12:00:00", "2026-Q1"], ["quarterly", "2026-04-01T12:00:00", "2026-Q2"],
            ["quarterly", "2026-12-01T12:00:00", "2026-Q4"], ["semiannual", "2026-06-30T12:00:00", "2026-H1"],
@@ -625,7 +744,7 @@ PERIODS = [["monthly", "2026-01-15T12:00:00", "2026-01"], ["monthly", "2026-12-3
 
 SIGS = {
     "fresh": ["D"], "getPath": ["S", "*"], "setPath": ["S", "*"], "applyCar": ["S", "D"], "applyState": ["S", "D"],
-    "applyAddress": ["S", "D"], "applyBrand": ["S", "D"], "autoMiles": ["S", "D", "opts"], "applyMinutes": ["S"],
+    "applyAddress": ["S", "D", "opts"], "applyBrand": ["S", "D"], "autoMiles": ["S", "D", "opts"], "applyMinutes": ["S"],
     "syncCredits": ["S", "D", "now"], "derive": ["S", "D", "now", "opts"], "setAddress": ["S", "D", "*", "opts"],
     "setPosition": ["S", "D", "*", "opts"], "setCar": ["S", "D", "*"], "setBrand": ["S", "D", "*", "opts"],
     "pickStore": ["S", "D", "*", "opts"], "setQty": ["S", "*"], "pinMiles": ["S", "*"], "unpinMiles": ["S", "D", "opts"],

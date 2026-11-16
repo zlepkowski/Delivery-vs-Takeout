@@ -1,0 +1,18 @@
+{
+  "provider": "osrm",
+  "case": "oahu_molokai_noroute",
+  "recorded": "2026-11-16",
+  "request": {
+    "method": "GET",
+    "url": "https://router.project-osrm.org/route/v1/driving/-157.858,21.307;-157.02,21.09?overview=false&alternatives=false&steps=false"
+  },
+  "response": {
+    "status": 400,
+    "contentType": "application/json; charset=UTF-8",
+    "bodyKind": "json",
+    "body": {
+      "message": "Impossible route between points",
+      "code": "NoRoute"
+    }
+  }
+}

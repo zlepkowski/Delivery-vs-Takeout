@@ -1,0 +1,15 @@
+{
+  "provider": "nominatim",
+  "case": "not_found",
+  "recorded": "2026-11-16",
+  "request": {
+    "method": "GET",
+    "url": "https://nominatim.openstreetmap.org/search?q=Qqzzx+Nowhere+Road+99999&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+  },
+  "response": {
+    "status": 200,
+    "contentType": "application/json; charset=utf-8",
+    "bodyKind": "json",
+    "body": []
+  }
+}

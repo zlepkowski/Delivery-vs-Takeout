@@ -1,0 +1,16 @@
+{
+  "provider": "overpass",
+  "case": "constructed_429",
+  "recorded": null,
+  "constructed": "Constructed by hand to Overpass's documented JSON output format (https://dev.overpass-api.de/output_formats.html#json): the places, ids and coordinates are made up, not OpenStreetMap data. overpass-api.de and its mirror couldn't be reached from the recording session (ISS-040, D-040).",
+  "request": {
+    "method": "GET",
+    "url": "(see build.py: /nearby?lat=45.834&lon=-109.95&radius=2)"
+  },
+  "response": {
+    "status": 429,
+    "contentType": "text/html",
+    "bodyKind": "text",
+    "body": "<html><body><p>Rate limited. Please wait.</p></body></html>"
+  }
+}

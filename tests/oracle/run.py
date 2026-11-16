@@ -56,6 +56,8 @@ GEO_FIX = os.path.join(ROOT, "tests", "fixtures", "geo")
 GEO_N = int(os.environ.get("ORACLE_GEO_N", "60"))
 VIN_FIX = os.path.join(ROOT, "tests", "fixtures", "vin")
 VIN_N = int(os.environ.get("ORACLE_VIN_N", "400"))
+API_FIX = os.path.join(ROOT, "tests", "fixtures", "api")
+API_N = int(os.environ.get("ORACLE_API_N", "2000"))
 
 
 # ---------------------------------------------------------------- helpers
@@ -806,6 +808,158 @@ def vin_checks(failures):
         print("oracle: vin %s %d/%d calls match the JS" % (name, len(cs) - bad, len(cs)))
 
 
+# ---------------------------------------------------------------- the API seam (D-040)
+def api_reference():
+    """Runs tests/fixtures/api/build.py into a scratch file: its functions are the reference, its output the staleness check."""
+    import contextlib
+    import io
+    import runpy
+    build = os.path.join(API_FIX, "build.py")
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "cases.json")
+        saved = sys.argv
+        sys.argv = [build, out]
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                ref = runpy.run_path(build, run_name="api_build")
+        finally:
+            sys.argv = saved
+        with open(out, encoding="utf-8") as fh:
+            fresh = fh.read()
+    return ref, fresh
+
+
+def api_built(failures):
+    if not os.path.exists(os.path.join(ROOT, "src", "js", "api.js")):
+        return False
+    with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
+        if not re.search(r"""<script\b[^>]*\bsrc=["']src/js/api\.js["']""", fh.read()):
+            failures.append("api: src/js/api.js exists but index.html doesn't load it")
+    return True
+
+
+def api_random_cases(ref, seed):
+    rnd = random.Random(seed)
+    T = lambda tag: {"$": tag}
+    out = []
+    def num():
+        r = rnd.random()
+        if r < 0.05:
+            return rnd.choice([T("NaN"), T("Infinity"), T("-Infinity"), T("-0"), "1", None, True])
+        k = rnd.randint(-180000, 180000)
+        return rnd.choice([k / 1000, k / 1000 + 0.0005, k / 1000 - 0.0005, k / 1000 + 1e-9, round(rnd.uniform(-181, 181), rnd.randint(0, 7))])
+    def val(x):
+        return {"-0": -0.0}.get(x["$"], float("nan")) if isinstance(x, dict) else x
+    alphabet = "abcXYZ019 ,.-'#\t\n \u001f\u0007﻿ é"
+    def text():
+        if rnd.random() < 0.05:
+            return rnd.choice([None, 12345, ["a"], ""])
+        n = rnd.choice([0, 1, 2, 3, 4, 5, 10, 30, 199, 200, 201, 202])
+        return "".join(rnd.choice(alphabet) for _ in range(n))
+    for _ in range(API_N // 4):
+        x = num()
+        out.append(({"fn": "fmt3", "args": [x]}, ref["fmt3"](val(x)) if not (isinstance(x, dict) and x["$"] != "-0") else None))
+    for _ in range(API_N // 4):
+        t = text()
+        fn = rnd.choice(["geoQuery", "geoKey", "nameKey"])
+        f = {"geoQuery": ref["geo_query"], "geoKey": ref["geo_key"], "nameKey": ref["name_key"]}[fn]
+        out.append(({"fn": fn, "args": [t]}, f(t)))
+    for _ in range(API_N // 4):
+        lat = rnd.choice([40.749, 40.7491, 45.834, -0.0004, 89.9999, 91, rnd.uniform(-90, 90)])
+        lon = rnd.choice([-73.986, -109.95, 179.9996, -180, rnd.uniform(-180, 180)])
+        pos = rnd.choice([None, {"lat": lat, "lon": lon, "src": rnd.choice(["zip", "gps", "addr"])}])
+        store = rnd.choice([None, {"id": "x@1,2", "lat": lat + rnd.choice([0, 0.006, -0.0105]), "lon": lon}])
+        S = {"address": rnd.choice(["", "10118", "350 5th Ave, New York, NY 10118", "Big Timber, MT", text()]),
+             "pos": pos, "milesSrc": rnd.choice([None, "store", "drive", "pinned", "estimate"]), "store": store}
+        A = {"drive": {}, "geo": {}, "nearby": {}}     # answer some of the possible asks at random
+        dk = ref["drive_key"](pos, store)
+        if dk and rnd.random() < 0.4:
+            A["drive"][dk] = rnd.choice([False, {"miles": 1, "minutes": 2}])
+        gk = ref["geo_key"](S["address"])
+        if gk and rnd.random() < 0.4:
+            A["geo"][gk] = False
+        p0 = ref["pt"](pos)
+        if p0:
+            for r in (2, 5, 10):
+                if rnd.random() < 0.5:
+                    n = rnd.choice([0, 3, 9, 10, 12])
+                    A["nearby"][p0 + "/" + str(r)] = rnd.choice([False, {"places": [
+                        {"id": "osm:n%d" % (i + 1), "name": rnd.choice(["Subway", "Nook %d" % i, "DOMINO'S"]), "category": "casual",
+                         "lat": max(-90, min(90, lat + rnd.uniform(-0.01, 0.01))), "lon": max(-180, min(180, lon + rnd.uniform(-0.01, 0.01)))}
+                        for i in range(n)]}])
+        opts = rnd.choice([{"failed": {}, "api": A}, {"failed": {}, "api": A}, {"failed": {}}, T("undefined")])
+        o = None if isinstance(opts, dict) and opts.get("$") == "undefined" else opts
+        if rnd.random() < 0.5:
+            out.append(({"fn": "asks", "args": [S, T("D"), opts]}, ref["asks"](S, o)))
+        else:
+            D = {"BRANDS": {"subway": {"name": "Subway"}, "dominos": {"name": "Domino's"}}}
+            out.append(({"fn": "placesFor", "args": [S, D, opts]}, ref["places_for"](S, D, o)))
+    for _ in range(API_N // 4):
+        b = rnd.choice([{"miles": rnd.choice([0, 33.9, 1000, 1000.01, -1, "3", None]), "minutes": rnd.choice([0, 3.1, -0.1, "1"])},
+                        {"lat": rnd.choice([40.7, 91, "1"]), "lon": -73.9, "zip": rnd.choice([None, "10118", "1011", 10118]),
+                         "state": rnd.choice([None, "NY", "ny"])},
+                        {"places": rnd.choice([[], {}, [{"id": rnd.choice(["osm:n1", "osm:x1", "osm:r0", "osm:w12"]),
+                                                         "name": rnd.choice(["A", "", "x" * 121]), "category": rnd.choice(["pizza", "sushi"]),
+                                                         "lat": rnd.choice([1, 95]), "lon": 2}]])}, None, []])
+        fn = rnd.choice(["checkDrive", "checkGeocode", "checkNearby"])
+        f = {"checkDrive": ref["check_drive"], "checkGeocode": ref["check_geocode"], "checkNearby": ref["check_nearby"]}[fn]
+        out.append(({"fn": fn, "args": [b]}, f(b)))
+    return out
+
+
+def run_js_api(cases):
+    with tempfile.TemporaryDirectory() as tmp:
+        fin = os.path.join(tmp, "in.json")
+        fout = os.path.join(tmp, "out.json")
+        with open(fin, "w", encoding="utf-8") as fh:
+            json.dump({"cases": cases}, fh)
+        subprocess.run(["node", os.path.join("tests", "oracle", "api_runner.js"), fin, fout], cwd=ROOT, check=True)
+        with open(fout, encoding="utf-8") as fh:
+            return json.load(fh)
+
+
+def api_same(fn, exp, got):
+    if fn == "placesFor" and isinstance(exp, list) and isinstance(got, list) and len(exp) == len(got):
+        for a, b in zip(exp, got):
+            if not isinstance(b, dict) or set(a) != set(b):
+                return False
+            for k in a:
+                if k == "mi":
+                    if not (isinstance(b[k], (int, float)) and abs(a[k] - b[k]) <= 1e-9 * max(1.0, abs(a[k]))):
+                        return False
+                elif a[k] != b[k]:
+                    return False
+        return True
+    return json.dumps(exp, sort_keys=True) == json.dumps(got, sort_keys=True)
+
+
+def api_checks(failures):
+    ref, fresh = api_reference()
+    with open(os.path.join(API_FIX, "cases.json"), encoding="utf-8") as fh:
+        current = fh.read()
+    doc = json.loads(current)
+    if fresh != current:
+        failures.append("api: tests/fixtures/api/cases.json is stale: run python3 -I tests/fixtures/api/build.py tests/fixtures/api/cases.json")
+    print("oracle: api cases.json %s (%d worker cases, %d seam cases)" % ("is current" if fresh == current else "IS STALE",
+                                                                          len(doc["worker"]), len(doc["seam"])))
+    if not api_built(failures):
+        print("oracle: src/js/api.js is not built yet, so the JS comparison is skipped")
+        return
+    fixed = [({"fn": c["fn"], "args": c["args"], "config": c.get("config")}, c["returns"]) for c in doc["seam"] if c["fn"] != "remember"]
+    rnd = api_random_cases(ref, SEED)
+    results = run_js_api([c for c, _ in fixed + rnd])
+    for label, group, res in (("hand-worked", fixed, results[:len(fixed)]), ("random", rnd, results[len(fixed):])):
+        bad = 0
+        for (c, exp), r in zip(group, res):
+            got = r["v"] if r["ok"] else "JS error: " + r["err"]
+            if not r["ok"] or not api_same(c["fn"], exp, got):
+                bad += 1
+                if bad <= 5:
+                    failures.append("api %s %s(%s): expected %s, JS gave %s" % (label, c["fn"], json.dumps(c["args"])[:160],
+                                                                             json.dumps(exp)[:160], json.dumps(got)[:160]))
+        print("oracle: api %s %d/%d seam calls match the JS" % (label, len(group) - bad, len(group)))
+
+
 def main():
     failures = []
 
@@ -863,6 +1017,7 @@ def main():
     geo_checks(failures)
     insights_checks(failures)
     vin_checks(failures)
+    api_checks(failures)
 
     for f in failures[:10]:
         print("FAIL " + f)

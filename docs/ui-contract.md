@@ -15,14 +15,21 @@ What the page shows and what each control calls: `src/js/render.js` (`POD.ui`), 
 - **0 console errors** in every e2e flow (D-017), with two exceptions the browser makes, which page code can't suppress: a tile file that doesn't exist logs a resource error (§4; locally, without built tiles, that's expected; on Pages every tile in `TILE_INDEX` exists), and a VIN request that fails at the network or comes back with an HTTP error status logs one too (§6b; the page still shows its own message). The e2e allows each only in the test that causes it, matched exactly.
 - **No horizontal scroll** at 390 px and 1280 px.
 
+*Amended 2026-11-16 (Phase 8, D-040, `docs/api-contract.md` §8):* the optional Worker. Boot sets up `D.PLACES` and, only when `POD.api.enabled()`, `opts.api` (§1); `afterChange` sends the seam's asks (§3); a street-address status line (§5.1); the independents list, `pick-place` and the brand option (§3, §5.2); the independents' category (§5.3); the road-distance line (§5.4); the OpenStreetMap fine print (§5.10). **With `POD.config.apiBase` empty (the committed value), the page is exactly as before.**
+
 ## 1. Boot (`POD.boot`, in `app.js`)
 
 ```
 storage = safeStorage()                      // try { window.localStorage } catch → null
 POD.opts = { failed: {} }                    // passed to every POD.state / POD.geo call that takes opts
 POD.S = POD.state.load(storage, POD.data, new Date(), POD.opts)
+POD.data.PLACES = POD.data.PLACES || {}       // D-040: independents the Worker returned
+if (POD.S.place) POD.data.PLACES[POD.S.place.id] = {name, category, lat, lon} of it   // unless already there
+if (POD.api.enabled()) POD.opts.api = { drive: {}, geo: {}, nearby: {} }
 afterChange(POD.state.derive(POD.S, POD.data, new Date(), POD.opts))   // load doesn't return the trip status
 ```
+
+A saved independent is put back in `D.PLACES` even with the Worker off, so a returning user's pick still prices.
 
 `afterChange(status)` (§3) then loads any tiles the trip or the "Near you" list needs, saves and renders. `POD.boot` is also callable again (the e2e doesn't need it).
 
@@ -70,6 +77,7 @@ One `<main id="app">` holding these sections in this DOM order, each a `<section
 | `locate` | | geolocation (§6) |
 | `example` | | the first-visit example (§7) |
 | `pick-store` | `data-store` = index into the last `storesNear` list | `pickStore(S, D, store, opts)` |
+| `pick-place` | `data-place` = index into the last `POD.api.placesFor` list (`POD.ui.placeAt(i)`) | `pickStore(S, D, row, opts)` (D-040) |
 | `qty` | `data-index`, `data-delta` (`1` or `-1`) | `setQty(S, index, max(0, current + delta))` |
 | `pin` | | `pinMiles(S, parseFloat(#pinMiles.value))`; a bad number changes nothing |
 | `unpin` | | `unpinMiles(S, D, opts)` |
@@ -79,7 +87,7 @@ One `<main id="app">` holding these sections in this DOM order, each a `<section
 | `vin` | | the VIN lookup (§6b) |
 
 - **`input`**: nothing is committed while typing (values commit on `change`). The listener exists only so the count stays three; it may stay empty.
-- **`afterChange(status)`** runs after every one of these: when `status` is a trip status with `status === "need"`, load its cells (§4). Also run `POD.geo.storesNear(S.pos.lat, S.pos.lon, D, opts)` when `S.pos` is a position, and load its `need` cells if its status is `"need"`. Then `POD.state.save(S, storage)` and `POD.ui.render()`.
+- **`afterChange(status)`** runs after every one of these: when `status` is a trip status with `status === "need"`, load its cells (§4). Also run `POD.geo.storesNear(S.pos.lat, S.pos.lon, D, opts)` when `S.pos` is a position, and load its `need` cells if its status is `"need"`. Then, only when `opts.api` exists (D-040), for each ask of `POD.api.asks(S, D, opts)` whose `kind + ":" + key` isn't in flight: mark it in flight and `POD.api.send(ask, cb)`, where `cb(value)` clears the mark, runs `POD.api.remember(D, opts, ask, value)` and then `afterChange(derive())`. Nothing waits for an answer. Then `POD.state.save(S, storage)` and `POD.ui.render()`.
 
 ## 4. Tiles (geography contract §9, D-021, D-030)
 
@@ -97,6 +105,7 @@ Strings in quotes are exact. `{x}` is a value; `mi1(x)` = `(Math.round(x * 10) /
 - A button `data-action="example"` "Show me an example" when `S.brand` is `null` (§7).
 - `[data-testid="loc-status"]`:
   - `S.pos.src === "gps"` and `S.zipRec`: `"Your location · near ZIP {zip}, {city}, {st}"`
+  - `S.pos.src === "addr"` and `S.zipRec`: `"Street address · ZIP {zip}, {city}, {st}"` (D-040)
   - `S.zipRec`: `"ZIP {zip} · {city}, {st}"` (`city` = `zipRec.c`)
   - `S.zip` and no `zipRec`: `"ZIP {zip} not found"`
   - otherwise `"Type your ZIP or address, or use your location."`
@@ -109,20 +118,22 @@ Strings in quotes are exact. `{x}` is a value; `mi1(x)` = `(Math.round(x * 10) /
   - `null`: `[data-testid="near-status"]` `"No store data is available for this area."`
   - `status "need"`: `[data-testid="near-status"]` `"Finding restaurants near you…"`
   - `status "ok"`: `ol[data-testid="near-list"]` with the first 15 stores (all of them after `more-stores`), each an `li` holding a `button` with `data-action="pick-store"`, `data-store="{i}"`, `data-brand="{brand}"`, `aria-pressed` = `"true"` when `S.store` and `S.store.id === store.id`, else `"false"`. The button shows the brand's `name` (or the brand id when `name` is `null`), `mi1(store.mi) + " mi"`, and a tag `"Estimate"` when `store.profiled` is false. Then a `button[data-action="more-stores"]` `"Show all {n}"` when there are more than 15. `partial` adds `[data-testid="near-status"]` `"Some store data didn't load, so the list may be incomplete."`. An empty list says `"No restaurants found within {radius} miles."`.
+- **Independents (D-040):** after the chain list (or its status line), when `rows = POD.api.placesFor(S, D, opts)` isn't empty: an `h3` `"Independent restaurants"`, then `ol[data-testid="indie-list"]` with one `li` per row, each holding a `button` with `data-action="pick-place"`, `data-place="{i}"`, `data-brand="{brand}"`, `aria-pressed` = `"true"` when `S.store` and `S.store.id === row.id`, else `"false"`, showing the `name`, `mi1(row.mi) + " mi"` and the tag `"Estimate"`; then `[data-testid="indie-note"]` `"From OpenStreetMap. We don't know which apps list these places: turn off any app that doesn't."`. `POD.ui.placeAt(i)` returns row `i` of the list last rendered (a copy), or `null`.
 - Without a position: `"Type a ZIP or address, or use your location, to see restaurants near you."`
-- Always: `select#brand` (`data-action="brand"`): first option `value=""` `"Choose any chain…"`, then every `BRAND_IDS` brand sorted by name (plain `<` on the names), the selected one `S.brand`. Each option's text is the name, plus `" (estimate)"` when the brand isn't in `PROFILES`.
+- Always: `select#brand` (`data-action="brand"`): first option `value=""` `"Choose any chain…"`, then every `BRAND_IDS` brand sorted by name (plain `<` on the names), the selected one `S.brand`. Each option's text is the name, plus `" (estimate)"` when the brand isn't in `PROFILES`. When `S.brand` is an own key of `D.PLACES` and not of `D.BRANDS` (an independent, D-040), one more option right after the first: `value` = `S.brand`, text `"{D.PLACES[brand].name} (estimate)"`, selected.
 
 ### 5.3 `order`
 
 - No `S.rest`: `"Pick a restaurant first."`
 - Profiled (`S.rest.profiled`): one row `[data-testid="menu-item"]` per menu index `i` (an item `{name, price, dealItem}`, D-036): the `name`, `money(price)`, a tag `"Deal item"` when `dealItem === true`, buttons `data-action="qty" data-index="{i}" data-delta="-1"` (label `"−"`, `aria-label="Remove one"`) and `data-delta="1"` (`"+"`, `aria-label="Add one"`), and the quantity in `[data-testid="qty-{i}"]` (`S.cart[i]` or 0). A footer `[data-testid="order-total"]` `"Menu total {money(menuSub)}"` from `POD.engine.cartInfo(S)` (pure; reads only `S`).
 - When `S.rest.deal`: a checkbox `#dealOn` (`data-bind="dealOn"`) labeled `"Use the {deal.label} deal"`, and `[data-testid="deal-status"]`: `"Deal applies"` when `dealReady`, else `"Add {shortBy} more deal item for the deal"` (`items` when `shortBy > 1`).
-- Unprofiled: `input#manualSubtotal` (`data-bind="manualSubtotal"`, `type="number"`, `step="0.01"`, `min="0"`) labeled `"Your order's menu total ($)"`, and the note `"{name} isn't profiled: app prices use a typical {category} markup, so these totals are estimates."` (`category` = `D.BRANDS[brand].category`).
+- Unprofiled: `input#manualSubtotal` (`data-bind="manualSubtotal"`, `type="number"`, `step="0.01"`, `min="0"`) labeled `"Your order's menu total ($)"`, and the note `"{name} isn't profiled: app prices use a typical {category} markup, so these totals are estimates."` (`category` = `D.BRANDS[brand].category`, or `D.PLACES[brand].category` for an independent, D-040).
 
 ### 5.4 `trip`
 
 - `[data-testid="trip"]`: when `S.miles` is a number, `"{mi1(miles)} mi round trip · about {minutes} min"`, then a source line `[data-testid="trip-src"]`:
   - `milesSrc "store"`: `"To the nearest {name}, {mi1(straight)} mi away in a straight line (× 2 × 1.25 for the road)."` where `straight` = `POD.geo.distMi(S.pos.lat, S.pos.lon, S.store.lat, S.store.lon)`; with `S.storePicked`, `"To the {name} you picked, …"` with the same tail.
+  - `milesSrc "drive"` (D-040): `"To the nearest {name}, {mi1(S.miles / 2)} mi each way by road."`; with `S.storePicked`, `"To the {name} you picked, {mi1(S.miles / 2)} mi each way by road."`
   - `"estimate"`: `"Estimated from how close together restaurants are around your ZIP."`
   - `"pinned"`: `"You set this distance."`
 - When `S.miles` is `null`: `"No trip yet."`
@@ -169,7 +180,7 @@ Each a labeled `input type="number"` with `data-bind` and `id` = the path with `
 
 ### 5.10 `fine`
 
-Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {BRANDS_RUN}."`, `"App listings come from the chains' and apps' own announcements, some several years old: check the app."` (ISS-030), `"Card credits: each issuer's card page, as of {the latest asOf in D.CARDS}."`, `"Gas: U.S. EIA weekly retail prices (week of {GAS_WEEK}). Meal tax: state rates. Fuel economy: EPA, by model year."` (when `D.GAS_WEEK` is a string matching `/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/`; otherwise the same without the parenthesis: `"Gas: U.S. EIA weekly retail prices. Meal tax: state rates. Fuel economy: EPA, by model year."`, D-039), `"A VIN lookup goes from your browser to NHTSA's free decoder (vPIC). The VIN isn't saved."` (D-038), and `"Every app fee left blank is one the app doesn't publish (D-032): enter what your checkout shows."`.
+Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {BRANDS_RUN}."`, `"App listings come from the chains' and apps' own announcements, some several years old: check the app."` (ISS-030), `"Card credits: each issuer's card page, as of {the latest asOf in D.CARDS}."`, `"Gas: U.S. EIA weekly retail prices (week of {GAS_WEEK}). Meal tax: state rates. Fuel economy: EPA, by model year."` (when `D.GAS_WEEK` is a string matching `/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/`; otherwise the same without the parenthesis: `"Gas: U.S. EIA weekly retail prices. Meal tax: state rates. Fuel economy: EPA, by model year."`, D-039), `"A VIN lookup goes from your browser to NHTSA's free decoder (vPIC). The VIN isn't saved."` (D-038), and `"Every app fee left blank is one the app doesn't publish (D-032): enter what your checkout shows."`. When the page shows anything from the Worker (`S.milesSrc === "drive"`, `S.pos.src === "addr"`, or a non-empty independents list), one more line `[data-testid="fine-osm"]`: `"Road distances, street addresses and independent restaurants: OpenStreetMap (© OpenStreetMap contributors, ODbL), through this site's server."` (D-040).
 
 ## 6. Geolocation (BUILD.md §10)
 

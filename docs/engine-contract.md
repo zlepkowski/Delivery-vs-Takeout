@@ -4,6 +4,8 @@ The exact definition of `POD.engine` that `src/js/engine.js` and the Python orac
 
 *Amended 2026-11-14 (D-036, Phase 6):* menu items are objects with an optional per-item markup (§2.1); app food is a sum over cart lines (§5.2); a `bogo` promo type (§5.4) and its note (§6).
 
+*Amended 2026-11-16 (D-040, Phase 8):* `restFor` builds an independent restaurant from `D.PLACES` (§2.1).
+
 Everything here is pure. The engine reads only its arguments: no `POD.S`, no `POD.data`, no DOM, no `Date`.
 
 ## 1. API
@@ -59,7 +61,8 @@ rest = { id, name, profiled, menu, deal, directDelivery, directFee, directSvc,
 - **A menu item** is `{ name, price, dealItem, markup }` (D-036): `name` a string, `price` a finite number > 0, `dealItem` a boolean (missing means false), and `markup` optional: an object (not null, not an array) `{dd?, ue?, gh?}` of percents, the item's own markup on that app. **The item's markup on app `p`**, `mk(it, p)`, is `it.markup[p]` when `it.markup` is such an object with an own key `p` whose value is a finite number ≥ 0, else `S.plats[p].markup`. A missing or malformed override falls back to the app's markup; it never throws and never becomes 0%.
 - **Profiled** (`D.PROFILES[brandId]` exists): copy (deep, so the result never shares an array or object with `D`) `menu`, `deal`, `directDelivery`, `directFee` (only when `directDelivery`), `amexGoldDirect`, `platforms`, `markup`, `markupEst` from the profile. `directSvc` = the profile's `directSvc` or `null`. `profiled: true`.
 - **Unprofiled** (in `D.BRANDS` but not in `PROFILES`), per D-006: `menu: []`, `deal: null`, `directDelivery: false` (the route is removed, §9.3), `directSvc: null`, `amexGoldDirect: false`, `platforms: ["dd","ue","gh"]`, `markup` = `D.CATEGORY_DEFAULTS[category].markup`, `markupEst: true`, `profiled: false`. **If the brand's category has no default, `restFor` returns `null`:** the brand can't be priced, and a missing markup must never become 0%.
-- `name` is `D.BRANDS[brandId].name`, or the `brandId` itself for a profiled brand missing from `BRANDS`. A brand in neither table gives `null`.
+- `name` is `D.BRANDS[brandId].name`, or the `brandId` itself for a profiled brand missing from `BRANDS`. A brand in neither table gives `null`, except an independent:
+- **Independent** (D-040, api contract §7): `brandId` in neither `BRANDS` nor `PROFILES`, and `D.PLACES` an object (not an array) with an own key `brandId` whose value is an object with a string `name` and a string `category`: built exactly as an unprofiled brand from that category, with `name` = the place's `name`. No default for the category → `null`. (`D.PLACES` holds the independent restaurants the Worker has returned, `{id: {name, category, lat, lon}}`; it doesn't exist with the Worker off.)
 - `directSvc` (D-029, ISS-031) is `null` or `{ flat, pct, max, modes }`: a restaurant-imposed service fee on direct orders. `flat` and `pct` default to 0, `max` ≤ 0 or missing means no cap, and `modes` (`["d"]`, `["p"]` or `["d","p"]`) says which direct channels pay it. **A `directSvc` without a `modes` array applies to no channel**, never a crash. The generator rejects such an entry when the field is added (ISS-031).
 
 The state layer (Phase 4) copies `rest.markup[p]` into `S.plats[p].markup` and a card's `membership` into `S.plats[p].member`. **The engine reads the app's markup and membership only from `S.plats`**, and a per-item override only from `S.rest.menu[i].markup` (D-036).

@@ -23,6 +23,8 @@ The Worker never ships to the browser, so **modern JS (ES2022 modules) is allowe
 
 ## Endpoint contracts
 
+**`docs/api-contract.md` (D-040, Phase 8) is the spec, and it wins over this section and the Providers, CORS and seam notes below** where they differ: the endpoints are `/drive`, `/geocode` and `/nearby` on OpenStreetMap providers (no keys), the cache is Workers KV, and `/nearby` has a 10 s seam timeout.
+
 All endpoints are `GET`, return JSON, and use real HTTP status codes. An error is `{"error": {"code": "...", "message": "..."}}` with a 4xx/5xx status, never a 200.
 
 | Endpoint | Returns |

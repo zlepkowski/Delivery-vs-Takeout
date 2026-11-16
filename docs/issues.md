@@ -28,12 +28,14 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Update 2026-11-12, research done:** the user approved reverting the environment from unrestricted to **limited** with the 16 hosts listed above (package registries and MCP servers still allowed). Checked: www.eia.gov 200, www.subway.com 302; www.restaurantdive.com and www.pymnts.com are refused. A future profile refresh needs the per-chain ordering API hosts too (e.g. order.littlecaesars.com, onlo-api.littlecaesars.com), which exceed the 20-host cap; that is a Phase 7 question (weekly refresh).
 - **Update 2026-11-13 (Phase 4, task 4.1):** the user approved swapping 3 chain sites that aren't profiled (`www.tacobell.com`, `www.pizzahut.com`, `www.fiveguys.com`) for the default-fee and trip-cost sources: `help.doordash.com`, `help.uber.com`, `www.uber.com`, `www.grubhub.com`, `about.grubhub.com`, `newsroom.aaa.com` and `rosap.ntl.bts.gov`. The list is now at the 20-host cap. Re-add a removed chain site only if that chain is profiled later (D-028).
 - **Update 2026-11-16 (Phase 7):** the user approved swapping `about.grubhub.com` (it refused every connection, see ISS-034) for `vpic.nhtsa.dot.gov`, to check vPIC's CORS header and record VIN fixtures (D-038). The list stays at the 20-host cap. `www.eia.gov`, `data.alltheplaces.xyz`, `alltheplaces-data.openaddresses.io` and `www.fueleconomy.gov` served the rest of Phase 7.
+- **Update 2026-11-16 (Phase 8, D-040):** the user approved swapping `newsroom.aaa.com`, `rosap.ntl.bts.gov` and `www.dunkindonuts.com` (finished research) for `router.project-osrm.org`, `nominatim.openstreetmap.org` and `overpass-api.de`; then `overpass-api.de` (every TLS handshake reset from this egress) for the mirror `overpass.kumi.systems` (it never answered either; see ISS-040). OSRM and Nominatim answered and served the recorded fixtures. Still at the 20-host cap.
 - **Next step:** at the start of Phase 1, the orchestrator calls `get_environment` and requests the exact hosts in one approval: EPA, AAA, All The Places, NHTSA, the tax sources, the issuer sites (americanexpress.com, chase.com, capitalone.com) and the menu sites for the chosen profiles.
 
 ### ISS-004 — Phase 8 deployment needs the user's accounts
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 8 · **Status:** open
 - **What:** The Worker needs a Cloudflare account to deploy, and a Mapbox token (free tier) or a Google Places key.
 - **Next step:** build and test against recorded fixtures; deploy once the user provides the accounts.
+- **Update 2026-11-16 (D-040):** the providers are OpenStreetMap's (OSRM, Nominatim, Overpass), which take no key. Deploying needs only a Cloudflare account, a KV namespace, and a `USER_AGENT` naming the site and a contact (`worker/README.md`). Then `apiBase` in `src/js/config.js`.
 
 ### ISS-005 — Pages serves only from `main`
 - **Opened:** 2026-11-11 by orchestrator · **Phase:** 10 · **Status:** open
@@ -208,6 +210,12 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **What:** the member ends mid-features (`},` then end of file; `json.loads` fails at line 4818), and its zip CRC matches the cut bytes, so ATP published it that way. The other 358 food members of that run parse.
 - **Why it matters:** `build-stores.py` refuses the whole run (D-039 amendment: a run never ships partly, since dropping the file would silently remove Taco Bell's ~8,000 US stores), so the weekly build falls back to the previous run. If three runs in a row are broken the build fails, and Pages keeps the last good site.
 - **Next step:** none while the fallback holds. If the weekly log keeps skipping runs, check whether the spider is broken upstream (ATP's issue tracker) before considering a per-brand fallback to an older run (the ISS-007 idea).
+
+### ISS-040 — Overpass fixtures are constructed, not recorded (D-040)
+- **Opened:** 2026-11-16 by orchestrator · **Phase:** 8 · **Status:** open
+- **What:** From the session, `overpass-api.de` reset every TLS handshake (`ws_closed_mid_exchange`, 39 B received, five tries), and the mirror `overpass.kumi.systems` accepted the connection but sent nothing in 30 s and 60 s. After that the session's permission check refused further Overpass requests. So `tests/fixtures/api/overpass/*.json` are written by hand to Overpass's documented JSON output (`version`, `osm3s`, `elements` with `type`, `id`, `lat`/`lon` or `center`, `tags`; `remark` on a runtime error), with made-up places and ids.
+- **Why it matters:** the `/nearby` parser is tested against the documented format, not a real answer. A field Overpass sends differently from its documentation would show up only in production.
+- **Next step:** record one real answer (the exact request is in `tests/fixtures/api/README.md`) from a machine that reaches Overpass, add it as `overpass/recorded_*.json`, and add its hand-worked expected output to `build.py`. Either the user runs the curl line, or a later session with a working route does.
 
 ## Closed
 

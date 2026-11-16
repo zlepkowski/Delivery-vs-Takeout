@@ -325,7 +325,12 @@ def rest_for(brand_id, D):
     b = brands.get(brand_id)
     prof = profiles.get(brand_id)
     if b is None and prof is None:
-        return None
+        # An independent from the Worker (D-040, contract 2.1): built like an unprofiled brand.
+        places = D.get("PLACES")
+        pl = places.get(brand_id) if isinstance(places, dict) else None
+        if not (isinstance(pl, dict) and isinstance(pl.get("name"), str) and isinstance(pl.get("category"), str)):
+            return None
+        b = {"name": pl["name"], "category": pl["category"]}
     name = b["name"] if b is not None else brand_id
     if prof is not None:
         r = {"id": brand_id, "name": name, "profiled": True, "menu": prof["menu"], "deal": prof["deal"],
