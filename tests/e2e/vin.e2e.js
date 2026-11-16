@@ -258,6 +258,68 @@ test('D-038 only the latest lookup counts: a slow first answer arriving last cha
   await ctx.close();
 });
 
+/** A page whose answer for the 2003 Accord VIN waits until release() is called. */
+async function openGated() {
+  let release;
+  const gate = new Promise((r) => { release = r; });
+  let done;
+  const finished = new Promise((r) => { done = r; });
+  const o = await open(async (vin, route) => {
+    if (vin !== VINS.accord2003) return false;
+    await gate;
+    await route.fulfill({ status: 200, headers: CORS, body: fs.readFileSync(path.join(VPIC, 'accord2003.json'), 'utf8') });
+    done();
+    return true;
+  });
+  return Object.assign(o, {
+    release: async () => {
+      release();
+      await finished;
+      await o.page.evaluate(() => new Promise((r) => setTimeout(r, 0)));   // let the page's load handler run
+    },
+  });
+}
+
+test('D-038 the latest action wins: a typo clicked while an answer is pending keeps its message', async () => {
+  const { ctx, page, errors, release } = await openGated();
+  await lookUp(page, VINS.accord2003);
+  await H.waitText(page, '[data-testid="vin-status"]', 'Looking up');
+  await lookUp(page, '1HGCM82643A004352');
+  await H.waitText(page, '[data-testid="vin-status"]', MSG.digit);
+  await release();
+  assert.equal(await H.text(page, '[data-testid="vin-status"]'), MSG.digit, 'the older answer is ignored (UI contract §6b amendment)');
+  assert.equal(await value(page, '#make'), '');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('D-038 the latest action wins: a car picked by hand while an answer is pending stays', async () => {
+  const { ctx, page, errors, release } = await openGated();
+  await lookUp(page, VINS.accord2003);
+  await H.waitText(page, '[data-testid="vin-status"]', 'Looking up');
+  await page.selectOption('#make', 'Toyota');
+  await page.selectOption('#model', 'Camry');
+  await H.waitText(page, '[data-testid="car-summary"]', '46 mpg');
+  await release();
+  assert.equal(await value(page, '#make'), 'Toyota');
+  assert.equal(await H.text(page, '[data-testid="car-summary"]'), '46 mpg · regular');
+  assert.equal(await page.locator('[data-testid="vin-status"]').count(), 0, 'the make change cleared the message');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('D-038 the first-visit example clears a VIN message', async () => {
+  const { ctx, page, errors } = await open();
+  await lookUp(page, VINS.civic2015);
+  await H.waitText(page, '[data-testid="vin-status"]', 'NHTSA says 2015 HONDA Civic.');
+  await page.click('[data-action="example"]');
+  await H.waitText(page, '[data-testid="car-summary"]', '46 mpg');
+  assert.equal(await value(page, '#make'), 'Toyota');
+  assert.equal(await page.locator('[data-testid="vin-status"]').count(), 0);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('D-037 the model-year select: Newest first, a year\'s own figure, back to newest; a make change clears it', async () => {
   const { ctx, page, errors } = await open();
   await page.selectOption('#make', 'Honda');

@@ -180,7 +180,7 @@ Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {B
 `data-action="vin"`: `v = POD.vin.clean(document.getElementById("vin").value)`; `view.vin = v`; `c = POD.vin.check(v)`.
 
 - `c !== "ok"`: the message is `"length"` → `"A VIN has 17 letters and digits."`, `"chars"` → `"A VIN uses only digits and the letters A–Z except I, O and Q."`, `"digit"` → `"That VIN's check digit (its 9th character) doesn't match: check for a typo."`. **No request is made.** Render.
-- Otherwise: `seq` = a page counter + 1; the message `"Looking up {v} with NHTSA…"`; render; then one `XMLHttpRequest`: `open("GET", POD.vin.url(v), true)`, `timeout = 10000`, no `withCredentials`, no request headers (a simple CORS request: no preflight). When it ends, if `seq` isn't the latest lookup's, the answer is ignored (a newer lookup started). Else:
+- Otherwise: `seq` = a page counter + 1 (taken on every click, see below); the message `"Looking up {v} with NHTSA…"`; render; then one `XMLHttpRequest`: `open("GET", POD.vin.url(v), true)`, `timeout = 10000`, no `withCredentials`, no request headers (a simple CORS request: no preflight). When it ends, if `seq` isn't the latest lookup's, the answer is ignored (a newer lookup started). Else:
   - `onload` with `status === 200`: `body` = `JSON.parse(responseText)` inside `try` (a throw → the failure below); `dec = POD.vin.decode(body)`. `dec === null` → `"NHTSA couldn't decode that VIN. Pick your car below."`. Else `m = POD.vin.match(dec, D)`; `POD.state.setCar(S, D, m.make, m.model, m.year)`; then the message, with `{car}` = `dec.year + " " + dec.make + " " + dec.model` (vPIC's own words):
     - `m.make === "Other"` → `"NHTSA says {car}. That make isn't in the EPA list: enter its fuel and mpg below."`
     - `m.model === ""` → `"NHTSA says {car}. Pick the model below: EPA's list names it differently."`
@@ -188,7 +188,8 @@ Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {B
     - else → `"NHTSA says {car}."`
     Then `afterChange(POD.state.derive(S, D, new Date(), opts))`.
   - Any other status, `onerror`, `ontimeout`, or a parse failure: `"Couldn't reach NHTSA's VIN decoder. Pick your car below."`, and render. `S` is unchanged.
-- The message lives in `view` (page-only, not saved) and is cleared by the next `make`, `model` or `year` change. Never a console error, whatever vPIC answers.
+- The message lives in `view` (page-only, not saved) and is cleared by the next `make`, `model` or `year` change and by the first-visit example (§7). Never a console error, whatever vPIC answers.
+- *Amended 2026-11-16 (review of 7.5):* **the latest action wins.** Every Look up click takes a new `seq`, including one refused locally, and so does every `make`, `model` or `year` change and the first-visit example. A pending answer whose `seq` is no longer the latest is ignored, so it can't overwrite a newer message or a car the user picked by hand while it was on its way.
 
 ## 7. The first-visit example
 
