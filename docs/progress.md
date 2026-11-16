@@ -1,6 +1,6 @@
 # Progress
 
-**Current phase:** 7 (Phase A static: VIN lookup, model-year mpg, weekly gas + store refresh) is **done**. Next is **Phase 8 (Phase A backend: Worker behind the seam)**, to start in a **fresh session**, with the user's `/goal`
+**Current phase:** 8 (Phase A backend: Worker behind the seam) is **in progress** (log below). The user's goal: Phase 8 checked off and `npm test` exits 0
 **Last updated:** 2026-11-16
 **Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/phase-7-vin-lookup-refresh-3kq5sh` (the Phase 7 session branch, fast-forwarded from `claude/awesome-goodall-4qdauw` at `02db8d6`, the Phase 6 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
@@ -64,6 +64,19 @@
 - Workers are dispatched as `general-purpose` Haiku agents that read their agent file and skill first, until a fresh session loads them by name (D-019).
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
+
+### Phase 8: Phase A backend: the Worker behind the seam (2026-11-16, in progress)
+
+Branch `claude/charming-heisenberg-wag8bg` (this session's; fast-forwarded to `claude/phase-7-vin-lookup-refresh-3kq5sh` at `556bc34`, the Phase 7 tip). User decisions at the start: **OpenStreetMap providers** (OSRM, Nominatim, Overpass; no keys), the **host swap** (newsroom.aaa.com, rosap.ntl.bts.gov and www.dunkindonuts.com out; router.project-osrm.org, nominatim.openstreetmap.org and overpass.kumi.systems in; ISS-001), and **independents in Phase 8**.
+
+| Task | Status | Commit |
+|---|---|---|
+| 8.1 D-040, `docs/api-contract.md`; state, engine and UI contracts amended in place (the Worker-off path is Phase 7's by construction: `opts.api` absent) | ✅ | `0b8d25b` |
+| 8.2 References first: 6 OSRM/Nominatim answers recorded (Big Timber → the Livingston Domino's 33.9 mi by road), 4 constructed Overpass answers (ISS-040), `tests/fixtures/api/build.py` → `cases.json`, 37 state scenarios, the oracle's `rest_for`, `run.py` api checks (staleness + 2,000 seeded seam calls vs JS) | ✅ | `0b8d25b` |
+| 8.3 api-builder: `worker/`; tests first (`worker-cases.test.js`); review fix rounds: KV timeout, safe-integer ids; ISS-041 (two orchestrator expectations wrong) | ✅ 100/100 cases | `eaa7be9` |
+| 8.4a builder: `src/js/config.js`, `src/js/api.js`, `restFor` independents, `state.js` D-040 | verified (api-cases 137, scenarios 171, oracle 2,000/2,000); in review | — |
+| 8.4b builder: `app.js`, `render.js`, css; `tests/e2e/worker.e2e.js` written first by the orchestrator | in progress | — |
+| 8.5 tester: `send()` with a fake XHR, extra Worker inputs, mutants; close | ⬜ | — |
 
 ### Phase 7: Phase A static: VIN lookup, model-year mpg, weekly gas + store refresh (2026-11-16, done)
 
