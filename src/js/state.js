@@ -18,7 +18,7 @@
   var APP_FLAGS = ["memberOwn", "cardMember"];                     // §8
   var PROMO_NUMS = ["value", "cap", "min"];                        // §8
   var SHARED_FEES = ["regFee", "smallMin", "smallFee"];            // §7
-  var SAVED_SCALARS = ["address", "make", "model", "fuel", "mpg", "miPerKwh", "kwh", "brand",
+  var SAVED_SCALARS = ["address", "make", "model", "year", "fuel", "mpg", "miPerKwh", "kwh", "brand",
     "storePicked", "manualSubtotal", "dealOn", "miles", "speed", "milesAuto", "tipDel", "tipPick",
     "wear", "hourly", "regFee", "smallMin", "smallFee"];           // §8
   var SAVED_COPIED = ["store", "cart", "milesBy", "cards", "creditOptIn", "usedIn", "manualCredits"]; // §8
@@ -131,7 +131,7 @@
     var P = defaultsPart(D, "plats");
     var S = {
       address: "", pos: null, zip: null, zipRec: null, state: null, tax: null, gas: null,
-      make: "", model: "", fuel: "regular", mpg: null, miPerKwh: null, kwh: num(T.kwh),
+      make: "", model: "", year: null, fuel: "regular", mpg: null, miPerKwh: null, kwh: num(T.kwh),
       brand: null, rest: null, store: null, storePicked: false,
       cart: {}, manualSubtotal: 0, dealOn: true,
       miles: null, minutes: null, speed: num(T.speed), milesAuto: true, milesSrc: null, milesBy: {},
@@ -188,51 +188,162 @@
     return true;
   }
 
-  // ---- §4.1 applyCar ---------------------------------------------------------------
+  // ---- §4.0 the car tables (D-023, D-037) ------------------------------------------
 
-  var CAR_VALUE = /^(\d+)(\*|d|e)?$/;
+  var CAR_RUN = /^([0-9]+)([*de]?)@([0-9]{4})(-([0-9]{4}))?$/;  // a CAR_YEARS run (§4.0)
+  var CAR_VALUE = /^([0-9]+)([*de]?)$/;                          // a CAR_DATA value (§4.0)
 
-  /** One "Model:val" token of a row: { fuel, mpg, miPerKwh } or null. */
-  function parseCarValue(text) {
-    var m = CAR_VALUE.exec(text);
-    if (!m) { return null; }
-    var v = Number(m[1]);
-    if (m[2] === "e") { return { fuel: "ev", mpg: null, miPerKwh: v / 10 }; }
-    var fuel = m[2] === "*" ? "premium" : (m[2] === "d" ? "diesel" : "regular");
-    return { fuel: fuel, mpg: v, miPerKwh: null };
+  function isYear(x) { return isNum(x) && Math.floor(x) === x && x >= 1900 && x <= 2100; }
+
+  function plainOrder(a, b) { return a < b ? -1 : (a > b ? 1 : 0); }
+
+  /** {fuel, mpg, miPerKwh} for a value and its suffix: "e" is EV (kWh/100 mi ÷ 10), "d" diesel, "*" premium. */
+  function carFigures(v, suffix) {
+    if (suffix === "e") { return { fuel: "ev", mpg: null, miPerKwh: v / 10 }; }
+    if (suffix === "d") { return { fuel: "diesel", mpg: v, miPerKwh: null }; }
+    return { fuel: suffix === "*" ? "premium" : "regular", mpg: v, miPerKwh: null };
   }
 
-  /** The spec of model in one "Make|Model:val,Model:val" row, or null. */
-  function carInRow(row, make, model) {
+  /** One table row as {make, entries: [{model, value}]}, or null when the row is unusable. */
+  function parseRow(row) {
     if (typeof row !== "string") { return null; }
     var bar = row.indexOf("|");
-    if (bar < 0 || row.slice(0, bar) !== make) { return null; }
-    var models = row.slice(bar + 1).split(",");
-    for (var i = 0; i < models.length; i++) {
-      var colon = models[i].lastIndexOf(":");
-      if (colon >= 0 && models[i].slice(0, colon) === model) {
-        return parseCarValue(models[i].slice(colon + 1));
+    if (bar < 1) { return null; }
+    var parts = row.slice(bar + 1).split(",");
+    var entries = [];
+    for (var i = 0; i < parts.length; i++) {
+      var colon = parts[i].indexOf(":");
+      if (colon > 0) { entries.push({ model: parts[i].slice(0, colon), value: parts[i].slice(colon + 1) }); }
+    }
+    return { make: row.slice(0, bar), entries: entries };
+  }
+
+  /** The parsed rows of one table (D.CAR_DATA or D.CAR_YEARS), in written order. */
+  function parsedRows(D, name) {
+    var rows = isObj(D) ? D[name] : undefined;
+    var out = [];
+    if (!Array.isArray(rows)) { return out; }
+    for (var i = 0; i < rows.length; i++) {
+      var r = parseRow(rows[i]);
+      if (r !== null) { out.push(r); }
+    }
+    return out;
+  }
+
+  /** The runs of a CAR_YEARS value text, in written order: {from, to, fuel, mpg, miPerKwh}. */
+  function parseRuns(text) {
+    var out = [];
+    var words = text.split(" ");
+    for (var i = 0; i < words.length; i++) {
+      var m = CAR_RUN.exec(words[i]);
+      if (m === null) { continue; }
+      var v = parseInt(m[1], 10);
+      var from = parseInt(m[3], 10);
+      var to = m[5] === undefined ? from : parseInt(m[5], 10);
+      if (!(v > 0) || from > to) { continue; }
+      var f = carFigures(v, m[2]);
+      out.push({ from: from, to: to, fuel: f.fuel, mpg: f.mpg, miPerKwh: f.miPerKwh });
+    }
+    return out;
+  }
+
+  /** Every run of one make and model in CAR_YEARS, in written order. */
+  function carYearRuns(D, make, model) {
+    var out = [];
+    var rows = parsedRows(D, "CAR_YEARS");
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].make !== make) { continue; }
+      for (var j = 0; j < rows[i].entries.length; j++) {
+        if (rows[i].entries[j].model === model) { out = out.concat(parseRuns(rows[i].entries[j].value)); }
+      }
+    }
+    return out;
+  }
+
+  /** The first CAR_DATA value of one make and model that fully matches, or null. */
+  function carDataFigures(D, make, model) {
+    var rows = parsedRows(D, "CAR_DATA");
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].make !== make) { continue; }
+      for (var j = 0; j < rows[i].entries.length; j++) {
+        var e = rows[i].entries[j];
+        var m = e.model === model ? CAR_VALUE.exec(e.value) : null;
+        if (m !== null) {
+          var f = carFigures(parseInt(m[1], 10), m[2]);
+          return { fuel: f.fuel, mpg: f.mpg, miPerKwh: f.miPerKwh, year: null };
+        }
       }
     }
     return null;
   }
 
-  function findCar(D, make, model) {
-    var rows = isObj(D) && Array.isArray(D.CAR_DATA) ? D.CAR_DATA : [];
-    for (var i = 0; i < rows.length; i++) {
-      var spec = carInRow(rows[i], make, model);
-      if (spec !== null) { return spec; }
+  /** The makes of both tables, each once, in plain string order. */
+  function carMakes(D) {
+    var out = [];
+    var tables = ["CAR_DATA", "CAR_YEARS"];
+    for (var t = 0; t < tables.length; t++) {
+      var rows = parsedRows(D, tables[t]);
+      for (var i = 0; i < rows.length; i++) {
+        if (out.indexOf(rows[i].make) < 0) { out.push(rows[i].make); }
+      }
     }
-    return null;
+    return out.sort(plainOrder);
   }
 
-  /** The car sets fuel and mpg (or miPerKwh); an unknown car leaves the user's own values. */
+  /** The models of one make in both tables, each once, in plain string order. */
+  function carModels(D, make) {
+    if (!isStr(make)) { return []; }
+    var out = [];
+    var tables = ["CAR_DATA", "CAR_YEARS"];
+    for (var t = 0; t < tables.length; t++) {
+      var rows = parsedRows(D, tables[t]);
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].make !== make) { continue; }
+        for (var j = 0; j < rows[i].entries.length; j++) {
+          var model = rows[i].entries[j].model;
+          if (out.indexOf(model) < 0) { out.push(model); }
+        }
+      }
+    }
+    return out.sort(plainOrder);
+  }
+
+  /** The runs of one model, as new objects, in written order. */
+  function carYears(D, make, model) {
+    if (!isStr(make) || !isStr(model)) { return []; }
+    return carYearRuns(D, make, model);
+  }
+
+  /** The figure for a car (§4.0): an integer year reads CAR_YEARS only; null prefers the newest run. */
+  function carLookup(D, make, model, year) {
+    if (!isStr(make) || !isStr(model)) { return null; }
+    var runs = carYearRuns(D, make, model);
+    var i, r;
+    if (isYear(year)) {
+      for (i = 0; i < runs.length; i++) {
+        r = runs[i];
+        if (r.from <= year && year <= r.to) { return { fuel: r.fuel, mpg: r.mpg, miPerKwh: r.miPerKwh, year: year }; }
+      }
+      return null;
+    }
+    if (year !== null) { return null; }
+    if (runs.length > 0) {
+      var best = runs[0];
+      for (i = 1; i < runs.length; i++) { if (runs[i].to > best.to) { best = runs[i]; } }
+      return { fuel: best.fuel, mpg: best.mpg, miPerKwh: best.miPerKwh, year: best.to };
+    }
+    return carDataFigures(D, make, model);
+  }
+
+  // ---- §4.1 applyCar ---------------------------------------------------------------
+
+  /** The car sets fuel and mpg (or miPerKwh); no figure for the car leaves the user's own values. */
   function applyCar(S, D) {
-    var spec = isStr(S.make) && isStr(S.model) ? findCar(D, S.make, S.model) : null;
-    if (spec !== null) {
-      S.fuel = spec.fuel;
-      S.mpg = spec.mpg;
-      S.miPerKwh = spec.miPerKwh;
+    var r = carLookup(D, S.make, S.model, S.year);
+    if (r !== null) {
+      S.fuel = r.fuel;
+      S.mpg = r.mpg;
+      S.miPerKwh = r.miPerKwh;
     }
     applyState(S, D);
   }
@@ -639,14 +750,17 @@
     return tripStatus(S, D, opts);
   }
 
-  function setCar(S, D, make, model) {
+  /** setCar(S, D, make, model, year): a four-argument call means year null (D-037). */
+  function setCar(S, D, make, model, year) {
     var newMake = isStr(make) ? make : "";
     var newModel = isStr(model) ? model : "";
-    var changed = newMake !== S.make || newModel !== S.model;
+    var newYear = isYear(year) ? year : null;
+    var changed = newMake !== S.make || newModel !== S.model || newYear !== S.year;
     S.make = newMake;
     S.model = newModel;
-    // A pair the user just picked that isn't listed: the old car's mpg and kWh belong to it, not to this one.
-    if (changed && findCar(D, newMake, newModel) === null) {
+    S.year = newYear;
+    // A car the user just picked that has no figure: the old car's mpg and kWh belong to it, not to this one.
+    if (changed && carLookup(D, newMake, newModel, newYear) === null) {
       S.mpg = null;
       S.miPerKwh = null;
     }
@@ -839,6 +953,7 @@
       if (isStr(v[STRING_SAVED[i]])) { S[STRING_SAVED[i]] = v[STRING_SAVED[i]]; }
     }
     if (v.brand === null || isStr(v.brand)) { S.brand = v.brand; }
+    if (v.year === null || isYear(v.year)) { S.year = v.year; }
     if (FUELS.indexOf(v.fuel) >= 0) { S.fuel = v.fuel; }
     for (i = 0; i < BOOL_SAVED.length; i++) {
       if (typeof v[BOOL_SAVED[i]] === "boolean") { S[BOOL_SAVED[i]] = v[BOOL_SAVED[i]]; }
@@ -990,6 +1105,10 @@
     fresh: fresh,
     getPath: getPath,
     setPath: setPath,
+    carMakes: carMakes,
+    carModels: carModels,
+    carYears: carYears,
+    carLookup: carLookup,
     applyCar: applyCar,
     applyState: applyState,
     applyAddress: applyAddress,
