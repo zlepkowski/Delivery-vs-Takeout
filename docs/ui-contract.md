@@ -57,7 +57,7 @@ One `<main id="app">` holding these sections in this DOM order, each a `<section
 | `address` | `input#address` | `setAddress(S, D, value, opts)` |
 | `brand` | `select#brand` | `setBrand(S, D, value === "" ? null : value, opts)` |
 | `make` | `select#make` | `setCar(S, D, value, "", null)` |
-| `model` | `select#model` | `setCar(S, D, S.make, value, null)` |
+| `model` | `select#model` | `setCar(S, D, S.make, value, S.year)` (the year stays: after a VIN names the year but not the model, picking the model keeps it) |
 | `year` | `select#year` | `setCar(S, D, S.make, S.model, value === "" ? null : parseInt(value, 10))` |
 | `toggle-card` | checkbox, `data-card` | `toggleCard(S, D, card, checked, new Date())` |
 | `opt-in` | checkbox, `data-key` | `setOptIn(S, D, key, checked, new Date())` |
