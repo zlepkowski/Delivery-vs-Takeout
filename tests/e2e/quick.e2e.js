@@ -342,7 +342,41 @@ test('search: typing filters the near list by name, keeps focus and the same box
   assert.equal(await page.inputValue('#search'), '', 'the box is cleared');
   const S2 = H.expected(await H.saved(page)).S;
   const near2 = POD().geo.storesNear(S2.pos.lat, S2.pos.lon, D(), { failed: {} });
-  assert.equal(await page.locator('[data-testid="near-list"] [data-action="pick-store"]').count(), Math.min(15, near2.stores.length), 'the list is unfiltered');
+  // Not filtered by the old query: folded to the brand's store when it's in the new list (§5.2), else the first 15.
+  const pressed = S2.store ? near2.stores.findIndex((st) => st.id === S2.store.id) : -1;
+  const rows = await page.$$eval('[data-testid="near-list"] [data-action="pick-store"]', (bs) => bs.map((b) => Number(b.getAttribute('data-store'))));
+  assert.deepEqual(rows, pressed >= 0 ? [pressed] : Array.from({ length: Math.min(15, near2.stores.length) }, (_, i) => i), 'the list is unfiltered');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+// ---- §5.2 folding after a pick ----------------------------------------------------------------
+
+test('folding: a pick folds the near list to the picked restaurant; "Change restaurant" shows them all; a new pick folds again', async () => {
+  const { ctx, page, errors } = await H.openPage(browser, site.url, { viewport: PHONE });
+  await zip(page, '10118');
+  const S = H.expected(await H.saved(page)).S;
+  const near = POD().geo.storesNear(S.pos.lat, S.pos.lon, D(), { failed: {} });
+  const n = near.stores.length;
+  const rowsShown = () => page.$$eval('[data-testid="near-list"] [data-action="pick-store"]', (bs) => bs.map((b) => Number(b.getAttribute('data-store'))));
+  assert.equal((await rowsShown()).length, Math.min(15, n), 'before a pick: the first 15');
+
+  const first = await firstRow(page, true);
+  const i0 = Number(await page.getAttribute(first, 'data-store'));
+  await page.click(first);
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="near-list"] [data-action="pick-store"]').length === 1);
+  assert.deepEqual(await rowsShown(), [i0], 'folded to the picked store');
+  assert.equal(await page.getAttribute('[data-testid="near-list"] [data-store="' + i0 + '"]', 'aria-pressed'), 'true');
+  assert.equal(await H.text(page, '[data-action="more-stores"]'), 'Change restaurant (' + n + ' nearby)');
+  assert.ok(await page.locator('[data-action="qty"][data-index="0"][data-delta="1"]').isVisible(), 'the menu is right there');
+
+  await page.click('[data-action="more-stores"]');
+  assert.deepEqual(await rowsShown(), Array.from({ length: n }, (_, i) => i), '"Change restaurant" shows every store');
+  const other = (await rowsShown()).find((i) => i !== i0);
+  await page.click('[data-testid="near-list"] [data-store="' + other + '"]');
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="near-list"] [data-action="pick-store"]').length === 1);
+  assert.deepEqual(await rowsShown(), [other], 'a new pick folds the list again');
+  assert.equal(H.expected(await H.saved(page)).S.store.id, near.stores[other].id);
   assert.deepEqual(errors, []);
   await ctx.close();
 });
