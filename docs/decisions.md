@@ -455,3 +455,16 @@ BUILD.md §11's `/vehicle?vin` without a server (D-004). [`docs/vin-contract.md`
 - backend: no change (no backend work in Phase 9)
 - not a rule: the orchestrator's user link check and the environment's missing node_modules (orchestrator-only); a slow redirect landing in the next `goto` of a shared page, fixed by a fresh context per URL (one occurrence, tool-level); two e2e slips caught before running (a button that exists only with no brand; a guessed store id) and `waitForEvent` started before its click (one occurrence each); re-baselining `worker.e2e.js` by D-041 (a decision, not a failure)
 - data-research: ~ rule 6 and the file table: `src/data/links.js` is orchestrator only, like `cards.js` (added by the orchestrator at approval)
+
+### Phase 10 (2026-11-16): reflector proposal, approved by the orchestrator with one evidence fix
+- data-research: ~ the scheduled-dry-run rule: the dry run uses an empty cache as CI starts; a reused cache lets repeated runs creep past a flaky host (progress.md Phase 10, 10.3, f78b879). *Approval fix:* the proposal said both Phase 10 dry runs passed on a warm cache; neither passed, and dry run 2 (reusing dry run 1's cache) only got further
+- data-research: ~ the scheduled-build rule: a passing zip CRC proves nothing, so parse every member (ISS-039, ISS-043)
+- data-research: + a downloader retries a flaky edge (200 to a Range GET, 5xx, dropped connection) and refuses a wrong request (416, 404, wrong length) at once (f78b879, D-039 amendment)
+- test-runner: ~ pin-by-source rule extended to every number a doc states; the first drift test let six through (1edd6c5)
+- test-runner: ~ mutant rule: the mutation must apply (grep the copy); a `sed` that matched nothing passed a test (10.2, progress.md Phase 10)
+- test-runner: + a retry or error branch gets one case per status class, written from the decision and failing on the old code (f78b879, d29b938; HTTPError ⊂ URLError ⊂ TRANSIENT)
+- code-review: + blocker: a doc's factual sentence is checked against its source; "every profile uses its category default" and "bot protection" were both wrong (268a84e)
+- code-review: + for a large doc, check the named sections first and send findings as you go; the 10.1 review ran out of turns with no report (progress.md Phase 10)
+- frontend: no change (no builder work in Phase 10; the served smoke was clean)
+- backend: no change (no backend work in Phase 10)
+- not a rule: the owner's Pages and default-branch settings checked live before the merge (orchestrator-only, progress.md Phase 10, 10.4); the stop hook asking to commit during worker runs (orchestrator-only); the upstream cut-off files are covered by the data-research zip-CRC bullet above
