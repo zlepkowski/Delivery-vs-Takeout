@@ -1,5 +1,5 @@
 {
- "about": "Hand-worked cases for docs/api-contract.md (D-040), written by build.py, an independent Python reading of the contract that never runs worker/ or src/js/api.js. `worker` cases: send request.method to request.url with an Origin header when request.origin isn't null, to handle(request, env, deps) with env as given and env.POD_CACHE a fake KV per `kv` (null = no binding, \"empty\", \"throws\" = get and put reject, or {preset: {key: storedValue}}; get(key, 'json') returns the stored value or null, put records {key, value: JSON.parse(value), ttl: expirationTtl}). deps.fetch answers only the URLs in `upstream` (any other URL fails the test), and must be called with header user-agent = env.USER_AGENT: a {fixture} or {status, contentType, text} entry becomes a Response with that status, content type and body (a fixture's JSON body re-serialized); {reject: true} rejects. Then check status, every header in expect.headers (names lowercase; null in the table means absent: see absentHeaders), the body (JSON.parse, deep-equal; for errors only error.code is compared, and error.message must be a non-empty string), the exact upstream URLs called in order, and the KV puts in order. `seam` cases: call POD.api[fn](...args) in the app's VM (\"$\" tags: NaN, Infinity, -Infinity, -0, undefined; {\"$\": \"D\"} is the real POD.data), with POD.config = config when given; compare `returns` (placesFor rows' mi with relative tolerance 1e-9), and for remember compare D and opts afterwards with `after`.",
+ "about": "Hand-worked cases for docs/api-contract.md (D-040), written by build.py, an independent Python reading of the contract that never runs worker/ or src/js/api.js. `worker` cases: send request.method to request.url with an Origin header when request.origin isn't null, to handle(request, env, deps) with env as given and env.POD_CACHE a fake KV per `kv` (null = no binding, \"empty\", \"throws\" = get and put reject, \"hangs\" = they never settle, or {preset: {key: storedValue}}; get(key, 'json') returns the stored value or null, put records {key, value: JSON.parse(value), ttl: expirationTtl}). deps.fetch answers only the URLs in `upstream` (any other URL fails the test), and must be called with header user-agent = env.USER_AGENT: a {fixture} or {status, contentType, text} entry becomes a Response with that status, content type and body (a fixture's JSON body re-serialized); {reject: true} rejects. Then check status, every header in expect.headers (names lowercase; null in the table means absent: see absentHeaders), the body (JSON.parse, deep-equal; for errors only error.code is compared, and error.message must be a non-empty string), the exact upstream URLs called in order, and the KV puts in order. `seam` cases: call POD.api[fn](...args) in the app's VM (\"$\" tags: NaN, Infinity, -Infinity, -0, undefined; {\"$\": \"D\"} is the real POD.data), with POD.config = config when given; compare `returns` (placesFor rows' mi with relative tolerance 1e-9), and for remember compare D and opts afterwards with `after`.",
  "env": {
   "USER_AGENT": "pod-test/1.0 (fixture contact)",
   "ALLOW_ORIGINS": "https://zlepkowski.github.io"
@@ -1433,6 +1433,89 @@
     "kvPuts": []
    },
    "work": ""
+  },
+  {
+   "name": "drive: a KV whose get and put never settle is given up after 1 s",
+   "refs": [
+    "§5"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/drive?from=45.834,-109.95&to=45.67,-110.546",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "hangs",
+   "upstream": {
+    "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false": {
+     "status": 200,
+     "contentType": "application/json; charset=UTF-8",
+     "bodyKind": "json",
+     "body": {
+      "code": "Ok",
+      "routes": [
+       {
+        "legs": [
+         {
+          "steps": [],
+          "weight": 2176.1,
+          "summary": "",
+          "duration": 2176.1,
+          "distance": 54552.2
+         }
+        ],
+        "weight_name": "routability",
+        "weight": 2176.1,
+        "duration": 2176.1,
+        "distance": 54552.2
+       }
+      ],
+      "waypoints": [
+       {
+        "hint": "aUkkgH7Q7YUXAAAAJgAAAAAAAAAAAAAApB-lQQKiB0IAAAAAAAAAABcAAAAmAAAAAAAAAAAAAADEfwAAkEty-UNfuwLQS3L5EF-7AgAADwMAAAAA",
+        "location": [
+         -109.950064,
+         45.834051
+        ],
+        "name": "East 4th Avenue",
+        "distance": 7.540932727
+       },
+       {
+        "hint": "IEEigCNBIoB6AAAATQAAAAAAAAAAAAAAkvWqQtiEU0IAAAAAAAAAAHoAAABNAAAAAAAAAAAAAADEfwAA1TNp-YTeuAKwM2n5cN64AgAALxQAAAAA",
+        "location": [
+         -110.545963,
+         45.67002
+        ],
+        "name": "North O Street",
+        "distance": 3.640364991
+       }
+      ]
+     },
+     "fixture": "osrm/bigtimber_livingston.json"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "miles": 33.9,
+     "minutes": 36.3,
+     "source": "osrm"
+    },
+    "upstreamCalls": [
+     "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false"
+    ],
+    "kvPuts": []
+   },
+   "work": "get times out (1 s) -> the provider answers; put times out (1 s) -> the 200 still goes out. About 2 s in all."
   },
   {
    "name": "drive: no cache binding at all",
@@ -4204,6 +4287,16 @@
          "amenity": "restaurant",
          "name": "Fixture yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy🍕"
         }
+       },
+       {
+        "type": "node",
+        "id": 1e+21,
+        "lat": 45.8341,
+        "lon": -109.9502,
+        "tags": {
+         "amenity": "restaurant",
+         "name": "Fixture Huge Id"
+        }
        }
       ]
      },
@@ -4450,7 +4543,7 @@
      }
     ]
    },
-   "work": "Skipped: 1003 and 1013 (brand tags), 1004 (no name), 1008 (8.01 mi > 5), 1009 (bar), the second 1002 (repeat), 2002 (no center), 0 (id < 1), 1012 (tags not an object), 1017 (type area), 1018 (lat 91), 1019 (121-character name), 1020 (119 + an emoji = 121 UTF-16 units). Kept 1021 (119 units). Kept 1010 (empty brand). Categories by D-021: american -> casual (restaurant), 'burger;american' -> burger, 'Pizza ;italian' -> pizza, thai -> asian, tacos -> mexican, ' Noodle' -> asian, french -> casual, wings -> chicken, sandwich -> sandwich, no cuisine -> by amenity."
+   "work": "Skipped: 1003 and 1013 (brand tags), 1004 (no name), 1008 (8.01 mi > 5), 1009 (bar), the second 1002 (repeat), 2002 (no center), 0 (id < 1), 1012 (tags not an object), 1017 (type area), 1018 (lat 91), 1022 (id 1e21, not a safe integer), 1019 (121-character name), 1020 (119 + an emoji = 121 UTF-16 units). Kept 1021 (119 units). Kept 1010 (empty brand). Categories by D-021: american -> casual (restaurant), 'burger;american' -> burger, 'Pizza ;italian' -> pizza, thai -> asian, tacos -> mexican, ' Noodle' -> asian, french -> casual, wings -> chicken, sandwich -> sandwich, no cuisine -> by amenity."
   },
   {
    "name": "nearby: a dense block keeps the nearest 40 (constructed)",

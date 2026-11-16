@@ -294,6 +294,16 @@
             "amenity": "restaurant",
             "name": "Fixture yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\ud83c\udf55"
           }
+        },
+        {
+          "type": "node",
+          "id": 1e+21,
+          "lat": 45.8341,
+          "lon": -109.9502,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Huge Id"
+          }
         }
       ]
     }

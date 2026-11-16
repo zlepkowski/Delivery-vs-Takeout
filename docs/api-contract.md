@@ -78,7 +78,7 @@ A street address (or town) to a point.
   `[out:json][timeout:8];nwr["amenity"~"^(restaurant|fast_food|cafe|ice_cream)$"]["name"](around:{M},{lat},{lon});out center tags;`
   with `M = Math.round(R * 1609.344)` (2 → 3219, 5 → 8047, 10 → 16093) and canonical `lat`, `lon`. (`URLSearchParams` encodes `~` as `%7E`, space as `+`.)
 - **Normalizing:** status 200, the body parses as a JSON object, and `elements` is an array, else 502. If `remark` is a string containing `"runtime error"` → 502: Overpass sends a timed-out query's partial results with status 200, and a partial list would silently drop places. Then each element, in order:
-  1. skip unless `type` is `"node"`, `"way"` or `"relation"`, `id` is an integer ≥ 1, and `tags` is a plain object;
+  1. skip unless `type` is `"node"`, `"way"` or `"relation"`, `id` is a safe integer ≥ 1 (`Number.isSafeInteger`; `1e21` would print as `osm:n1e+21`), and `tags` is a plain object;
   2. the point: a node's `lat`, `lon`; a way's or relation's `center.lat`, `center.lon`. Skip unless finite and in range;
   3. `name` = `tags.name` trimmed; skip unless a string of 1–120 characters;
   4. **skip chains**: an element with a non-empty string `tags.brand` or `tags["brand:wikidata"]`. Chains come from the store tiles (D-021), so a chain is never listed twice;
@@ -91,7 +91,7 @@ A street address (or town) to a point.
 
 ## 5. Cache (`worker/src/cache.js`, Workers KV)
 
-- With `env.POD_CACHE`: before the provider, `await POD_CACHE.get(key, "json")`; a stored `{"ok": body}` → that 200; a stored `{"miss": code}` → that 404. After the provider: a 200 stores `{"ok": body}`, a `no_route`/`not_found` stores `{"miss": code}`, via `await POD_CACHE.put(key, JSON.stringify(v), {expirationTtl: ttl})`. Nothing else is stored (no 400, 502 or 503). A `get` or `put` that throws or rejects is ignored: the request goes on as if uncached, and never fails because of the cache.
+- With `env.POD_CACHE`: before the provider, `await POD_CACHE.get(key, "json")`; a stored `{"ok": body}` → that 200; a stored `{"miss": code}` → that 404. After the provider: a 200 stores `{"ok": body}`, a `no_route`/`not_found` stores `{"miss": code}`, via `await POD_CACHE.put(key, JSON.stringify(v), {expirationTtl: ttl})`. Nothing else is stored (no 400, 502 or 503). A `get` or `put` that throws, rejects, **or hasn't settled within 1,000 ms** (each call raced against its own 1 s timer) is ignored: the request goes on as if uncached, and never fails or hangs because of the cache. *(Clarified 2026-11-16 after review of 8.3: a hung KV kept the request open forever.)*
 - Keys and TTLs (seconds):
 
 | Endpoint | Key | 200 TTL | miss TTL |

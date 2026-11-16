@@ -25,6 +25,10 @@ function fakeKV(spec) {
     const no = async () => { throw new Error('KV is down'); };
     return { kv: { get: no, put: no }, puts };
   }
+  if (spec === 'hangs') {
+    const never = () => new Promise(() => {});             // api contract §5: given up after 1 s
+    return { kv: { get: never, put: never }, puts };
+  }
   const store = new Map();
   if (spec && spec.preset) for (const [k, v] of Object.entries(spec.preset)) store.set(k, JSON.stringify(v));
   const bad = [];
@@ -76,7 +80,7 @@ test('cases.json holds the Worker cases (a guard: an empty file must not pass)',
 });
 
 for (const c of DOC.worker) {
-  test('worker ' + c.refs.join(' ') + ': ' + c.name, async () => {
+  test('worker ' + c.refs.join(' ') + ': ' + c.name, { timeout: 10000 }, async () => {   // a hang fails, never stalls the suite
     const headers = {};
     if (c.request.origin !== null) headers.Origin = c.request.origin;
     const request = new Request(c.request.url, { method: c.request.method, headers });
@@ -84,7 +88,12 @@ for (const c of DOC.worker) {
     const env = Object.assign({}, c.env);
     if (kv) env.POD_CACHE = kv;
     const ff = fakeFetch(c.upstream, c.env.USER_AGENT);
-    const res = await handle(request, env, { fetch: ff.fetch, now: () => NOW });
+    // A hung handle() must fail this case, not stall or end the file: a promise that never settles
+    // doesn't hold the event loop open, so race it against a timer that does, until it fires.
+    let timer;
+    const late = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('handle() did not answer within 8 s')), 8000); });
+    let res;
+    try { res = await Promise.race([handle(request, env, { fetch: ff.fetch, now: () => NOW }), late]); } finally { clearTimeout(timer); }
 
     assert.deepEqual(ff.problems, [], 'upstream calls');
     if (bad) assert.deepEqual(bad, [], 'KV usage');

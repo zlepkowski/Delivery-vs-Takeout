@@ -209,7 +209,7 @@ def nearby_normal(resp, qlat, qlon, R):
         if not isinstance(e, dict) or e.get("type") not in ("node", "way", "relation"):
             continue
         i = e.get("id")
-        if not (is_num(i) and i == int(i) and i >= 1) or not isinstance(e.get("tags"), dict):
+        if not (is_num(i) and i == int(i) and 1 <= i <= 2 ** 53 - 1) or not isinstance(e.get("tags"), dict):
             continue
         t = e["tags"]
         src = e if e["type"] == "node" else e.get("center")
@@ -372,6 +372,9 @@ wcase("drive: a cached miss answers 404 without the provider", ["§5"], "/drive?
 url_bt = drive_url(("45.834", "-109.95"), ("45.67", "-110.546"))
 wcase("drive: a cache that throws is ignored", ["§5"], "/drive?from=%s&to=%s" % (BT, LV), {url_bt: rec("osrm/bigtimber_livingston.json")},
       ok_expect(body_bt, [url_bt], []), kv="throws")
+wcase("drive: a KV whose get and put never settle is given up after 1 s", ["§5"], "/drive?from=%s&to=%s" % (BT, LV),
+      {url_bt: rec("osrm/bigtimber_livingston.json")}, ok_expect(body_bt, [url_bt], []), kv="hangs",
+      work="get times out (1 s) -> the provider answers; put times out (1 s) -> the 200 still goes out. About 2 s in all.")
 wcase("drive: no cache binding at all", ["§0", "§5"], "/drive?from=%s&to=%s" % (BT, LV), {url_bt: rec("osrm/bigtimber_livingston.json")},
       ok_expect(body_bt, [url_bt], []), kv=None)
 
@@ -458,7 +461,7 @@ wcase("geocode: the cache key ignores case", ["§5"], "/geocode?" + qs([("q", ES
 # ---- /nearby (§4)
 c, small = nearby_case("nearby: a small town (constructed)", ["§4", "§5"], "45.834", "-109.95", 5, rec("overpass/constructed_small_town.json"),
                        "Skipped: 1003 and 1013 (brand tags), 1004 (no name), 1008 (%.2f mi > 5), 1009 (bar), the second 1002 (repeat), "
-                       "2002 (no center), 0 (id < 1), 1012 (tags not an object), 1017 (type area), 1018 (lat 91), 1019 (121-character name), 1020 (119 + an emoji = 121 UTF-16 units). Kept 1021 (119 units). "
+                       "2002 (no center), 0 (id < 1), 1012 (tags not an object), 1017 (type area), 1018 (lat 91), 1022 (id 1e21, not a safe integer), 1019 (121-character name), 1020 (119 + an emoji = 121 UTF-16 units). Kept 1021 (119 units). "
                        "Kept 1010 (empty brand). Categories by D-021: american -> casual (restaurant), 'burger;american' -> burger, "
                        "'Pizza ;italian' -> pizza, thai -> asian, tacos -> mexican, ' Noodle' -> asian, french -> casual, "
                        "wings -> chicken, sandwich -> sandwich, no cuisine -> by amenity." % dist_mi(45.834, -109.95, 45.95, -109.95))
@@ -733,7 +736,7 @@ doc = {
     "about": ("Hand-worked cases for docs/api-contract.md (D-040), written by build.py, an independent Python reading of the "
               "contract that never runs worker/ or src/js/api.js. `worker` cases: send request.method to request.url with an "
               "Origin header when request.origin isn't null, to handle(request, env, deps) with env as given and env.POD_CACHE "
-              "a fake KV per `kv` (null = no binding, \"empty\", \"throws\" = get and put reject, or {preset: {key: storedValue}}; "
+              "a fake KV per `kv` (null = no binding, \"empty\", \"throws\" = get and put reject, \"hangs\" = they never settle, or {preset: {key: storedValue}}; "
               "get(key, 'json') returns the stored value or null, put records {key, value: JSON.parse(value), ttl: expirationTtl}). "
               "deps.fetch answers only the URLs in `upstream` (any other URL fails the test), and must be called with header "
               "user-agent = env.USER_AGENT: a {fixture} or {status, contentType, text} entry becomes a Response with that status, "

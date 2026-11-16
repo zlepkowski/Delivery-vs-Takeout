@@ -1,0 +1,7 @@
+{
+  "name": "pickup-or-delivery-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The optional Worker behind the Pickup or Delivery site: driving distance, street geocoding and independent restaurants from OpenStreetMap (docs/api-contract.md)."
+}
