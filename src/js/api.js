@@ -169,10 +169,23 @@
     return out;
   }
 
+  /** True once the widening for pos has stopped (§6.2, the rule of §6.1 step 3): a false answer, a full list, or all radii answered. */
+  function widenSettled(api, pos) {
+    for (var i = 0; i < NEARBY_RADII.length; i++) {
+      var k = nearbyKey(pos, NEARBY_RADII[i]);
+      if (!hasOwn(api.nearby, k)) { return false; }
+      var v = api.nearby[k];
+      if (v === false) { return true; }
+      if (isObj(v) && Array.isArray(v.places) && v.places.length >= NEARBY_WANT) { return true; }
+    }
+    return true;
+  }
+
   /** The independent rows to show (§6.2): the largest radius that answered, minus chains, nearest first. */
   function placesFor(S, D, opts) {
     var api = isObj(opts) ? opts.api : null;
     if (!isObj(api) || !isObj(api.nearby) || !isObj(S) || pointOf(S.pos) === null) { return []; }
+    if (!widenSettled(api, S.pos)) { return []; }
     var ans = null;
     var i, k;
     for (i = NEARBY_RADII.length - 1; i >= 0; i--) {

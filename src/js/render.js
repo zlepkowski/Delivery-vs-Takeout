@@ -42,6 +42,7 @@
   var NOTE_DD = "DoorDash publishes 15% service (5% with DashPass, on orders of $12 or more) for markets not yet on its newer fee model; check your own checkout.";
 
   var nearRows = [];
+  var indieRows = [];   // D-040: the independents last rendered (POD.ui.placeAt)
 
   function esc(s) { return POD.util.esc(s); }
   function money(n) { return POD.util.money(n); }
@@ -56,6 +57,13 @@
 
   function nameOf(D, id) {
     return hasOwn(D.BRANDS, id) && typeof D.BRANDS[id].name === "string" ? D.BRANDS[id].name : String(id);
+  }
+
+  /** D.PLACES[id] when it's an independent of the page (D-040, ui-contract §5.2), else null. */
+  function placeOf(D, id) {
+    if (!isObj(D.PLACES) || !hasOwn(D.PLACES, id) || !isObj(D.PLACES[id])) { return null; }
+    if (isObj(D.BRANDS) && hasOwn(D.BRANDS, id)) { return null; }
+    return D.PLACES[id];
   }
 
   function section(id, heading, body) {
@@ -74,6 +82,9 @@
   function locStatus(S) {
     if (S.pos && S.pos.src === "gps" && S.zipRec) {
       return "Your location · near ZIP " + S.zip + ", " + S.zipRec.c + ", " + S.zipRec.st;
+    }
+    if (S.pos && S.pos.src === "addr" && S.zipRec) {
+      return "Street address · ZIP " + S.zip + ", " + S.zipRec.c + ", " + S.zipRec.st;
     }
     if (S.zipRec) { return "ZIP " + S.zip + " · " + S.zipRec.c + ", " + S.zipRec.st; }
     if (S.zip && !S.zipRec) { return "ZIP " + S.zip + " not found"; }
@@ -109,6 +120,10 @@
       return na < nb ? -1 : (na > nb ? 1 : 0);
     });
     var out = '<option value="">Choose any chain…</option>';
+    var ind = S.brand ? placeOf(D, S.brand) : null;
+    if (ind !== null && typeof ind.name === "string") {        // D-040: the picked independent, selected
+      out += '<option value="' + esc(S.brand) + '" selected>' + esc(ind.name + " (estimate)") + "</option>";
+    }
     for (var i = 0; i < ids.length; i++) {
       var id = ids[i];
       out += '<option value="' + esc(id) + '"' + (S.brand === id ? " selected" : "") + ">" +
@@ -117,10 +132,29 @@
     return out;
   }
 
-  function secNear(c) {
+  /** The independents block (D-040, ui-contract §5.2): '' when there are none, else one wrapped block. */
+  function indieHtml(S, rows) {
+    if (rows.length === 0) { return ""; }
+    var list = '<ol class="near-list indie-list" data-testid="indie-list">';
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var on = !!S.store && S.store.id === row.id;
+      list += '<li><button type="button" data-action="pick-place" data-place="' + i + '" data-brand="' + esc(row.brand) +
+        '" aria-pressed="' + (on ? "true" : "false") + '">' +
+        '<span class="indie-name">' + esc(row.name) + ' <span class="tag">Estimate</span></span>' +
+        '<span class="num">' + mi1(row.mi) + " mi</span></button></li>";
+    }
+    list += "</ol>";
+    return '<div class="indie"><h3>Independent restaurants</h3>' + list +
+      '<p class="muted" data-testid="indie-note">' + esc("From OpenStreetMap. We don't know which apps list these places: " +
+      "turn off any app that doesn't.") + "</p></div>";
+  }
+
+  function secNear(c, places) {
     var S = c.S, D = c.D, view = c.view;
     var msg = "", list = "", more = "";
     nearRows = [];
+    indieRows = places;
     if (!S.pos) {
       msg = '<p class="muted">Type a ZIP or address, or use your location, to see restaurants near you.</p>';
     } else {
@@ -155,8 +189,10 @@
         }
       }
     }
+    // D-040 (UI contract §5.2): the independents are the last block, and written only when there are rows.
     var h = '<div>' + msg + "</div>" + none(list) + none(more) +
-      '<label for="brand">Restaurant chain</label><select id="brand" data-action="brand">' + brandOptions(c) + "</select>";
+      '<label for="brand">Restaurant chain</label><select id="brand" data-action="brand">' + brandOptions(c) + "</select>" +
+      indieHtml(S, places);
     return section("near", "Near you", h);
   }
 
@@ -193,7 +229,8 @@
         h += "<div></div><div></div>";
       }
     } else {
-      var cat = hasOwn(D.BRANDS, S.brand) ? D.BRANDS[S.brand].category : "";
+      var ind = placeOf(D, S.brand);
+      var cat = hasOwn(D.BRANDS, S.brand) ? D.BRANDS[S.brand].category : (ind !== null ? ind.category : "");
       h += '<label for="manualSubtotal">Your order\'s menu total ($)</label>' +
         '<input id="manualSubtotal" type="number" step="0.01" min="0" value="' +
         (isNum(S.manualSubtotal) ? String(S.manualSubtotal) : "") + '" data-bind="manualSubtotal">';
@@ -208,6 +245,11 @@
   function tripSource(S) {
     if (S.milesSrc === "pinned") { return "You set this distance."; }
     if (S.milesSrc === "estimate") { return "Estimated from how close together restaurants are around your ZIP."; }
+    if (S.milesSrc === "drive" && isNum(S.miles)) {          // D-040: the Worker's road distance, one way
+      var dn = (S.rest && S.rest.name) || S.brand || "";
+      var dwho = S.storePicked ? "To the " + dn + " you picked, " : "To the nearest " + dn + ", ";
+      return dwho + mi1(S.miles / 2) + " mi each way by road.";
+    }
     if (S.milesSrc === "store" && S.store && S.pos) {
       var straight = POD.geo.distMi(S.pos.lat, S.pos.lon, S.store.lat, S.store.lon);
       if (!isNum(straight)) { return ""; }
@@ -623,7 +665,7 @@
 
   // ---- fine --------------------------------------------------------------------------------------
 
-  function secFine(D) {
+  function secFine(D, fromWorker) {
     var asOf = "";
     for (var i = 0; i < D.CARDS.length; i++) {
       var card = D.CARDS[i];
@@ -646,6 +688,10 @@
     ];
     var h = "";
     for (var j = 0; j < lines.length; j++) { h += "<p>" + esc(lines[j]) + "</p>"; }
+    if (fromWorker) {                                          // D-040: only when the page shows Worker data
+      h += '<p data-testid="fine-osm">' + esc("Road distances, street addresses and independent restaurants: " +
+        "OpenStreetMap (© OpenStreetMap contributors, ODbL), through this site's server.") + "</p>";
+    }
     return section("fine", "Where the numbers come from", h);
   }
 
@@ -663,19 +709,22 @@
    */
   function patchChildren(live, fresh) {
     var fk = Array.prototype.slice.call(fresh.children);
-    if (live.children.length !== fk.length) {
-      live.innerHTML = fresh.innerHTML;
-      return;
-    }
-    for (var i = 0; i < fk.length; i++) {
-      var old = live.children[i], nu = fk[i];
+    var lk = Array.prototype.slice.call(live.children);
+    var n = Math.min(lk.length, fk.length), i, j;
+    for (i = 0; i < n; i++) {
+      var old = lk[i], nu = fk[i];
       if (old.outerHTML === nu.outerHTML) { continue; }
-      if (isBlock(old) && old.tagName === nu.tagName && old.id === nu.id) {
+      // Patch one level down only when the element itself (tag and every attribute) is the same,
+      // so a shifted pair can never keep the old element's class or data-app (review of 8.4b).
+      if (isBlock(old) && old.cloneNode(false).outerHTML === nu.cloneNode(false).outerHTML) {
         patchChildren(old, nu);
       } else {
         live.replaceChild(nu, old);
       }
     }
+    // A block appended or removed at the end (the independents, D-040) touches only the tail.
+    for (j = lk.length - 1; j >= n; j--) { live.removeChild(lk[j]); }
+    for (j = n; j < fk.length; j++) { live.appendChild(fk[j]); }
   }
 
   /** Writes #app from ctx: only the blocks that changed, then focus back on the element that had it. */
@@ -684,10 +733,13 @@
     var app = doc && doc.getElementById ? doc.getElementById("app") : null;
     if (!app) { return; }
 
+    var places = POD.api.placesFor(ctx.S, ctx.D, ctx.opts);   // [] with the Worker off (D-040)
+    var S = ctx.S;
+    var fromWorker = S.milesSrc === "drive" || (!!S.pos && S.pos.src === "addr") || places.length > 0;
     var res = secResults(ctx);
-    var html = secLoc(ctx) + secNear(ctx) + secOrder(ctx) + secTrip(ctx) +
+    var html = secLoc(ctx) + secNear(ctx, places) + secOrder(ctx) + secTrip(ctx) +
       '<div id="side">' + res.html + secInsights(ctx, res.F, res.R) + "</div>" +
-      secCar(ctx) + secWallet(ctx) + secSettings(ctx) + secFine(ctx.D);
+      secCar(ctx) + secWallet(ctx) + secSettings(ctx) + secFine(ctx.D, fromWorker);
 
     var was = doc.activeElement;
     var inApp = !!was && app.contains(was);
@@ -707,8 +759,18 @@
     }
   }
 
+  /** A shallow copy of a row, so the caller can't change the list the page shows. */
+  function copyRow(row) {
+    var out = {};
+    for (var k in row) { if (hasOwn(row, k)) { out[k] = row[k]; } }
+    return out;
+  }
+
   POD.ui = {
     render: render,
-    storeAt: function (i) { return i >= 0 && i < nearRows.length ? nearRows[i] : null; }
+    storeAt: function (i) { return i >= 0 && i < nearRows.length ? nearRows[i] : null; },
+    placeAt: function (i) {
+      return Math.floor(i) === i && i >= 0 && i < indieRows.length ? copyRow(indieRows[i]) : null;
+    }
   };
 })(typeof window !== "undefined" ? window : this);

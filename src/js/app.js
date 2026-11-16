@@ -15,6 +15,7 @@
   var storage = null;
   var wired = false;
   var CREDIT_PLATS = ["direct", "dd", "ue", "gh"];
+  var inflight = {};    // D-040: Worker asks on their way, by kind + ":" + key (api contract §6.1)
 
   function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
 
@@ -71,6 +72,35 @@
 
   // ---- the one path after every change (§3) -----------------------------------------------------
 
+  var TABLE_OF = { drive: "drive", geocode: "geo", nearby: "nearby" };
+
+  /** True when the answer to an ask is already stored under its key (a synchronous answer may have come first). */
+  function storedAlready(ask) {
+    var table = POD.opts.api[TABLE_OF[ask.kind]];
+    return hasOwn(table, ask.key);
+  }
+
+  /** Sends each Worker ask not already in flight or stored. Nothing waits for an answer (ui-contract §3, D-040). */
+  function sendAsks() {
+    var list = POD.api.asks(POD.S, POD.data, POD.opts);
+    for (var i = 0; i < list.length; i++) {
+      var ask = list[i];
+      var mark = ask.kind + ":" + ask.key;
+      if (hasOwn(inflight, mark) || storedAlready(ask)) { continue; }
+      inflight[mark] = true;
+      if (!POD.api.send(ask, answered(ask, mark))) { delete inflight[mark]; }
+    }
+  }
+
+  /** The answer to one ask: clear its mark, remember it under its key, then run the same path as a change. */
+  function answered(ask, mark) {
+    return function (value) {
+      delete inflight[mark];
+      POD.api.remember(POD.data, POD.opts, ask, value);
+      afterChange(derive());
+    };
+  }
+
   function afterChange(status) {
     if (status && status.status === "need") { loadCells(status.need); }
     var S = POD.S;
@@ -78,6 +108,7 @@
       var near = POD.geo.storesNear(S.pos.lat, S.pos.lon, POD.data, POD.opts);
       if (near && near.status === "need") { loadCells(near.need); }
     }
+    if (POD.opts && POD.opts.api) { sendAsks(); }
     POD.state.save(S, storage);
     view.loading = pending > 0;
     POD.ui.render(ctx());
@@ -90,6 +121,13 @@
     POD.opts = { failed: {} };
     requested = {};
     POD.S = POD.state.load(storage, POD.data, new Date(), POD.opts);
+    // D-040: a saved independent prices again even with the Worker off (ui-contract §1).
+    POD.data.PLACES = POD.data.PLACES || {};
+    var place = POD.S.place;
+    if (place && !hasOwn(POD.data.PLACES, place.id)) {
+      POD.data.PLACES[place.id] = { name: place.name, category: place.category, lat: place.lat, lon: place.lon };
+    }
+    if (POD.api.enabled()) { POD.opts.api = { drive: {}, geo: {}, nearby: {} }; }
     view.canLocate = canLocate();
     afterChange(derive());
   }
@@ -307,7 +345,7 @@
 
     var S = POD.S, D = POD.data, opts = POD.opts;
     var now = new Date();
-    var i, cur, store;
+    var i, cur, store, row;
     var before = stateKey();
     view.mcError = false;
     switch (action) {
@@ -316,6 +354,11 @@
         store = POD.ui.storeAt(parseInt(el.getAttribute("data-store"), 10));
         if (!store) { return; }
         POD.state.pickStore(S, D, store, opts);
+        break;
+      case "pick-place":
+        row = POD.ui.placeAt(parseInt(el.getAttribute("data-place"), 10));
+        if (!row) { return; }
+        POD.state.pickStore(S, D, row, opts);
         break;
       case "qty":
         i = parseInt(el.getAttribute("data-index"), 10);
