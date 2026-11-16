@@ -25,6 +25,7 @@ import math
 import os
 import re
 import sys
+import time
 import unicodedata
 import urllib.error
 import urllib.request
@@ -79,10 +80,17 @@ def fail(msg):
 
 RANGE_CHUNK = 16 * 1024 * 1024          # largest single ranged GET
 TRANSIENT = (urllib.error.URLError, http.client.HTTPException, OSError)
+RANGE_TRIES = 6                         # attempts per ranged read (D-039 amendment, Phase 10)
+RANGE_BACKOFF = (1, 2, 4, 8, 16)        # seconds slept before attempts 2..6
+SLEEP = time.sleep                      # looked up at call time, so a test can replace it
 
 
 class RangeError(RuntimeError):
     """A response we refuse to read (wrong status or length). Never retried."""
+
+
+class RangeIgnored(RuntimeError):
+    """The host answered a Range request with 200 (the whole file). Retried."""
 
 
 def http_get(url, tries=3, limit=64 * 1024 * 1024):
@@ -111,7 +119,17 @@ def http_range(url, start, end):
         "User-Agent": USER_AGENT,
         "Range": "bytes=%d-%d" % (start, end),
     })
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    try:
+        resp = urllib.request.urlopen(req, timeout=120)
+    except urllib.error.HTTPError as e:
+        # 4xx (a wrong URL, a range past the end): never retried. 5xx is transient.
+        if 400 <= e.code < 500:
+            raise RangeError("HTTP %d for a Range request: %s" % (e.code, url)) from e
+        raise
+    with resp:
+        if resp.status == 200:
+            # The whole file, body unread: the with block closes the connection.
+            raise RangeIgnored("expected 206 for a Range request, got 200")
         if resp.status != 206:
             raise RangeError("expected 206 for a Range request, got %s" % resp.status)
         cl = resp.headers.get("Content-Length")
@@ -150,6 +168,7 @@ class HttpRangeFile(io.RawIOBase):
         self.pos = 0
         self.requests = 0
         self.bytes_read = 0
+        self.retries = 0
         _, headers, _ = http_get_head(url)
         self.size = int(headers["Content-Length"])
 
@@ -176,16 +195,21 @@ class HttpRangeFile(io.RawIOBase):
 
     def _fetch(self, start, end):
         last = None
-        for _ in range(3):
+        for attempt in range(RANGE_TRIES):
+            if attempt > 0:
+                self.retries += 1
+                SLEEP(RANGE_BACKOFF[attempt - 1])
             try:
                 data = http_range(self.url, start, end)
-            except TRANSIENT as e:
+            except (RangeIgnored, OSError, http.client.HTTPException) as e:
+                # RangeIgnored (a 200) and transient network errors are retried;
+                # RangeError (not a RangeIgnored) propagates at once.
                 last = e
                 continue
             self.requests += 1
             self.bytes_read += len(data)
             return data
-        raise RuntimeError("range read failed: %s" % last)
+        raise RuntimeError("range read failed after %d attempts: %s" % (RANGE_TRIES, last))
 
     def read(self, size=-1):
         if size is None or size < 0:
@@ -592,8 +616,8 @@ def main():
             if key not in seen:
                 seen[key] = {"brand": props.get("brand"), "name": props.get("name"),
                              "category": category_of(props), "lat": pt[0], "lon": pt[1]}
-    print("member files: %d downloaded, %d cached, %d missing from zip; range requests: %d"
-          % (stats["downloaded"], stats["cached"], len(stats["missing"]), reader.requests))
+    print("member files: %d downloaded, %d cached, %d missing from zip; range requests: %d; range retries: %d"
+          % (stats["downloaded"], stats["cached"], len(stats["missing"]), reader.requests, reader.retries))
     if stats["missing"]:
         print("  missing spiders: " + ", ".join(sorted(stats["missing"])))
     print("US food features with valid coordinates: %d; after dedupe: %d" % (raw_kept, len(seen)))
