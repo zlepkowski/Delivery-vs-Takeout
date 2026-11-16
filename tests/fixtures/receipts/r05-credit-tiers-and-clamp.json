@@ -1,0 +1,69 @@
+{
+  "id": "r05-credit-tiers-and-clamp",
+  "title": "Amex Platinum: Uber Cash applies to Uber Eats; the Resy credit is restricted and needs an opt-in; credits never push a total below zero",
+  "refs": ["§9.1", "§4.2 step 8", "D-029 §5.9", "D-024"],
+  "dataNote": "The credit rows copy src/data/cards.js (amex_platinum): uber_cash $15 monthly, plats [ue]; resy $100 quarterly, plats [direct], restricted. Keys are cardId:creditId, as syncCredits will build them.",
+  "patch": {
+    "credits": [
+      {"key": "amex_platinum:uber_cash", "name": "Uber Cash", "amount": 15, "plats": ["ue"]},
+      {"key": "amex_platinum:resy", "name": "Resy credit", "amount": 100, "plats": ["direct"], "restricted": true}
+    ]
+  },
+  "cases": [
+    {
+      "call": "calc", "channel": "direct-p",
+      "expect": {"net": 30.70, "credit": 0},
+      "work": ["§9.1: Resy is restricted and not opted in, so it does NOT apply at Domino's. The total stays r01's 30.70, not $0."]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "expect": {
+        "lines": [["Food", 31.11], ["Delivery fee", 1.99], ["Service fee", 4.67], ["Tax", 2.66], ["Tip", 4.67], ["Card credits", -15], ["TOTAL", 30.10]],
+        "gross": 45.10, "credit": 15, "off": 15, "net": 30.10
+      },
+      "work": ["Uber Cash is universal with plats [ue]: credit = min(15, 45.10 − 0) = 15; net = 45.10 − 15 = 30.10"]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {"net": 46.10, "credit": 0},
+      "work": ["Neither credit lists dd."]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "patch": {"creditOptIn": {"amex_platinum:resy": true}},
+      "expect": {
+        "lines": [["Food", 26.98], ["Tax", 2.30], ["Gas", 0.82], ["Wear", 0.60], ["Card credits", -30.70], ["TOTAL", 0]],
+        "gross": 30.70, "credit": 30.70, "off": 30.70, "net": 0
+      },
+      "work": [
+        "With the user's opt-in (\"Qualifies here\"), Resy applies at direct",
+        "credit = min(100, gross − disc = 30.70) = 30.70: clamped so the total can't go negative; net = 0"
+      ]
+    },
+    {
+      "call": "calc", "channel": "ue-p",
+      "patch": {"promos": {"ue": {"type": "dollar", "value": 30, "cap": 0, "min": 0}}},
+      "expect": {
+        "lines": [["Food", 31.11], ["Tax", 0.09], ["Gas", 0.82], ["Wear", 0.60], ["Promo", -30], ["Card credits", -2.62], ["TOTAL", 0]],
+        "gross": 32.62, "disc": 30, "credit": 2.62, "off": 32.62, "net": 0
+      },
+      "work": [
+        "A $30 promo: promo = min(30, 31.11) = 30; tax = (31.11 − 30) × 8.54% = 1.11 × 0.0854 = 0.094794 → 0.09",
+        "gross = 31.11 + 0.09 + 1.42 = 32.62; gross − disc = 2.62",
+        "Uber Cash is clamped to what's left: min(15, 2.62) = 2.62; net = 32.62 − 30 − 2.62 = 0"
+      ]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "patch": {"credits": [{"key": "amex_platinum:uber_cash", "name": "Uber Cash", "amount": 15, "plats": ["ue"], "used": true}]},
+      "expect": {"net": 45.10, "credit": 0},
+      "work": ["Marked used this month: it no longer applies."]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "patch": {"credits": [{"key": "x:locked", "name": "Locked", "amount": 15, "plats": ["ue"], "locked": true}], "creditOptIn": {"x:locked": true}},
+      "expect": {"net": 45.10, "credit": 0},
+      "work": ["A locked credit never applies, even with plats and an opt-in."]
+    }
+  ]
+}

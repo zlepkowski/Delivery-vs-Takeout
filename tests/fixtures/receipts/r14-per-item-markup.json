@@ -1,0 +1,95 @@
+{
+  "id": "r14-per-item-markup",
+  "title": "Per-item markup (D-036): the Coke is marked up 40% on DoorDash and the pizza 10% on Uber Eats; every other line uses the app's 15.3%",
+  "refs": ["D-036", "engine contract §2.1, §5.2", "BUILD.md §11 Phase B"],
+  "dataNote": "Fixture overrides, not research: no profile carries a per-item markup yet (D-036). Cart = the base pizza + 2 L Coke.",
+  "patch": {"rest": {"menu": [{"name": "Large (14\") ExtravaganZZa", "price": 21.99, "dealItem": false, "markup": {"ue": 10}}, {"name": "Large (14\") The People's Pizza - Deluxe", "price": 21.99, "dealItem": false}, {"name": "Hot Buffalo Wings (8 pc)", "price": 11.99, "dealItem": false}, {"name": "Stuffed Cheesy Bread (8 pc)", "price": 9.99, "dealItem": false}, {"name": "Parmesan Bread Bites (16 pc)", "price": 6.99, "dealItem": false}, {"name": "5-Cheese Mac & Cheese", "price": 9.49, "dealItem": false}, {"name": "Coke® (2 L)", "price": 4.99, "dealItem": false, "markup": {"dd": 40}}, {"name": "Domino's Marbled Cookie Brownie", "price": 9.99, "dealItem": false}]}},
+  "cases": [
+    {
+      "call": "calc",
+      "channel": "dd-d",
+      "expect": {"lines": [["Food", 32.34], ["Delivery fee", 2.99], ["Service fee", 4.85], ["Tax", 2.76], ["Tip", 4.85], ["TOTAL", 47.79]], "parts": {"food": 32.34, "fees": 7.84, "tax": 2.76, "tip": 4.85, "drive": 0}, "gross": 47.79, "net": 47.79},
+      "work": [
+        "Pizza on dd has no override: 21.99 × 1 × 1.153 = 25.35447; Coke's own dd markup: 4.99 × 1 × 1.40 = 6.986",
+        "acc = 25.35447 + 6.986 = 32.34047 → food 32.34, rounded once (one rate of 15.3% gave 31.11 in r01)",
+        "service = max(32.34 × 15% = 4.851, 3) → 4.85; fees = 2.99 + 4.85 = 7.84; small: 32.34 ≥ 12 → 0",
+        "tax = 32.34 × 8.54% = 2.761836 → 2.76; tip = 32.34 × 15% = 4.851 → 4.85",
+        "gross = 32.34 + 7.84 + 2.76 + 4.85 = 47.79 = net"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-p",
+      "expect": {"lines": [["Food", 29.94], ["Tax", 2.56], ["Gas", 0.82], ["Wear", 0.6], ["TOTAL", 33.92]], "gross": 33.92, "net": 33.92},
+      "work": [
+        "Pizza's own ue markup: 21.99 × 1.10 = 24.189; Coke on ue has no override: 4.99 × 1.153 = 5.75347",
+        "acc = 29.94247 → food 29.94; tax = 29.94 × 8.54% = 2.556876 → 2.56; tip 0",
+        "drive as r01: gas 6/30 × 4.116 = 0.8232 → 0.82, wear 0.60 → 1.42; gross = 29.94 + 2.56 + 1.42 = 33.92"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "direct-p",
+      "expect": {"parts": {"food": 26.98, "fees": 0, "tax": 2.3, "tip": 0, "drive": 1.42}, "net": 30.7},
+      "work": [
+        "Direct has no markup, so overrides don't apply: food = menuSub 26.98, as r01 (30.70)"
+      ]
+    },
+    {
+      "call": "allResults",
+      "expect": {"order": ["direct-p", "ue-p", "dd-p", "ue-d", "dd-d"], "net": {"direct-p": 30.7, "ue-p": 33.92, "dd-p": 36.52, "ue-d": 43.47, "dd-d": 47.79}},
+      "work": [
+        "dd-p: food 32.34, tax 2.76, drive 1.42 → 36.52",
+        "ue-d: food 29.94, delivery 1.99, service max(4.491, 3) → 4.49, tax 2.56, tip 4.491 → 4.49; 29.94 + 6.48 + 2.56 + 4.49 = 43.47",
+        "r01's dd-p/ue-p tie (35.19 each) is broken: ue-p 33.92 now ranks ahead of dd-p 36.52"
+      ]
+    },
+    {
+      "call": "cartInfo",
+      "expect": {"menuSub": 26.98, "dealSub": 26.98, "qty": 2},
+      "work": [
+        "Markups never touch the menu subtotal: 21.99 + 4.99 = 26.98"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "dd-p",
+      "patch": {"rest": {"menu": [{"name": "Large (14\") ExtravaganZZa", "price": 21.99, "dealItem": false}, {"name": "Large (14\") The People's Pizza - Deluxe", "price": 21.99, "dealItem": false}, {"name": "Hot Buffalo Wings (8 pc)", "price": 11.99, "dealItem": false}, {"name": "Stuffed Cheesy Bread (8 pc)", "price": 9.99, "dealItem": false}, {"name": "Parmesan Bread Bites (16 pc)", "price": 6.99, "dealItem": false}, {"name": "5-Cheese Mac & Cheese", "price": 9.49, "dealItem": false}, {"name": "Coke® (2 L)", "price": 4.99, "dealItem": false, "markup": {"dd": 0}}, {"name": "Domino's Marbled Cookie Brownie", "price": 9.99, "dealItem": false}]}},
+      "expect": {"parts": {"food": 30.34, "fees": 0, "tax": 2.59, "tip": 0, "drive": 1.42}, "net": 34.35},
+      "work": [
+        "An override of 0 is a value, not a fallback: 25.35447 + 4.99 × 1.00 = 30.34447 → 30.34",
+        "tax = 30.34 × 8.54% = 2.591036 → 2.59; gross = 30.34 + 2.59 + 1.42 = 34.35"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "dd-d",
+      "patch": {"rest": {"menu": [{"name": "Large (14\") ExtravaganZZa", "price": 21.99, "dealItem": false, "markup": {"dd": null}}, {"name": "Large (14\") The People's Pizza - Deluxe", "price": 21.99, "dealItem": false}, {"name": "Hot Buffalo Wings (8 pc)", "price": 11.99, "dealItem": false, "markup": {"gh": 30}}, {"name": "Stuffed Cheesy Bread (8 pc)", "price": 9.99, "dealItem": false}, {"name": "Parmesan Bread Bites (16 pc)", "price": 6.99, "dealItem": false}, {"name": "5-Cheese Mac & Cheese", "price": 9.49, "dealItem": false}, {"name": "Coke® (2 L)", "price": 4.99, "dealItem": false, "markup": {"dd": -5, "ue": "20"}}, {"name": "Domino's Marbled Cookie Brownie", "price": 9.99, "dealItem": false}]}},
+      "expect": {"parts": {"food": 31.11}, "net": 46.1},
+      "work": [
+        "Malformed overrides fall back to the app's 15.3% (contract §2.1): -5 is negative, \"20\" a string, null not a number; gh isn't dd",
+        "So this is r01's dd-d: food 31.11, net 46.10"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"rest": {"menu": [{"name": "Large (14\") ExtravaganZZa", "price": 21.99, "dealItem": false, "markup": [10]}, {"name": "Large (14\") The People's Pizza - Deluxe", "price": 21.99, "dealItem": false}, {"name": "Hot Buffalo Wings (8 pc)", "price": 11.99, "dealItem": false}, {"name": "Stuffed Cheesy Bread (8 pc)", "price": 9.99, "dealItem": false}, {"name": "Parmesan Bread Bites (16 pc)", "price": 6.99, "dealItem": false}, {"name": "5-Cheese Mac & Cheese", "price": 9.49, "dealItem": false}, {"name": "Coke® (2 L)", "price": 4.99, "dealItem": false, "markup": "x"}, {"name": "Domino's Marbled Cookie Brownie", "price": 9.99, "dealItem": false}]}},
+      "expect": {"parts": {"food": 31.11}, "net": 45.1},
+      "work": [
+        "A markup that isn't an object (an array, a string) is ignored: r01's ue-d, food 31.11, net 45.10"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "dd-d",
+      "patch": {"cart": {"6": 3}},
+      "expect": {"lines": [["Food", 20.96], ["Delivery fee", 2.99], ["Service fee", 3.14], ["Tax", 1.79], ["Tip", 3.14], ["TOTAL", 32.02]], "net": 32.02},
+      "work": [
+        "Quantity multiplies before the markup: 4.99 × 3 × 1.40 = 20.958 → 20.96",
+        "service = max(20.96 × 15% = 3.144, 3) → 3.14; small: 20.96 ≥ 12 → 0; fees = 6.13",
+        "tax = 20.96 × 8.54% = 1.789984 → 1.79; tip = 3.144 → 3.14; gross = 20.96 + 6.13 + 1.79 + 3.14 = 32.02"
+      ]
+    }
+  ]
+}

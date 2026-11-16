@@ -1,0 +1,44 @@
+{
+  "id": "subway",
+  "asOf": "2026-11-12",
+  "menu": [
+    {"name": "Italian B.M.T. Footlong", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 11.49, "url": "https://www.subway.com/en-us/restaurant/19027-0/menu"},
+      {"zip": "60602", "state": "IL", "price": 11.29, "url": "https://www.subway.com/en-us/restaurant/74838-0/menu"},
+      {"zip": "85004", "state": "AZ", "price": 12.79, "url": "https://www.subway.com/en-us/restaurant/18419-0/menu"}]},
+    {"name": "Italian B.M.T. 6-inch", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 7.59, "url": "https://www.subway.com/en-us/restaurant/19027-0/menu"},
+      {"zip": "60602", "state": "IL", "price": 7.49, "url": "https://www.subway.com/en-us/restaurant/74838-0/menu"},
+      {"zip": "85004", "state": "AZ", "price": 7.99, "url": "https://www.subway.com/en-us/restaurant/18419-0/menu"}]},
+    {"name": "Oven-Roasted Turkey Footlong", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 11.49, "url": "https://www.subway.com/en-us/restaurant/19027-0/menu"},
+      {"zip": "60602", "state": "IL", "price": 11.79, "url": "https://www.subway.com/en-us/restaurant/74838-0/menu"},
+      {"zip": "85004", "state": "AZ", "price": 12.49, "url": "https://www.subway.com/en-us/restaurant/18419-0/menu"}]},
+    {"name": "Oven-Roasted Turkey 6-inch", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 7.49, "url": "https://www.subway.com/en-us/restaurant/19027-0/menu"},
+      {"zip": "60602", "state": "IL", "price": 7.59, "url": "https://www.subway.com/en-us/restaurant/74838-0/menu"},
+      {"zip": "85004", "state": "AZ", "price": 7.99, "url": "https://www.subway.com/en-us/restaurant/18419-0/menu"}]},
+    {"name": "Lay's Classic Chips", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 1.30, "url": "https://www.subway.com/en-us/restaurant/19027-0/menu"},
+      {"zip": "60602", "state": "IL", "price": 1.59, "url": "https://www.subway.com/en-us/restaurant/74838-0/menu"},
+      {"zip": "85004", "state": "AZ", "price": 1.99, "url": "https://www.subway.com/en-us/restaurant/18419-0/menu"}]},
+    {"name": "Cookie", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 1.10, "url": "https://www.subway.com/en-us/restaurant/19027-0/menu"},
+      {"zip": "60602", "state": "IL", "price": 0.89, "url": "https://www.subway.com/en-us/restaurant/74838-0/menu"},
+      {"zip": "85004", "state": "AZ", "price": 0.89, "url": "https://www.subway.com/en-us/restaurant/18419-0/menu"}]},
+    {"name": "Fountain Drink (Medium)", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 2.89, "url": "https://www.subway.com/en-us/restaurant/19027-0/menu"},
+      {"zip": "60602", "state": "IL", "price": 2.49, "url": "https://www.subway.com/en-us/restaurant/74838-0/menu"},
+      {"zip": "85004", "state": "AZ", "price": 3.09, "url": "https://www.subway.com/en-us/restaurant/18419-0/menu"}]}
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "amexGoldDirect": false,
+  "platforms": {
+    "dd": "Marketing Dive 2018-10-12 (https://www.marketingdive.com/news/subway-brings-delivery-to-more-than-9000-locations/539587/): '9,000 of its nearly 26,000 U.S. restaurants ... will offer delivery through Grubhub, DoorDash and Uber Eats'. Read by the orchestrator 2026-11-12. Dated; not re-confirmed for 2026.",
+    "ue": "Marketing Dive 2018-10-12 (https://www.marketingdive.com/news/subway-brings-delivery-to-more-than-9000-locations/539587/): '9,000 of its nearly 26,000 U.S. restaurants ... will offer delivery through Grubhub, DoorDash and Uber Eats'. Read by the orchestrator 2026-11-12. Dated; not re-confirmed for 2026.",
+    "gh": "Marketing Dive 2018-10-12 (https://www.marketingdive.com/news/subway-brings-delivery-to-more-than-9000-locations/539587/): '9,000 of its nearly 26,000 U.S. restaurants ... will offer delivery through Grubhub, DoorDash and Uber Eats'. Read by the orchestrator 2026-11-12. Dated; not re-confirmed for 2026."
+  },
+  "markup": {"useCategory": true},
+  "notes": "Menu: pickup prices from subway.com store menu API (api/store-menu) at 3 stores: NY 19027-0 (165 Church St, ZIP 10007); IL 74838-0 (105 W Madison St, ZIP 60602); AZ 18419-0 (530 E McDowell Rd, ZIP 85004). Medians are computed by the generator. Deal: none. The Oct 27-Nov 8 2026 BOGO has expired, and no current direct-only offer was confirmed. Delivery: subway.com shows 'a Delivery fee of $2.99-$6.49 USD' plus a 12% service fee at delivery addresses in NY, IL and AZ, which is a range, not an observed fee. The bag drawer did not open in the browser run, so no single fee was read. directDelivery false, ISS-027. Platforms: dd, ue and gh from Subway's Oct 2018 announcement (Marketing Dive), added by the orchestrator; the worker gathered none. Orchestrator re-read the three store-menu APIs on 2026-11-12: every price in this file matches. Markup: no chain-specific published figure found, so category default (est). Sources checked 2026-11-12."
+}

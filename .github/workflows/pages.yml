@@ -1,0 +1,74 @@
+# GitHub Pages deploy for Pickup or Delivery (D-011, D-018, D-021).
+#
+# One-time repo setting (ISS-005): Settings -> Pages -> Source: "GitHub Actions".
+# Without it, the deploy job fails at actions/deploy-pages.
+#
+# The logic lives in tools/build-site.sh, which regenerates src/data/brands.js
+# and the store tiles from the latest All The Places run, regenerates
+# src/data/states.js (EIA gas, GAS_WEEK; D-039), runs the gates in
+# tools/check-site.js, and writes a folder with ONLY index.html and src/.
+# Run it locally with:
+#   ATP_RUN=latest bash tools/build-site.sh /tmp/site
+#
+# Weekly (Monday 07:17 UTC) and on push to main, the build deploys. The
+# workflow_dispatch input dry_run (default false) runs the build and every gate
+# but skips the deploy, so the owner can check a site before it goes live.
+# A failed gate fails the build, and Pages keeps serving the last good deploy.
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 7 * * 1'   # weekly, Monday 07:17 UTC (quiet hour)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and run every gate, but do not deploy'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build site (regenerate brands, tiles and gas; run the gates)
+        run: bash tools/build-site.sh _site
+        env:
+          ATP_RUN: latest
+          ATP_CACHE: ${{ runner.temp }}/atp-cache
+          EIA_CACHE: ${{ runner.temp }}/eia-cache
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -68,8 +68,390 @@ The project moved from `zlepkowski/test` to `zlepkowski/Delivery-vs-Takeout`, a 
 **D-019 — Dispatching workers when the named agents aren't loaded** · 2026-11-12 · *accepted*
 Agents in `.claude/agents/` load only at session start, so a session that began before they existed can't call `builder`, `researcher` and the rest by name. In that case the orchestrator dispatches a `general-purpose` agent with `model: haiku`, tells it to read its agent file and skill first, and gives it the task card. The rules, the report format and the orchestrator's re-verification are unchanged. A fresh session calls them by name.
 
+**D-020 — All The Places data is CC-0, so the tiles can be published** · 2026-11-12 · *accepted*
+The ATP README (`raw.githubusercontent.com/alltheplaces/alltheplaces/master/README.md`, "License", read 2026-11-12) says the data its spiders generate is released under the Creative Commons CC-0 waiver. The spider code is MIT. Publishing derived store coordinates on Pages is allowed. Credit ATP in the `brands.js` provenance header and on the page anyway. Closes ISS-002.
+*Also found:* the latest run (`2026-10-31-13-32-34`, from `data.alltheplaces.xyz/runs/latest.json`) is one 2.9 GB `output.zip` covering 5,781 spiders worldwide. The host answers HTTP `Range` requests (206), so `tools/build-stores.py` should read the zip's central directory by range and download only the members it needs, not the whole file.
+
+**D-021 — Store data: selection, brands and the tile format** · 2026-11-12 · *accepted*
+Finalizes the store-tile proposal in the data-research skill. Where they differ, this wins.
+- **Run.** `tools/build-stores.py --run <run_id|latest>`. `latest` resolves through `https://data.alltheplaces.xyz/runs/latest.json`. The run id is recorded in every output.
+- **Download only what's needed.** Read `output.zip` through HTTP `Range` requests: `zipfile.ZipFile` over a small seekable reader object whose `read()` issues ranged GETs. The central directory takes about 3 requests. Downloaded members are cached in a `--cache` directory outside the repo.
+- **Which brands are restaurants.** A `brand:wikidata` is a food brand if it appears in the Name Suggestion Index files `data/brands/amenity/{fast_food,restaurant,cafe,ice_cream}.json` (`raw.githubusercontent.com/osmlab/name-suggestion-index/<ref>/…`, `--nsi-ref`, default `main`).
+- **Which members.** The run's `stats/_insights.json` lists, per Wikidata ID, the spiders holding its stores in each country (`atp_splits.US`). Download the union of the US spiders for the food brands only. That was 339 members for 338 brands in run `2026-10-31-13-32-34`.
+- **Which features.** `amenity` ∈ {fast_food, restaurant, cafe, ice_cream}; `brand:wikidata` in the food set; in the US (`addr:country` = `US`, or no `addr:country` and the spider name ends in `_us`); valid coordinates. Dedupe on (brand, lat×1000, lon×1000), rounded half away from zero. A brand is its `brand:wikidata`, so two spiders for one brand merge.
+- **Fixture cells with no stores** get no file and no `TILE_INDEX` entry.
+- **Brands kept:** at least 25 deduped US stores.
+- **Brand name:** the most common `brand` property among the brand's kept US features; ties go to the alphabetically first.
+- **Brand id:** that name lowercased, `&` → `and`, apostrophes dropped, every other run of non-alphanumerics → `_`, trimmed of `_`. On a collision, the brand with fewer stores gets `_` + its lowercased Wikidata ID appended; on an exact tie, every tied brand gets it. (In run `2026-10-31-13-32-34` the only collisions are taco_bell vs Q111972226 and taco_time vs Q7673970, neither a tie.)
+- **Category:** from the first `;`-separated token of `cuisine`. pizza → `pizza`; burger → `burger`; chicken, wings, fried_chicken → `chicken`; mexican, tex-mex, tacos, burrito → `mexican`; sandwich, sub, deli, bagel → `sandwich`; chinese, japanese, asian, sushi, thai, korean, vietnamese, indian, ramen, noodle → `asian`; coffee_shop, coffee, donut, tea, bubble_tea → `coffee`; ice_cream, frozen_yogurt, dessert, cake, cookies, juice, smoothie → `dessert`. With no match it falls back on `amenity`: restaurant → `casual`, cafe → `coffee`, ice_cream → `dessert`, fast_food → `other`. A brand's category is its most common store category; ties go to the alphabetically first. The 10 categories are the keys `categories.js` must cover.
+- **`brands.js`** assigns:
+  - `POD.data.BRANDS = { id: {name, category, wikidata, stores} }`. `profiled` is **not** stored: the page derives it from `POD.data.PROFILES`, so the generator doesn't depend on profiles.
+  - `POD.data.BRAND_IDS`: the ids, sorted. Tiles index into it.
+  - `POD.data.BRANDS_RUN`: the run id.
+  - `POD.data.TILE_INDEX = { cell: storeCount }` for every tile the run produced.
+- **Tiles.** Cell = `floor(la/1000)_floor(lo/1000)` of the stored ×1000 integers, e.g. `40_-74`, so every record sits inside its own cell. *Amended 2026-11-12:* this was "floor of the float degrees". The two rules disagree for 194 stores within 0.0005° of a cell edge, and the integer rule keeps tiles self-consistent. **The geography lookup (Phase 3) must load every cell the search circle touches, never only the user's own cell**, so an edge store is always found. File `<tiles-out>/<cell>.js`: a provenance comment, then the ES5 wrapper assigning `POD.data.TILES["<cell>"] = { run: "<run_id>", s: "b,la,lo;b,la,lo;…" }`, creating `POD.data.TILES` if absent. `b` indexes `BRAND_IDS`; `la`/`lo` are ×1000 integers. Records sorted by (b, la, lo) and unique. Store id = `<brandId>@<la>,<lo>`.
+- **Fixtures** (`--cells … --tiles-out tests/fixtures/stores`): NYC `40_-74` and `40_-75`; around Big Timber, MT, `45_-111`, `45_-110`, `45_-109`, `46_-111`, `46_-110`, `46_-109`. The committed `brands.js` and the fixtures come from the same run.
+- **Deploy (D-011):** the Pages workflow regenerates `brands.js` *and* the tiles together, so the indexes always match.
+*Why:* 24 MB of downloads instead of 2.9 GB (339 members, 223 MB uncompressed, measured 2026-11-12), a brand list grounded in OSM tagging, and tiles that can't drift from the brand index.
+
+**D-022 — Gas prices come from EIA, not AAA** · 2026-11-12 · *accepted*
+AAA's site sits behind Cloudflare bot protection. A plain request on 2026-11-12 got "Sorry, you have been blocked", and getting around that isn't acceptable. EIA's weekly retail prices (`www.eia.gov`) are official and free. Where EIA publishes a state series (CA, CO, FL, MA, MN, NY, OH, TX, WA), use it. Every other state uses its PADD region, or the PADD 1 sub-region (1A New England, 1B Central Atlantic, 1C Lower Atlantic), per EIA's own PADD definitions. A comment on each `STATES` row names the series used. `GRADE_ADD` = EIA's U.S. midgrade, premium and diesel averages minus U.S. regular, for the same week. Closes ISS-003: the Phase 7 refresh uses the same source. *Refined 2026-11-12:* PADD 5 states with no series of their own (AK, AZ, HI, NV, OR) use EIA's "West Coast (PADD 5) Except California" series. The plain PADD 5 average is pulled up by California, which is none of them.
+*Why:* robustness beats precision here (BUILD.md §1: fuel rarely decides the answer).
+
+**D-023 — Which cars `cars.js` lists** · 2026-11-12 · *accepted*
+Source: EPA `https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip`.
+- **Models:** every (make, `baseModel`) with at least one record in model year ≥ `--since` (2025 for this build). Use only the records from that model's latest model year.
+- **Fuel:** the most common `fuelType1` among those records; ties go Regular > Premium > Diesel > Electricity. Regular or Midgrade Gasoline → no suffix; Premium Gasoline → `*`; Diesel → `d`; Electricity → `e`. Models whose fuel is anything else (hydrogen, natural gas) are dropped.
+- **Value:** the median, over those records with that fuel, of `comb08` (gas, diesel), or of `1000 / combE` for electric (mi/kWh × 10). Round half up to an integer.
+- **Names:** makes merged case-insensitively (`MINI` / `Mini` → `MINI`). Any `,` `:` `|` in a name becomes a space; whitespace collapsed. Makes and models sorted.
+- **Expected:** about 48 makes and 347 models (the spec's v4 figures were ~39 / ~330).
+
+**D-024 — cards.js: which cards, which credits, and the shape** · 2026-11-12 · *accepted*
+Researched by the orchestrator on 2026-11-12 from the issuers' own card pages (D-013). Supersedes the spec's "27 cards".
+- **Cards (22):**
+  - every American Express consumer card with a live page on americanexpress.com (13): Platinum, Gold, Blue Cash Preferred, Blue Cash Everyday, Delta SkyMiles Blue/Gold/Platinum/Reserve, Hilton Honors/Surpass/Aspire, Marriott Bonvoy Bevy/Brilliant. Green, EveryDay, EveryDay Preferred and Cash Magnet now redirect to the card hub, so they're no longer offered and aren't listed.
+  - every Chase card whose page lists a DoorDash benefit (7): Sapphire Reserve, Sapphire Preferred, Freedom Unlimited, Freedom Flex, Freedom Rise, DoorDash Rewards Mastercard, Ink Business Preferred.
+  - Capital One Venture X and Savor (2). Neither has a food or delivery credit; they're listed so holders can see that.
+- **Only food-relevant credits are listed:** dining, restaurant, Resy, OpenTable, Uber Cash, DoorDash promos, Dunkin', and rideshare credits. Rideshare credits are listed as **locked** because people mistake them for Uber Eats money. Hotel, airline, streaming and retail credits are left out. A card with none has `credits: []`.
+- **`POD.data.CARDS`** is an ordered array of card objects (display order: Amex, Chase, Capital One). Card ids are unique.
+- **Card:** `{ id, issuer, name, url, asOf, membership?, note?, credits: [] }`. `membership` ("dd" | "ue" | "gh") means the card *provides* that platform's membership. A card that only reimburses a membership the user must buy (Platinum's Uber One credit) does **not** set it. The page turns it on by default, and the user can turn it off.
+- **Credit:** `{ id, name, amount, cadence, plats, modes?, goldPartner?, restricted?, locked?, source, asOf, note }`.
+  - The key for opt-ins and `used` flags is `cardId + "." + creditId`.
+  - `amount` is per `cadence` period ("monthly" | "quarterly" | "semiannual" | "annual"), never annualized.
+  - **Tier** (§9.1): universal = neither flag; `restricted: true` = applies only after the user opts in; `locked: true` = never applies, and `plats` is `[]`. Never both.
+  - A restricted credit's `plats` lists where it would apply after opt-in.
+  - **New `modes`:** `["d"]` or `["p"]` limits a credit to delivery or pickup channels of its `plats`; absent means both. The Phase 2 engine and oracle must honor it.
+- **When unsure, under-credit:** bonuses with odd timing (Platinum's extra $20 Uber Cash in December) aren't counted. A credit whose pickup eligibility isn't stated is limited to `modes: ["d"]`.
+*Why:* the spec's list was v4's. Issuer lineups changed, and listing non-food credits would only add noise to the Locked insight.
+
+**D-025 — Virginia's tax is its combined sales rate** · 2026-11-12 · *accepted*
+BUILD.md §6 listed VA among the meal-tax states at 10.5%. Virginia has no statewide meal tax: its meals taxes are levied by counties and cities at different rates, and no primary source for a "typical" local rate was reachable. Per §6's own rule (a state without a meal tax uses the combined sales rate), VA uses the Tax Foundation's published combined state + average local rate, with a note that local meals taxes are not included. All "combined" rows use the Tax Foundation's published combined figure as-is, not a re-added state + local sum. Resolves ISS-009.
+*Why:* a sourced number beats a null that breaks every Virginia calculation. Tax is applied the same way on every channel, so understating it barely moves the ranking.
+
+**D-026 — The 12 profiled chains** · 2026-11-12 · *accepted (user confirmed)*
+`dominos`, `taco_bell`, `chipotle`, `papa_johns`, `wingstop`, `pizza_hut`, `five_guys`, `buffalo_wild_wings`, `little_caesars`, `the_cheesecake_factory`, `subway`, `dunkin`.
+Picked per D-006. "How often a brand is nearby" was measured as the share of the 42,354 US ZIP centroids with a store of that brand within 5 miles (straight line), using run `2026-10-31-13-32-34`'s tiles. Subway 54.9% (#1), Taco Bell 43.9% (#2), Domino's 43.7% (#3), Dunkin' 38.2% (#5), Chipotle 31.8% (#8), Papa Johns 30.2% (#9), Wingstop 27.7% (#14), Pizza Hut 24.8% (#16), Five Guys 23.8% (#18), Buffalo Wild Wings 22.9% (#20), Little Caesars 19.2% (#27), The Cheesecake Factory 7.2% (#63).
+Changes from the handoff's list: **Wonder** (not in All The Places) and **McDonald's** (no US stores in this run, ISS-007) are replaced by **Subway** (top coverage, app-only deals) and **Dunkin'** (exercises the Amex Gold Dunkin' credit, a restricted credit). The Cheesecake Factory stays despite low coverage: it's an Amex Gold dining partner and the only sit-down chain in the set. Five Guys, Buffalo Wild Wings and The Cheesecake Factory are the `amexGoldDirect` profiles.
+
+**D-027 — How profiles and category defaults are researched and stored** · 2026-11-12 · *accepted*
+- **Inputs are hand-entered JSON with evidence, one file per chain:** `tools/data/profiles/<brandId>.json`, plus `tools/data/categories.json`. `tools/build-profiles.py` validates them and writes `src/data/profiles.js` and `src/data/categories.js`. Parallel researchers never touch the same file, and every number keeps its evidence in the repo.
+- **Chain file:**
+  - `id` must be a `BRAND_IDS` entry from D-026, and `asOf`.
+  - `menu`: 5–10 popular items, each `{name, dealItem, prices: [{zip, state, price, url}]}`, observed at **2–3 stores in different states** on the chain's own ordering site (pickup prices). The generator computes each item's price as the **median** of its observations (even count: mean of the middle two, rounded half up to the cent). It needs ≥ 2 observations from ≥ 2 states.
+  - `deal`: `null`, or a published **direct-only** offer `{label, price, minItems, scope, url, terms}`. `price` is per eligible item; `scope` ∈ both / pickup / delivery.
+  - `directDelivery`: true or false. When true, `directFee` = `{observed: [{zip, state, fee, url}]}`, and the generator takes the median fee, which must be > 0 (§9.3). If the fee can't be observed, `directDelivery` is false with a note, and an issue is logged. The route is left out, never priced at $0.
+  - `platforms`: `{dd|ue|gh: evidence}`, listing only apps with evidence that the chain is on them.
+  - `markup`: `{dd, ue, gh}` in percent for the listed platforms, with `source` (a URL) for chain-specific published reporting. Otherwise `{"useCategory": true}`: the generator then fills in the chain's category default from `categories.json` (category from `brands.js`) and marks it `est`.
+  - `amexGoldDirect`: true only for five_guys, buffalo_wild_wings and the_cheesecake_factory.
+  - `notes`.
+- **Output `PROFILES[id]`** (*menu shape amended by D-036: items are `{name, price, dealItem, markup?}`; an input item may carry a sourced per-item `markup`*) = `{ menu: [[name, price, isDealItem]], deal: {label, price, minItems, scope} | null, markup: {dd?, ue?, gh?}, markupEst, directDelivery, directFee?, amexGoldDirect, platforms: [...] }` (§6 shape, keyed by brand id).
+- **`categories.json`** holds `{ markup: {dd, ue, gh}, est, reason, sources }` per D-021 category. The generated **`CATEGORY_DEFAULTS[category]`** is just `{ markup: {dd, ue, gh}, est }`: reasons and sources stay in the JSON in the repo, and the sources are also listed in the file header. Estimates are allowed here (data-research skill) when flagged.
+- **Browser research rules:** Playwright through the proxy. **No getting around bot protection**: no user-agent spoofing, stealth plugins or CAPTCHA solving. A chain that blocks automated access is reported BLOCKED, for option 2 (prices from the user) or option 3 (unprofiled). Don't create accounts or place orders. Use a public address (e.g. a city hall) to see a store's prices and delivery fee. Don't scrape the delivery apps' menus; platform presence is shown by the chain's own site or a citable statement.
+- **Network:** during this research the environment is temporarily **unrestricted** (approved by the user 2026-11-12). Afterwards it goes back to the 16-host list in ISS-001.
+
+**D-028 — Pizza Hut and Five Guys ship unprofiled for now** · 2026-11-12 · *accepted (user confirmed)*
+Of the 12 D-026 chains, `pizza_hut` (connection resets and timeouts from this environment over HTTP/2 and HTTP/1.1, ISS-021) and `five_guys` (Cloudflare bot check, ISS-017) can't be researched under D-027's no-workaround rule. They ship as **unprofiled** brands per D-006: category-default markup (est), the user's typed cart total, no direct-delivery channel. `taco_bell` and `papa_johns`, whose earlier failures were transient (502s, ChunkLoadError), get one more research pass; if either is still blocked, it ships unprofiled the same way. All of them stay open issues for a later retry, and D-026's list stays the target.
+Consequence: an unprofiled Five Guys has no `amexGoldDirect`, so the Amex Gold dining credit isn't applied to ordering Five Guys direct. That under-credits, the safe direction (§9.1's trap is over-crediting). Buffalo Wild Wings and The Cheesecake Factory still carry the flag. Whether `amexGoldDirect` should become a brand-level flag independent of profiles is a Phase 3 question.
+**Retry outcome (same day):** `papa_johns` was profiled (`7af787d`). `taco_bell` stayed blocked: it answers only browser-like user agents, which D-027 rules out working around (ISS-013), so it ships unprofiled. Final Phase 1 set: **9 profiled**, with `taco_bell`, `pizza_hut` and `five_guys` unprofiled.
+*Why:* the user chose to retry the two transient failures and not hold Phase 1 for the two hard blocks. Shipping 8–10 sourced profiles beats shipping 12 with guessed numbers.
+
+**D-029 — The engine contract** · 2026-11-12 · *accepted*
+[`docs/engine-contract.md`](engine-contract.md) defines `POD.engine` exactly: the inputs, channel availability, every formula in §4.2 order with its rounding, the credit rules and the receipt lines. Both `src/js/engine.js` and the Python oracle implement it, and **where it differs from BUILD.md §4, the contract wins.** Changes go through a decision, and the oracle and receipts change before the engine. Its §7 lists the judgment calls that fill the spec's gaps: app pickup has no fees; small-order and regulatory fees apply to app delivery only; a membership applies at `food >= memberMin`; promos apply to both modes except `freedel`; EVs pay wear; a deal never raises an item's price; the engine enforces the §9.1 credit tiers itself; and a direct-channel service fee `directSvc` is modeled (ISS-031). `calc` reads `S.rest`, a resolved restaurant built by the pure `restFor(brandId, D)`, so the engine never touches `POD.data`.
+*Why:* the oracle can only match the JS to the cent if both follow one unambiguous definition. Writing the formulas once, with the order of floating-point operations fixed, makes the differential test exact.
+
+**D-030 — The geography contract** · 2026-11-13 · *accepted*
+[`docs/geo-contract.md`](geo-contract.md) defines `POD.geo` exactly, and **where it differs from BUILD.md §8, the contract wins.** `src/js/geo.js` and the Python reference `tests/oracle/geo.py` both implement it, and changes go through a decision, with the reference and fixtures changing before the code. The judgment calls that fill the spec's gaps:
+- **Every function takes the data tables as an argument `D`** and reads nothing global, like `restFor(brandId, D)` (D-029). It never throws: bad input gives `null`.
+- **`zipSpacing` averages the 6 nearest *distinct* centroid points, not records.** Many ZIPs sit stacked on one coordinate (ISS-032), and counting each would make those spots look like the densest in the country.
+- **`storesNear` lists one row per brand (its nearest store)**, sorted by distance then brand id. It widens 5 → 10 → 25 → 50 mi until at least `WANT` = 15 brands are found, and returns every brand within that radius (the UI decides how many to show).
+- **Tile loading stays outside `geo.js`.** `storesNear` and `nearestStore` say which cells they still `need`, and the page loads those (Phase 5) and calls again. A cell that fails to load is passed back in `opts.failed` and makes the result `partial`. A tile from another All The Places run is never read, because its brand indexes would point at the wrong brands.
+- **The cells for a search are the exact bounding box of the circle** (latitude ± δ, longitude ± asin(sin δ / cos φ)), so every cell the circle touches is loaded (D-021).
+- **Distances shown or priced are rounded to 0.1 mi:** a trip is `round1(straight × 2 × 1.25)`, and the estimator's `one` and `round` are rounded the same way. Unrounded distances are kept for sorting.
+*Why:* the same reason as D-029. An independent reference can only check the code if both follow one exact definition, and pure functions with `D` passed in can be tested on small hand-worked tables.
+
+**D-031 — The state contract** · 2026-11-13 · *accepted*
+[`docs/state-contract.md`](state-contract.md) defines `POD.state` exactly: the fields of `S`, the derivation cascade (`applyCar` → `applyState`, `applyAddress`, `applyBrand`, `autoMiles`, `syncCredits`, all run by `derive`), the user actions that reset things (`setBrand` empties the cart, `pinMiles`/`unpinMiles`, `pickStore`), the wallet, and persistence. Where it differs from BUILD.md §3/§5, the contract wins. The judgment calls:
+- **Functions read only their arguments** (`D`, `now`, `storage`) and mutate only `S`, so they run in Node with a fake clock and a throwing storage.
+- **`derive` never resets a user field**, so `load` = merge the saved user fields over `fresh`, then `derive`. Derived fields (`rest`, `tax`, `gas`, `credits`, `member`, `markup`) are never saved, so a data refresh can't leave stale copies behind.
+- **A used flag belongs to a period** (`usedIn[key] = "2026-11"`), so it resets by itself when the month, quarter or half-year turns.
+- **Restricted and locked credits get `plats: []` in `syncCredits`** (unless opted in), and the engine checks the tiers again (§9.1, defence in depth).
+- **A card's membership turns the app's membership on**, and the user can turn that off (`cardMember`) or say they pay for it (`memberOwn`), per D-024.
+- **The ZIP is the last 5-digit run in the address**, so a 5-digit house number doesn't win.
+- **A picked store survives a reload** (`storePicked`); the trip is then re-measured from wherever the user is.
+- **`autoMiles` never invents a distance while tiles load**: it reports `need` and clears the trip (`miles`, `minutes`, `milesSrc`, `store` → `null`), so `missing(S)` holds the page back until the tiles arrive.
+*Amended 2026-11-13 after review of 4.3:* `need` used to "leave `miles` alone". That kept the **previous brand's** distance (or the previous address's, or an unpinned pin), and the page would have priced the new brand at it. Also: `setPath` takes only plain values (null, boolean, string, finite number), so `S` never holds an object the caller still owns and a cyclic value can't overflow the copy. `pickStore` refuses a store whose `id` isn't `brand + "@…"`. Manual-credit keys have at most 9 digits, so `n + 1` never turns into `1e+21`.
+*Why:* the same reason as D-029 and D-030. Hand-worked scenarios can only test the cascade if every rule is written down once.
+
+**D-032 — Default values: official numbers only** · 2026-11-13 · *accepted (user decision)*
+`src/data/defaults.js` (generated by `tools/build-defaults.py` from `tools/data/defaults-platforms.json` and `tools/data/defaults-trip.json`) holds the values `fresh()` starts with. The user chose **official numbers only** for the delivery apps' fees: a fee an app doesn't publish (on a page readable from here) is `null`, the page asks the user for it, and **that app is left out of the comparison until it's filled in** (`forEngine`, state contract §7). On 2026-11-13 that leaves DoorDash with 15% service, 5% with DashPass and a $12 DashPass minimum (published for markets not yet on DoorDash's new fee model; the page must say so) and every app's delivery fee empty. Uber Eats' only readable page was a grocery guide, so none of its values are used. Other defaults:
+- Wear $0.1104/mi (AAA Your Driving Costs 2025), home electricity $0.1816/kWh (EIA Table 5.6.A, Aug 2026), speed 27 mph (FHWA NHTS 2022 Table 7-4: private-vehicle commute speed 26.59 mph, `est` because a commute stands in for an errand).
+- **Tips 15% delivery, 0% pickup: the user's product choice**, since no reachable page states a typical tip (ISS-033).
+- **Pickup discount 0**: no standing app pickup discount is assumed; promos are entered by the user. That's the conservative direction (it never makes an app look cheaper).
+*Why:* the user preferred empty fields the user fills to estimates the page would have to label. Switching an app's defaults to labeled estimates later is a change to the evidence files only (ISS-034).
+
+**D-033 — App pickup is priced without the app's delivery fees** · 2026-11-14 · *accepted (orchestrator; the open question in state contract §7)*
+Under D-032 every app's delivery fee starts empty, and `forEngine` switched a whole app off when any fee was missing, so the first screen priced no app at all, not even app pickup, which reads none of those fees (engine contract §7: app pickup has no fees). Now:
+- **Engine contract §3:** an app's delivery channel `p-d` is also unavailable when `S.plats[p].noDelivery === true` (a missing value is false, as for every boolean). Pickup `p-p` is unaffected.
+- **State contract §7:** `forEngine` switches an app off (`on = false`) only when a **pickup input** is missing (`plats.p.markup`, `plats.p.pickDisc`). When only **delivery inputs** are missing (`delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `regFee`, `smallMin`, `smallFee`), it sets `noDelivery = true` on the copy instead. `noDelivery` lives only on that copy: never in `fresh`, never saved or loaded.
+- The oracle, a new receipt (`r13-app-delivery-off`) and the state scenarios changed first; the fuzzer now sets `noDelivery` on 15% of apps.
+*Why:* it's the smallest change that lets the page price everything the user has given it. A delivery fee is still never invented (D-032): the app's delivery row is simply left out until the user enters its fees.
+
+**D-034 — The insights contract** · 2026-11-14 · *accepted*
+[`docs/insights-contract.md`](insights-contract.md) defines `POD.insights.build(F, R, now)` exactly: the nine cards of BUILD.md §4.5 (Unlock, Distance, Fuel, Minimum, Wallet, Timing, Locked, Nuance, Spread), when each shows, its numbers, and its sentence character for character. **Where it differs from BUILD.md §4.5, the contract wins.** `src/js/insights.js` and the Python reference `tests/oracle/insights.py` (built on the engine oracle) both implement it; `tests/fixtures/insights/` holds 34 cases whose key numbers are worked by hand, and `run.py` compares the JS with the reference on them and on 500 seeded scenarios. The judgment calls:
+- **Insights return plain text and numbers, not HTML** (`{id, label, cls, text, data}`), so the page escapes once and tests compare numbers exactly.
+- **Counterfactuals add the cheapest item:** Unlock adds the cheapest deal item, Minimum the cheapest menu item (up to 20) or, for an unprofiled brand, the smallest typed subtotal that reaches the minimum. Minimum shows the candidate whose total moves least.
+- **Distance and Fuel compare the cheapest pickup with the cheapest delivery**, as straight lines (credits that clamp at the total make the real line bend). Fuel caps its message at $12/gal (BUILD.md §4.5) and is skipped for EVs.
+- **Timing counts calendar days to the next period** (the same calendar periods as `periodOf`, D-031), with no `Date` built inside, and lists unused credits that can apply here.
+- **Locked lists both locked credits and restricted credits not opted in**, the second with a pointer to "Qualifies here" (§9.1).
+- An empty order gets no advice.
+*Why:* the same reason as D-029 to D-031: an independent reference can only check the code if both follow one exact definition.
+
+**D-035 — The UI contract** · 2026-11-14 · *accepted*
+[`docs/ui-contract.md`](ui-contract.md) defines the page: ten sections in a fixed order (one column on a phone, inputs left and results right on a desktop), what each control calls in `POD.state`, what each section reads and the exact strings the e2e checks, tile loading by script injection with a `?v=<BRANDS_RUN>` query (checked to work over `file://`), geolocation with a typed-ZIP fallback, and `POD.util.esc`. **Where it differs from BUILD.md §3/§10, it wins.** The judgment calls:
+- **Values commit on `change`**, not on every keystroke; an empty or unparsable number box is `null`, so the page asks for it rather than pricing a 0.
+- **Every change re-renders, writing only the blocks whose HTML changed**, and focus is restored by element `id`. *(Amended 2026-11-14 after slice A: a whole-section replace removed the button under the pointer when a text box committed on mouse down, so the click was lost.)*
+- **Apps waiting for fees get inline inputs under the results** (D-032, D-033): each app lists only the fees it's missing, labeled as "what your app's checkout shows"; shared fees appear once.
+- **A first-visit example** ("Show me an example": ZIP 10118, a Toyota Camry, Domino's, one pizza) runs the same actions a user would. It sets inputs, not data, so no number is invented.
+- **A tile that fails to load** makes the list "may be incomplete"; the browser's own resource error for the missing file is the one console error the e2e allows, in that test only. Locally without built tiles it's expected; on Pages every indexed tile exists.
+- **ISS-030** (dated platform evidence) is handled in the page's fine print for now: app listings are flagged as coming from announcements, some years old. A per-platform evidence date in `PROFILES` stays open for a later data pass.
+*Why:* the same as D-029 to D-034. The e2e checks this file's hooks and strings, written before the builder.
+
+**D-036 — Per-item markup and buy-one-get-one promos (BUILD.md §11 Phase B)** · 2026-11-14 · *accepted (orchestrator)*
+- **Menu items become objects** `{name, price, dealItem, markup?}` in `PROFILES`, `S.rest` and every fixture, replacing `[name, price, isDealItem]`. `markup` is optional, `{dd?, ue?, gh?}` in percent (15 = 15%, like every percent here; BUILD.md's `0.30` fractions are not used).
+- **An item's markup on app `p`** is its own `markup[p]` when that's a finite number ≥ 0, else the app's markup `S.plats[p].markup` (the chain's or category default). A malformed override falls back; it never throws and never becomes 0%.
+- **App food is a sum over cart lines, rounded once:** `food = round2(Σ price × qty × (1 + markup_i / 100))`, in ascending menu-index order (engine contract §5.2). Unprofiled brands keep `round2(subtotal × (1 + markup / 100))`. *Rejected:* rounding each item's app price to the cent first (as an app's menu shows it). It would move every app total by up to a cent per line on markups that are estimates (all 9 profiles use the category default), which is precision the data doesn't have, and it changed 150 of the 190 hand-worked app totals in the receipts. The sum changes none of them.
+- **A new app promo type `bogo`** ("Buy one, get one free"), entered by the user like every promo (D-032), on the item `promos[p].item` (a menu index): every two of that item in the cart make one free, `free = floor(qty / 2)`, priced at that item's own marked-up price (which is why per-item markup comes first), capped by `cap` dollars when `cap > 0`, after the usual minimum test on the marked-up food (§9.2). It applies to both modes, like `percent` and `dollar`; it lowers the taxed amount and not the tip base (§9.4). No item, an item not on the menu, an unprofiled brand or fewer than 2 in the cart → no promo, never a throw. A result with a `bogo` promo > 0 gets the note `"BOGO: " + item name`. A limit on how many items an offer makes free isn't modeled: `cap` limits the dollars.
+- **Not in this phase:** a direct-channel BOGO deal (no profiled chain has a direct-only deal, ISS-035; `deal` stays a price per eligible item) and per-item app prices typed by the user (a later UI decision, ISS-036).
+- **Data:** `tools/build-profiles.py` writes the object shape and accepts an item `markup` only for listed platforms, 0–60, with an https `source` (never estimated per item: an estimate already exists at the chain level). No current profile has one: the migration changes the shape, not a number.
+- **State:** `promos[p]` gains `item: null`; `load` accepts `type` `bogo` and an integer `item` ≥ 0; `setBrand` clears every `item` (an index into the old menu would name a different item in the new one). **Insights:** Minimum also counts a `bogo` promo when the brand is profiled. **UI:** the promo select gains "Buy one, get one free" and, for it, an item select.
+*Why:* BUILD.md §11 calls per-item markup the most valuable modeling change and a prerequisite for BOGO. The contracts, the oracle and the receipts change first (Phases 2–5 pattern).
+
+**D-037 — Fuel economy by model year (`CAR_YEARS`) and the car's `year`** · 2026-11-16 · *accepted (user decision)*
+A VIN gives the model year, but `CAR_DATA` holds only each model's newest EPA figure (D-023). NHTSA's sample VIN is a 2003 Honda Accord: EPA's four 2003 Accord records (21, 22, 25, 26 mpg) give 24, while `CAR_DATA` says 38 (the 2026 lineup). That would make driving look about 40% cheaper, which favors pickup. The user chose year-aware data over a labeled newest-year figure or asking for mpg.
+- **Data.** `cars.js` keeps `CAR_DATA` exactly as D-023 builds it and gains `POD.data.CAR_YEARS`: one packed string per make for every (make, baseModel) with a record in model year ≥ 2000 (`--years-since 2000`), with a figure per model year. Grammar: `"Make|Model:runs,Model:runs"`; makes and models sorted by codepoint; names and make spellings cleaned and merged as D-023 does (computed over the whole file, so both tables spell a make the same way). `runs` is one or more runs separated by one space, **newest first**. A run is the value, an optional suffix (`*` premium, `d` diesel, `e` electric with value = mi/kWh × 10, none = regular, as in `CAR_DATA`), `@`, the first model year, and `-` + the last year unless it's a single year: `"Honda|Accord:38@2023-2026 33@2018-2022 …"`. A run covers consecutive model years that all have the same value and suffix; a year with no figure separates runs.
+- **A model year's figure** is D-023's rule applied to that year's records alone: the most common fuel group (ties Regular > Premium > Diesel > Electricity > other), "other" means no figure that year, and the value is the median (half up) of `comb08`, or `1000 / combE` for electric, skipping blank or non-positive values. So each `CAR_DATA` pair's newest run is that pair's `CAR_DATA` value and suffix, ending at the model's latest year. A data test pins that.
+- **Size:** 55 KB for 2000 on: 86 makes, 1,030 models, 3,554 runs (the generator's output, 2026-11-16, on the same EPA file as D-023, sha256 `1d553896…`; a rough pre-build estimate said 40 KB). Older cars get "enter your mpg".
+- **State** (state contract §2, §4.1, §6, §8): a new user field `year`, an integer 1900–2100 or `null`, saved and loaded. `carLookup(D, make, model, year)`: an integer `year` takes the run that covers it, else nothing (a 2010 car never gets 2026's figure); `null` takes the newest run, or `CAR_DATA`'s pair when `CAR_YEARS` lacks it. `setCar(S, D, make, model, year)` takes the year as a fifth argument (missing → `null`), and its clearing rule (D-031 amendment) applies to the whole (make, model, year).
+- **UI** (UI contract §5.7): the make and model lists are the union of both tables. A model-year select follows the model, `""` = "Newest ({year})" and then the model's years, newest first. A new make clears the year; a new model keeps it (a VIN can name the year when EPA's list names the model differently). A line `"EPA figure for the {year} model."` says which year the number is for. `car-summary`'s text is unchanged.
+- *Not done:* matching the engine size (vPIC gives displacement and cylinders), which would need per-engine figures. A V6 Accord is priced at the model's median.
+*Why:* the user's choice. The model year is the biggest single factor in a car's mpg that a VIN can tell us, and the dropdown gets the same fix.
+
+**D-038 — VIN lookup from the browser (NHTSA vPIC)** · 2026-11-16 · *accepted (orchestrator)*
+BUILD.md §11's `/vehicle?vin` without a server (D-004). [`docs/vin-contract.md`](vin-contract.md) defines `POD.vin` (`src/js/vin.js`): `clean`, `check` (length, the 33 allowed characters, and the 49 CFR 565.15 check digit), `url`, `decode` (vPIC's `DecodeVinValues` JSON → `{year, make, model}`) and `match` (onto the car tables). A Python reference (`tests/oracle/vin.py`) and fixtures (`tests/fixtures/vin/`: real vPIC answers recorded 2026-11-16, plus hand-worked cases) check it through `run.py`. The judgment calls:
+- **The request goes from the browser** (`XMLHttpRequest`, GET, no credentials and no custom headers, so no CORS preflight; 10 s timeout). vPIC answers `Access-Control-Allow-Origin: *` (checked 2026-11-16), so it works from Pages and from `file://` (origin `null`). The e2e never reaches the network: Playwright answers with the recorded fixtures, CORS header included.
+- **A VIN with a bad check digit is refused locally** and never sent. Every US VIN since 1981 has one, and it catches most typos in a 17-character string. A gray-market import without one can still use the dropdowns.
+- **Matching is exact on a key**: lowercase letters and digits only, so vPIC's `HONDA` / `F-150` / `MERCEDES-BENZ` meet EPA's `Honda` / `F150` / `Mercedes-Benz`. No fuzzy or prefix matching: a wrong model would price the wrong car silently. No make match → `"Other"`; a make match without a model match → that make with no model, and the page asks the user to pick it (vPIC's `330i` is EPA's `3 Series`).
+- **The VIN isn't saved** (it isn't in `S`). The fine print says the lookup goes from the browser to NHTSA.
+- **vPIC's fuel type isn't used for numbers.** The figure and the fuel come from EPA through `carLookup`; for an unlisted car the user enters both, as for any car not in the list.
+*Why:* the same pattern as D-029 to D-036: an exact contract, an independent reference, fixtures first. A VIN that silently matches the wrong model would be worse than none.
+
+**D-039 — The weekly refresh: gas and stores at deploy time, with gates, and the dry run** · 2026-11-16 · *accepted (orchestrator)*
+- **What refreshes.** The Pages workflow (weekly on Mondays at 07:17 UTC, on every push to `main`, and by hand) already rebuilds `brands.js` and the tiles from the latest All The Places run into the site folder (D-011, D-021). It now also rebuilds **`states.js`** there, with `tools/build-states.py`: EIA's latest week (D-022) and the tax rates from the committed `tools/data/state-tax.csv`. The repo's committed copies stay as they are, for tests and local use. Not refreshed weekly: cars (EPA changes slowly; rebuild by hand), profiles and cards (researched by hand), ZIPs.
+- **`states.js` gains `POD.data.GAS_WEEK`** (the EIA week's date, `"YYYY-MM-DD"`), and the fine print shows it.
+- **Gates** (`tools/check-site.js`, unit-tested on small fake site folders). Any failure fails the build, so Pages keeps serving the last good deploy and GitHub tells the owner the scheduled run failed. A partly fresh site is never deployed. Each gate has a failing-input test:
+  1. brands: at least 150; every `PROFILES` key in `BRANDS`; `TILE_INDEX` and the tile files name the same cells; the `TILE_INDEX` counts sum to the stores in `BRANDS`.
+  2. drift against the committed `src/data/brands.js`: total stores ≥ 80% of the committed total; each profiled brand ≥ 50% of its committed count. A spider that breaks for a week must not empty a brand.
+  3. a canary through the real `src/js/geo.js` on the built tiles: `storesNear` at ZIP 10118's centroid is `ok`, not `partial`, and finds ≥ 15 brands within 5 mi. A coordinate-scale or brand-index bug can't pass it.
+  4. states: the same 51 codes as the committed file; every `gasRegular` a number in [1.50, 8.00]; every `mealTaxPct` equal to the committed file's (tax isn't refreshed weekly, so a change means a parse or merge bug); `GRADE_ADD` midgrade, premium and diesel numbers in [0, 2.50]; `GAS_WEEK` a date at most 14 days before the build date and not after it.
+  5. the ES5 gate over the site's `src/` (as before).
+- **Report lines** (printed, not gating): run id, brand and tile counts, the EIA week, and Big Timber (59011) → the nearest Domino's (store id, straight-line miles, trip). One store closing must not fail a weekly deploy, so this one isn't a gate.
+- **`pages.yml`** gets a `workflow_dispatch` input `dry_run` (default false): build and check, no deploy.
+- **The dry run** (Phase 7's done-when): `bash tools/build-site.sh <scratch dir>` here, against the live sources, exits 0 with every gate passing. Its Big Timber line must put the nearest Domino's within 25% of the real ~33 mi drive (BUILD.md §8): trip ÷ 2 between 24.75 and 41.25 mi. On the committed fixtures that's the Livingston, MT store, 30.9 mi straight, 77.2 mi round trip, 38.6 one way (+17%; the 1.25 winding factor overshoots on an interstate). The §8 estimator said 10.4 (−69%).
+*Why:* a weekly job runs with nobody watching. Failing closed keeps last week's good site live and tells the owner, and the gates are structural, so one store or one week's news can't trip them.
+*Amended 2026-11-16 (the first live dry run):* three upstream facts. ATP's `history.json` lags `latest.json` by about a week (ISS-038); `latest.json` itself answers from replicas that disagree (2026-10-31 five times, 2026-11-07 once, in six requests); and the 2026-11-07 run publishes `taco_bell_us.geojson` cut off mid-file (its zip CRC matches the cut bytes). So one broken spider would have blocked the **gas** refresh every week. Now:
+- **Store-run fallback.** `build-site.sh` tries up to 3 candidate runs, newest first: the run `latest.json` names, then `history.json`'s newest runs (without repeats). For each, it builds `brands.js` and the tiles into the site and runs every gate; the first candidate that passes them all is deployed, and the build log names any run it skipped and why. If none passes, the build fails as before. Store data is then at most a run or two old, which barely matters (stores rarely move); gas stays weekly.
+- **A spider file that isn't valid JSON fails that run** with a message naming the member (never a raw traceback), and never ships partly: dropping it would silently remove a chain (Taco Bell has about 8,000 US stores), which no gate catches for an unprofiled brand.
+- `ATP_RUN` set to a run id still builds exactly that run, with no fallback (for pinned rebuilds and tests).
+*Amended 2026-11-16 (Phase 10, the ship dry run):* All The Places' download host (`alltheplaces-data.openaddresses.io`, behind Cloudflare) sometimes answers a ranged GET with `200` and the whole 2.9–3.2 GB file instead of `206`, on any offset (`bytes=0-99` too). Measured from the session: 1 of 9 requests in one probe, 0 of 110 in two others, so it comes in bursts. `build-stores.py` refused a `200` as fatal and never retried it, and a run makes hundreds of ranged reads, so both Phase 10 dry runs from a fresh cache failed **every** candidate this way (one at the central directory, one mid-member). The weekly deploy would have failed the same way. Now:
+- **A `200` to a Range request is retried**, like a network error: the response is closed without reading its body (never 3 GB), and the read is tried again. Each ranged read gets `RANGE_TRIES = 6` attempts, sleeping `RANGE_BACKOFF = (1, 2, 4, 8, 16)` seconds before attempts 2 to 6 (31 s at most per read). Network errors (`TRANSIENT`) use the same schedule; before, they got 3 attempts with no wait.
+- **Still refused at once, never retried:** any other status (a `416`, a `404`), and a `206` whose `Content-Length` isn't the requested count. Those mean a wrong URL or a wrong size, not a flaky edge.
+- After the last attempt the read fails with `range read failed after 6 attempts: <last error>`, which `build-site.sh` logs as the candidate's reason, and the next candidate is tried as before.
+- The sleep is the module-level `SLEEP` (default `time.sleep`), looked up at call time, so a test replaces it and runs instantly. `HttpRangeFile.retries` counts retried attempts, and the build prints `range retries: N`.
+
+**D-040 — The Phase 8 backend: an OpenStreetMap Worker behind the seam, with driving distance, street addresses and independents** · 2026-11-16 · *accepted (provider, host swap and scope: user decisions; the rest: orchestrator)*
+[`docs/api-contract.md`](api-contract.md) defines the Worker (`worker/`) and the browser seam `POD.api` (`src/js/api.js`); the state, engine and UI contracts are amended in place. The judgment calls:
+- **Provider: OpenStreetMap first (the user's choice).** OSRM for road routes, Nominatim for addresses, Overpass for independent restaurants. No key or account, so no secret anywhere, and the data may be cached (ODbL, with attribution). Mapbox's terms bar caching temporary geocoding results, and Google's need a key and its map. The public OSRM server is for reasonable non-commercial use at 1 request/s with no uptime promise; the KV cache keeps a small site well inside that, and each provider sits behind one adapter, so a busy site can switch.
+- **`/drive` replaces BUILD.md's `/nearest`.** The page already finds the nearest store from the tiles (D-005, D-021), so the Worker is asked only for the road distance to that store. A Places search by brand would find a different store than the list shows. The trip is `2 × miles`, rounded to 0.1, with no 1.25 factor. **`minutes` still comes from `speed`**: OSRM's free-flow times leave out traffic and parking, and `speed` is the user's one sourced knob (D-032). Recorded 2026-11-16: Big Timber → the Livingston Domino's is 33.9 mi by road (BUILD.md §8: ~33 real; straight line × 1.25: 38.6).
+- **`/geocode` refines a typed address, never a bare ZIP.** A typed ZIP still sets the state and the tax (the ZIP table is the authority for both), and the geocoded point only moves the position. Text without a letter stays on the ZIP table, so `"10118"` makes no request.
+- **`/nearby`: independents (the user chose to include them in Phase 8).** Overpass `amenity` restaurant, fast_food, cafe and ice_cream with a name, **minus anything tagged with a brand** (chains come from the tiles, so none is listed twice), and minus names matching a `BRANDS` name. The category follows D-021's cuisine rule. An independent is priced as an unprofiled brand (D-006): category markup marked as an estimate, the user's menu total, no direct delivery, and all three apps, with a note that we don't know which apps list it. Its id is `osm:` + type letter + OSM id, and `S.place` saves the pick so it still prices after a reload, Worker or not.
+- **Pure state, answers as data.** Answers live in `opts.api` keyed by their exact inputs, the way tiles live in `D.TILES`. So state stays pure and testable, a late answer is never read for a newer position or store, and with `opts.api` absent every function is exactly Phase 7's. `POD.api.asks` (pure) says what to send; `app.js` sends it.
+- **Timeouts.** The seam waits 4 s (10 s for `/nearby`, which never blocks anything); the Worker waits 3.5 s for OSRM and Nominatim and 9 s for Overpass. Failures fall back silently, with one `console.warn` per page load.
+- **Cache:** Workers KV, because the Cache API does nothing on a `workers.dev` address. Keys are by exact inputs; 7 days for routes and places (stores don't move), 30 days for addresses, 1 day for "no route" / "not found".
+- **Fixtures.** OSRM and Nominatim answers were recorded on 2026-11-16 (`tests/fixtures/api/`). Overpass couldn't be reached from the session (overpass-api.de reset every TLS handshake, the kumi.systems mirror never answered, and the permission check then refused further attempts), so its fixtures are **constructed** from Overpass's documented JSON format with made-up places, and say so (ISS-040).
+- *Not built:* `/fuel` (EIA weekly already, D-039), `/vehicle` (browser to NHTSA, D-038), Mapbox, and per-place menus.
+*Why:* the user's choices on provider, hosts and scope, and the same pattern as D-029 to D-039: an exact contract, independent references, fixtures first, and an "off" path that is provably the old one.
+
+**D-041 — Deep links: every result row hands off (BUILD.md §11 Phase E)** · 2026-11-16 · *accepted (DoorDash search, Uber Eats and Grubhub home pages, Google Maps: user decisions; the rest: orchestrator)*
+[`docs/links-contract.md`](links-contract.md) defines `POD.links.forChannel(ch, S, D)` and the data `POD.data.LINKS`; the UI contract is amended in place (§5.5, §5.10). No platform pre-builds a cart from a link (D-016), so a row opens the app, the restaurant's own site or a map, and the fine print says the order doesn't carry over. The judgment calls:
+- **A link format goes in only when it was seen working.** The session can't render the apps' search pages (their data comes from API hosts outside the allowlist, behind bot checks), so the user opened three sample searches for "Ben & Jerry's" (spaces, `&` and `'` encoded as the page encodes them) on 2026-11-16. DoorDash's `/search/store/{q}/` showed the search; Uber Eats showed a human check and then its home page; Grubhub asked for an address and then showed its home page. So **DoorDash rows search for the restaurant by name; Uber Eats and Grubhub rows open the app's home page**, and their `search` is `null` until someone confirms a format (a data change only).
+- **Ordering direct links to the chain's home page**, on the host its profile was researched on, checked in Chromium on 2026-11-16 (Dunkin's host isn't on the allowlist any more: its menu pages were loaded on 2026-11-12; Little Caesars' `www` answers a permanent redirect to `littlecaesars.com`, whose page wasn't loaded). Not a deep path: Papa Johns' `/order/menu` still fails (ISS-024) and Chipotle's `/order` redirects home, and a home page outlives a path. **Only profiled chains get one** (a data test pins `LINKS.order`'s keys to `PROFILES`'): no unprofiled chain or independent has a checked site. Their websites (Wikidata's official website, OpenStreetMap's `website` tag) are a later data pass (ISS-042).
+- **Pickup from the restaurant also gets the map: Google Maps (the user's choice)**, using Google's documented, keyless Maps URLs. The link gives directions to the store the trip was measured to (or the picked one; a pinned distance keeps it), or, with no store, a map search by the restaurant's name. With no origin in the link, the directions start from the device's own location.
+- **A link carries only the restaurant's name or the store's point**, never the user's address, ZIP, position or order, and only `https:` URLs come out. Links open in a new tab (`rel="noopener noreferrer"`).
+- **Pure, like the other modules:** `forChannel` reads only its arguments, so a Python reference and hand-worked fixtures check it exactly, including the two encoding traps a reference catches: `encodeURIComponent` throws on a lone surrogate (an OpenStreetMap name can hold one), and `toFixed` rounds an exact tie up where Python's `format` rounds to even.
+- **The Phase 7 baseline e2e is re-baselined, not loosened:** the comparison with the Phase 7 page removes exactly the hand-off blocks and the new fine-print line from the new page (after checking that every result row has its hand-off), so everything else stays Phase 7's byte for byte, and with the Worker failing the whole `#app`, hand-offs included, must equal the Worker-off page's.
+*Why:* BUILD.md §11 wants the output to be a button. The pattern of D-029 to D-040 still applies, with one more rule from the data side: a URL is data, and like any number it's recorded with how it was seen, or left out.
+
 ---
 
 ## Skill updates
 
 <!-- The reflector appends here at the end of each phase. -->
+
+### Phase 1 (2026-11-12): reflector proposal, approved by the orchestrator with citation fixes
+- data-research: + map each state to its PADD from EIA's glossary, row by row (c539fc3)
+- data-research: + write the chain JSON after each store; one chain per run; stop exploring by call 60 (progress.md 1.7 turn budget, ISS-018)
+- data-research: + platforms cite a dated page opened and read; Drive, "powered by" and white-label are not platform evidence (e1bc046, ec5e627, ISS-023, ISS-024)
+- data-research: + copy item names with size or piece count as shown (ec5e627)
+- data-research: + record every bag or checkout fee line with amount or range and type (ISS-031, ISS-027, ISS-014)
+- data-research: + reachability checks use the default user agent only (ISS-013, D-027)
+- data-research: + new issue IDs are max+1 at write time, under `## Open` (2fbdac1, c5f8b19, e1bc046, 3f44708)
+- data-research: ~ profiles and categories are generated from JSON (D-027), not hand-entered; the table and profile bullets say so
+- data-research: ~ tax and gas sources: VA is 5.77 (D-025), gas is EIA by PADD (D-022); NH/VT/DC flagged as unconfirmed (ISS-010)
+- data-research: − removed "Wonder" from the amexGoldDirect list (D-027 names three brands)
+- test-runner: + pin lookup tables to the source item by item (c539fc3)
+- test-runner: + pin aggregates by value, with even-count and .5 cases (1.7 review findings 1, 2)
+- test-runner: + quote the issuer sentence beside each pinned credit amount (83f24d7)
+- test-runner: + read data via loadData(), compare with literals (ISS-008, 8962e13)
+- test-runner: + destructive negative tests run on a scratch copy, never the real repo (69b429b)
+- test-runner: + every generator rejection rule gets a failing-input test; a test-only rule gets a mutation check (56cc487, 1.7 review 3a/3b, ISS-011)
+- code-review: + blocker, mapping tables checked against the source (c539fc3)
+- code-review: + blocker, platform citations that are Drive, white-label or unopened snippets (e1bc046, ec5e627)
+- code-review: + profile diffs spot-check item names and one URL per platform (ec5e627, 1.7 review)
+- code-review: + blocker, credit "included" claims match the issuer sentence (83f24d7)
+- code-review: + should-fix, new ISS ids unused and under `## Open` (2fbdac1, c5f8b19, 3f44708)
+- frontend: no change (no Phase 1 frontend evidence)
+- backend: no change (Phase 8, no evidence yet)
+
+### Phase 2 (2026-11-12): reflector proposal, approved by the orchestrator with one addition (step 5's freedel exception)
+- frontend: ~ engine section names docs/engine-contract.md as the spec over BUILD.md §4 (D-029, ba25e38)
+- frontend: ~ step 3 fees: membership is `food >= memberMin` per app, not "above $12"; small-order and regulatory are app delivery only; `directSvc` added (contract §5, §7, D-029)
+- frontend: ~ `override` lists its four fields (contract §1)
+- frontend: + "Never put a neutral number in a code fallback" (ba25e38, c4e21c4)
+- frontend: + "A malformed optional input has no effect; it never throws" (793577b, c4e21c4)
+- frontend: + "Return copies of table data" (c4e21c4)
+- frontend: + "Implement the engine from the contract alone; don't open tests/oracle/" (be9e129)
+- frontend: + "Realm-sensitive compares…; a DONE WHEN with deepStrictEqual on loadApp/loadData is a card bug, report BLOCKED" (ISS-008, c4e21c4)
+- test-runner: + "Named missing-value and malformed-value test per optional engine field" (793577b, c4e21c4)
+- test-runner: + "Pin each threshold at its exact value with a receipt or named test" (memberMin `>=`→`>`: 15/500 fuzz, 0 receipts; progress.md Phase 2, be9e129)
+- code-review: ~ blocker 1 cites the contract as amended (D-029)
+- code-review: ~ blocker 4 covers a 0% markup or code default standing in for a missing value (ba25e38)
+- code-review: + should-fix "review a missing and malformed value for each optional field"; a throw in calc/allResults is a blocker (793577b, c4e21c4)
+- data-research: no change (no researcher work in Phase 2; directSvc data stays open under ISS-031)
+- backend: no change (Phase 8, no evidence yet)
+
+### Phase 3 (2026-11-13): reflector proposal, approved by the orchestrator with two fixes (frontend: the `?v=` tile URL needs a `file://` check first, as the contract says; test-runner: the NYC fixtures are `40_-74` and `40_-75`)
+- frontend: ~ geo.js row and Restaurant model name docs/geo-contract.md as the spec over BUILD.md §8 (D-030)
+- frontend: ~ every POD.geo function takes D and returns null on bad input (D-030)
+- frontend: + tile-loading protocol for Phase 5: need → tilePath → opts.failed → call again; a foreign-run tile stays partial; `?v=BRANDS_RUN` (geo-contract §9)
+- frontend: ~ trip distance rounded to 0.1 mi (tripMiles, geo-contract §6)
+- frontend: ~ "Return copies" also covers memo caches keyed by table (97ce6fe, c8e1e5c, 197acd1)
+- frontend: + "Work in the stored ×1000 integers; range-check every parsed coordinate" (197acd1: phantom store at mi null; own point by float distance)
+- frontend: ~ verify step: geo changes also run the oracle (D-030)
+- test-runner: ~ layout and oracle sections name geo.py, geo_runner.js and tests/fixtures/geo/ (3.1, D-030)
+- test-runner: ~ fixtures bullet: Big Timber search cells 45_-111, 45_-110, 45_-109, 46_-110; 45_-110 holds 2 stores (tests/fixtures/stores/45_-110.js)
+- test-runner: ~ merged "named missing-value test per optional engine field" with the wrong-typed rule: assert the documented output type (c8e1e5c blocker, 793577b, c4e21c4)
+- test-runner: + cache/order tests build their own collision and sandbox; pass under --test-name-pattern (97ce6fe, c8e1e5c)
+- test-runner: + differential runner fails, never skips; tags NaN/±Infinity; poisons POD.data/POD.S/Date; [0-9] + fullmatch in Python regexes (197acd1 contract review)
+- data-research: ~ tile section replaced by D-021's format (cell from ×1000 integers, POD.data.TILES[cell] = {run, s}); the addTile/floor(lat) text predates D-021
+- data-research: − removed `profiled` from the brands.js shape (D-021: not stored; the page derives it from PROFILES)
+- code-review: no change (every Phase 3 blocker and should-fix was caught by review: 197acd1, c8e1e5c)
+- backend: no change (Phase 8, no evidence yet)
+
+### Phase 4 (2026-11-13): reflector proposal, approved by the orchestrator with three fixes (code-review: the stale-derived finding came from the 4.3 code review, not the contract review; "each test file bites alone" is should-fix, as the review rated it, not a blocker; test-runner: wording of the `map` rule)
+- test-runner: ~ realm rule: copy VM arrays with `Array.from(v, f)`, a loop into `[]`, or JSON; never `map`/`filter`/`slice` (ISS-008: 8962e13, c4e21c4, a5b725d)
+- test-runner: ~ wrong-typed input: a value-taking setter also gets an object and a cyclic object (9a17357)
+- test-runner: + each test file must catch its own mutants, run alone (a7861b6)
+- frontend: + clear a derived field when its input changes and the new value isn't known; `derive` sets every unsaved derived field on every branch (9a17357, 5cbada0)
+- frontend: + value setters take plain values only (9a17357, D-031 amendment)
+- frontend: + report issues; no `docs/issues.md` appends outside SCOPE (Phase 4 ISS-031 append, reverted)
+- frontend: ~ the realm rule now points to test-runner; the BLOCKED-on-card-bug rule stays (ISS-008, c4e21c4, a5b725d)
+- data-research: ~ core rule 1: report a gap; write `docs/issues.md` only when SCOPE lists it
+- data-research: + use the source's own figure rather than deriving one (FHWA 26.59 mph, 7d3d496, D-032)
+- data-research: + fee and platform evidence must be for restaurant delivery (Uber grocery guide withdrawn, 7d3d496, ISS-034)
+- code-review: ~ blocker 13 (scope) covers docs appends (Phase 4 ISS-031 append)
+- code-review: + blocker: a derived field fed by a changed input is recomputed or cleared, never kept (9a17357)
+- code-review: + should-fix: a new test file catches its own mutants (a7861b6)
+- backend: no change (Phase 8, no evidence yet)
+
+### Phase 5 (2026-11-14): reflector proposal, approved by the orchestrator with one change (code-review: "a re-render without a type-then-click e2e" is should-fix, not blocker: the finding came from a builder, and a missing test isn't a wrong answer)
+- frontend: ~ file table: `render(ctx)`, `build(F, R, now)` → `{id, label, cls, text, data}` (D-034, D-035)
+- frontend: ~ Render: write only the changed blocks, restore focus by id; − syncStatic / full-subtree replace (5f60686, 2f657df)
+- frontend: + an empty or bad number box is null; a typed 0 is a value (D-035, 2f657df)
+- frontend: + a sticky panel needs max-height + overflow-y auto (5f60686)
+- frontend: ~ derived-value rule extended to fields that switch between derived and typed (setCar, e705a87, da81998)
+- frontend: + every module that reads credits applies the §9.1 tier itself (f10e69f)
+- frontend: ~ tile URLs carry `?v=<BRANDS_RUN>`, checked over file:// (D-035)
+- test-runner: + the one allowed console error is a deliberately omitted tile's ERR_FILE_NOT_FOUND, in that test only (D-035, 2f657df)
+- test-runner: + e2e builds with `helpers.buildSite()`; expected prices from `H.expected(saved state)` (2f657df)
+- test-runner: + run the data path in Node before an e2e names a store, row or missing field (2f657df)
+- test-runner: + type-then-click test for any control a re-render can replace (5f60686, 2f657df)
+- test-runner: ~ pin every boundary at equality; check every insight's condition for the state; −0 before JSON (f10e69f)
+- code-review: ~ render should-fix: whole-page or control-subtree replace (5f60686)
+- code-review: + blocker: credit readers apply the §9.1 tier (f10e69f)
+- code-review: + should-fix: type-then-click e2e for a re-render that can replace a clickable control (5f60686, 2f657df)
+- code-review: ~ stale-derived blocker covers derived/typed mode switches (e705a87)
+- test-runner: + (orchestrator addition) a scratch copy never links to the repo's node_modules; `npm ci` in one emptied the real node_modules at the Phase 5 close
+- data-research, backend: no change
+
+### Phase 6 (2026-11-14): reflector proposal, approved by the orchestrator with one fix (frontend: a builder can't edit the contract or the oracle, so the guard rule says to report the guard under ASSUMPTIONS for the orchestrator)
+- frontend: ~ engine step 2 and step 4: object menu items, the per-item markup sum rounded once, and the `bogo` promo (D-036, engine-contract §5.2)
+- frontend: ~ Render: a block re-render that replaces a container with a clicked control loses the click; `.app-settings` and `.fields` are blocks (3502730, b45868b)
+- frontend: + a defensive guard the contract doesn't name is a contract gap: report it under ASSUMPTIONS for the orchestrator to put in the contract and oracle (f3af8a8)
+- frontend: + an insight's promise must hold in its counterfactual (d5c7f2e)
+- frontend: + a new note or control in a grid takes a whole row; check desktop in every state (0f907b5)
+- test-runner: ~ type-then-click test asserts the clicked element survived with focus, not only the outcome (3502730, b45868b)
+- test-runner: ~ generator rejection branches: Phase 6 had 6 of 11 untested (0f907b5)
+- test-runner: + after a data shape change, grep tests for the old accessors; a passing old-shape test is broken (0f907b5)
+- code-review: ~ test integrity blocker: a test that passes on the old shape (0f907b5)
+- code-review: ~ re-render should-fix: the e2e checks element survival and focus (3502730)
+- code-review: ~ optional-input should-fix cites the per-item rejections found in Phase 6 (0f907b5)
+- data-research: ~ profiles.js shape: menu items are objects; per-item markup needs its own source, never estimated (D-036, 1359cf6)
+- backend: no change (no Phase 6 evidence)
+
+### Phase 7 (2026-11-16): reflector proposal, approved by the orchestrator with three changes (code-review: the two shortened rules are restored, since the reviewer loads only its own skill and "see the frontend rules" drops the failure scenarios; the late-async check is added to the stale-value blocker instead; frontend: the late-answer rule matches UI contract §6b, where any later action wins by sequence number, not only one that sets the same field; frontend's file table gains `src/js/vin.js`)
+- data-research: + a scheduled job's dry run uses the schedule's own inputs; a pinned pass is reported as pinned (ISS-038, ISS-039, e31bb4e, 93eadd2)
+- data-research: + one upstream's failure never blocks another's refresh; a generator never writes part of a run (ISS-039, 93eadd2, D-039 amendment)
+- test-runner: ~ pin-by-source rule extended: the key (make, model, year) is checked like the value (d573421)
+- test-runner: + exclude tests with `--test-skip-pattern`; a negative lookahead in `--test-name-pattern` doesn't filter here (7.3b, progress.md Phase 7)
+- test-runner: + a stubbed HTTP 500 yields Chromium's own resource error; allow it exactly, in that test only (12d34d3)
+- frontend: + a late async answer never overwrites a newer user action (8b27bc4, 5b49390, 9a17357)
+- code-review: ~ stale-value blocker merged with the frontend rules; now also checks late async answers (9a17357, e705a87, 8b27bc4)
+- code-review: ~ optional-input should-fix shortened; the writer rule lives in frontend (793577b, c4e21c4, 0f907b5)
+- backend: no change (no Phase 7 backend evidence; /vehicle is browser-side per D-038)
+- not a rule: "a card that adds exports names the API-enumerating test tables" (7.4, 022089e). An orchestrator card lesson, once; the fix belongs in the card's CONTEXT line, not a worker skill
+- not a rule: ISS-037 (setPath bypasses setCar), latent and logged; waits for a state-contract amendment
+- not a rule: frontend "Where things live" lacks `src/js/vin.js` (POD.vin); outside Learned rules, orchestrator to decide
+
+### Phase 8 (2026-11-16): reflector proposal, approved by the orchestrator with two fixes (backend: the seam uses `XMLHttpRequest`, not `fetch`; frontend: the block-count rule's evidence was a review hazard, not an observed lost click)
+- backend: ~ Layout, endpoint table, Providers, Cache, Secrets, CORS, seam and Testing rewritten to `docs/api-contract.md` (D-040): `/drive`, `/geocode`, `/nearby` on OSRM, Nominatim and Overpass, no keys, Workers KV; `/nearest`, `/fuel`, `/vehicle` and `mapbox.js` removed
+- backend: + bound every upstream and KV call in time (eaa7be9 blocker, f53891b)
+- backend: + a cached value is a hit only with the shape the code stored (7c0ab6d)
+- backend: + parse provider and user values by an explicit grammar; lengths in UTF-16 units (eaa7be9 review, be8813f)
+- backend: + an OSM id must be a safe integer (eaa7be9 review)
+- frontend: ~ file table: `config.js`, and what `api.js` holds and where it loads (D-040)
+- frontend: ~ restaurant model: the Worker's road distance (`milesSrc "drive"`), independents in `D.PLACES` (D-040)
+- frontend: ~ block-replace rule: a block that arrives last is appended; a count change touches only the tail (81a86d8, review of 8.4b)
+- frontend: + a new block with nothing to show adds no markup (4ac3bb9 blocker, 2320149)
+- test-runner: ~ browser resource errors: any failed request (404, 5xx, abort), exact and counted (e2bca28)
+- test-runner: + parallel workers use their own scratch subdirectories (Phase 8 mutant collision)
+- test-runner: + compute both sides of a boundary in the reference; assert hand guesses there (ISS-041, be8813f)
+- test-runner: + an "unchanged" test compares against the old commit's build (2320149)
+- test-runner: + race a promise that may never settle against a timer that holds the event loop (eaa7be9)
+- code-review: + blocker: an unbounded await on a provider or KV, or a cached value used without a shape check (eaa7be9, 7c0ab6d)
+- code-review: + blocker: an "unchanged" claim tested against new code (2320149)
+- data-research: no change (no researcher task in Phase 8)
+- not a rule (one occurrence each): `__proto__` as an own key (99b4cee); a test sandbox that led a builder to copy helpers (99b4cee); the reviewer's "no D-040 state tests" false positive; an e2e regex that forced a row layout; the 8.4a DONE WHEN that ran a next-task e2e
+
+### Phase 9 (2026-11-16): reflector proposal, approved by the orchestrator with three fixes (code-review: a malformed bullet fixed, and the rule keeps the review's own ratings, blocker for the lookalike only and should-fix for the floor and the guard reach; data-research: the status-code rule no longer marks a JavaScript shell "unverified" (Wingstop's home page renders empty here and is recorded as such), it says to open the link in a browser and record what it showed, and cites task 9.2, not a review; data-research's rule 6 and file table gain `src/data/links.js`, orchestrator only)
+- data-research: + a deep-link format is recorded only after someone opens it and sees it work (page, date, what it showed); unverified links are left out (Uber Eats and Grubhub search formats, 4123339, D-041)
+- data-research: + a link's status code is not its verdict: open it in a browser, record what it showed, prefer the home page to a deep path, never change the user agent (task 9.2, 4123339, ISS-024, ISS-013)
+- test-runner: ~ the rounding and JSON rule (197acd1, 4123339): pin an exact tie in both languages; check fixtures as read back (lone surrogates, 9.3 review)
+- test-runner: + a mutant counts as caught only if the unmutated copy passes in the same harness and fails for its intended reason (Phase 3 review; 9.5 scratch copy)
+- test-runner: + measure a generator's per-branch counts through the reference before relying on it (9.3 review; 793577b)
+- test-runner: + a string check needs a lookalike input it must reject; match whole labels (71b3e2c, 03ca191)
+- test-runner: + raise a count floor in the same change that adds cases; a guard test's data must reach its branch (71b3e2c; 9f1d2e2)
+- code-review: + blocker: test integrity in a diff that adds cases (floor, lookalike, guard reach) (71b3e2c)
+- frontend: no change (builder DONE in 1 loop; reviewer APPROVE, no findings)
+- backend: no change (no backend work in Phase 9)
+- not a rule: the orchestrator's user link check and the environment's missing node_modules (orchestrator-only); a slow redirect landing in the next `goto` of a shared page, fixed by a fresh context per URL (one occurrence, tool-level); two e2e slips caught before running (a button that exists only with no brand; a guessed store id) and `waitForEvent` started before its click (one occurrence each); re-baselining `worker.e2e.js` by D-041 (a decision, not a failure)
+- data-research: ~ rule 6 and the file table: `src/data/links.js` is orchestrator only, like `cards.js` (added by the orchestrator at approval)

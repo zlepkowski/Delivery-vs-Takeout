@@ -1,0 +1,4379 @@
+{
+ "about": "Real-data geo cases. Expected values come from tests/oracle/geo.py (the Python reference), regenerated with `python3 -I tests/oracle/geo.py --write`. D is POD.data with the fixture tiles from tests/fixtures/stores/ in D.TILES: all of them unless the case lists `tiles`. `tileRun` replaces a tile's run id. Unrounded distances compare with a relative tolerance of 1e-9.",
+ "cases": [
+  {
+   "args": [],
+   "call": "zipCount",
+   "data": "real",
+   "expect": 42354,
+   "id": "zipCount"
+  },
+  {
+   "args": [
+    "10118"
+   ],
+   "call": "zipByCode",
+   "data": "real",
+   "expect": {
+    "c": "New York",
+    "la": 40.749,
+    "lo": -73.986,
+    "st": "NY",
+    "z": "10118"
+   },
+   "id": "zipByCode 10118"
+  },
+  {
+   "args": [
+    "59011"
+   ],
+   "call": "zipByCode",
+   "data": "real",
+   "expect": {
+    "c": "Big Timber",
+    "la": 45.834,
+    "lo": -109.95,
+    "st": "MT",
+    "z": "59011"
+   },
+   "id": "zipByCode 59011"
+  },
+  {
+   "args": [
+    "11201"
+   ],
+   "call": "zipByCode",
+   "data": "real",
+   "expect": {
+    "c": "Brooklyn",
+    "la": 40.694,
+    "lo": -73.989,
+    "st": "NY",
+    "z": "11201"
+   },
+   "id": "zipByCode 11201"
+  },
+  {
+   "args": [
+    "00501"
+   ],
+   "call": "zipByCode",
+   "data": "real",
+   "expect": {
+    "c": "Holtsville",
+    "la": 40.922,
+    "lo": -72.637,
+    "st": "NY",
+    "z": "00501"
+   },
+   "id": "zipByCode 00501"
+  },
+  {
+   "args": [
+    "90004"
+   ],
+   "call": "zipByCode",
+   "data": "real",
+   "expect": {
+    "c": "Los Angeles",
+    "la": 33.787,
+    "lo": -118.299,
+    "st": "CA",
+    "z": "90004"
+   },
+   "id": "zipByCode 90004"
+  },
+  {
+   "args": [
+    "99950"
+   ],
+   "call": "zipByCode",
+   "data": "real",
+   "expect": {
+    "c": "Ketchikan",
+    "la": 55.542,
+    "lo": -131.433,
+    "st": "AK",
+    "z": "99950"
+   },
+   "id": "zipByCode 99950"
+  },
+  {
+   "args": [
+    "96701"
+   ],
+   "call": "zipByCode",
+   "data": "real",
+   "expect": {
+    "c": "Aiea",
+    "la": 21.391,
+    "lo": -157.928,
+    "st": "HI",
+    "z": "96701"
+   },
+   "id": "zipByCode 96701"
+  },
+  {
+   "args": [
+    "99998"
+   ],
+   "call": "zipByCode",
+   "data": "real",
+   "expect": null,
+   "id": "zipByCode unknown"
+  },
+  {
+   "args": [
+    40.7484,
+    -73.9857
+   ],
+   "call": "nearestZip",
+   "data": "real",
+   "expect": {
+    "c": "New York",
+    "la": 40.749,
+    "lo": -73.986,
+    "st": "NY",
+    "z": "10118"
+   },
+   "id": "nearestZip Empire State Building"
+  },
+  {
+   "args": [
+    45.8346,
+    -109.9555
+   ],
+   "call": "nearestZip",
+   "data": "real",
+   "expect": {
+    "c": "Mc Leod",
+    "la": 45.833,
+    "lo": -109.956,
+    "st": "MT",
+    "z": "59052"
+   },
+   "id": "nearestZip Big Timber courthouse"
+  },
+  {
+   "args": [
+    33.787,
+    -118.299
+   ],
+   "call": "nearestZip",
+   "data": "real",
+   "expect": {
+    "c": "Los Angeles",
+    "la": 33.787,
+    "lo": -118.299,
+    "st": "CA",
+    "z": "90004"
+   },
+   "id": "nearestZip on a stacked point (90004 group)"
+  },
+  {
+   "args": [
+    27.0,
+    -90.0
+   ],
+   "call": "nearestZip",
+   "data": "real",
+   "expect": {
+    "c": "Grand Isle",
+    "la": 29.228,
+    "lo": -90.019,
+    "st": "LA",
+    "z": "70358"
+   },
+   "id": "nearestZip Gulf of Mexico"
+  },
+  {
+   "args": [
+    {
+     "c": "New York",
+     "la": 40.749,
+     "lo": -73.986,
+     "st": "NY",
+     "z": "10118"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 0.2866718540922933,
+   "id": "zipSpacing 10118"
+  },
+  {
+   "args": [
+    {
+     "c": "Big Timber",
+     "la": 45.834,
+     "lo": -109.95,
+     "st": "MT",
+     "z": "59011"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 20.363427745637917,
+   "id": "zipSpacing 59011"
+  },
+  {
+   "args": [
+    {
+     "c": "Brooklyn",
+     "la": 40.694,
+     "lo": -73.989,
+     "st": "NY",
+     "z": "11201"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 1.246838645401353,
+   "id": "zipSpacing 11201"
+  },
+  {
+   "args": [
+    {
+     "c": "New York",
+     "la": 40.75,
+     "lo": -73.996,
+     "st": "NY",
+     "z": "10001"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 0.2908287286746299,
+   "id": "zipSpacing 10001"
+  },
+  {
+   "args": [
+    {
+     "c": "New York",
+     "la": 40.714,
+     "lo": -74.007,
+     "st": "NY",
+     "z": "10007"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 0.29702088098833157,
+   "id": "zipSpacing 10007"
+  },
+  {
+   "args": [
+    {
+     "c": "Los Angeles",
+     "la": 33.787,
+     "lo": -118.299,
+     "st": "CA",
+     "z": "90004"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 3.0634594731868745,
+   "id": "zipSpacing 90004"
+  },
+  {
+   "args": [
+    {
+     "c": "Holtsville",
+     "la": 40.922,
+     "lo": -72.637,
+     "st": "NY",
+     "z": "00501"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 21.553726813302376,
+   "id": "zipSpacing 00501"
+  },
+  {
+   "args": [
+    {
+     "c": "Ketchikan",
+     "la": 55.542,
+     "lo": -131.433,
+     "st": "AK",
+     "z": "99950"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 28.29790031537019,
+   "id": "zipSpacing 99950"
+  },
+  {
+   "args": [
+    {
+     "c": "Aiea",
+     "la": 21.391,
+     "lo": -157.928,
+     "st": "HI",
+     "z": "96701"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 5.622057294842048,
+   "id": "zipSpacing 96701"
+  },
+  {
+   "args": [
+    {
+     "c": "Absarokee",
+     "la": 45.516,
+     "lo": -109.455,
+     "st": "MT",
+     "z": "59001"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 14.913099948383511,
+   "id": "zipSpacing 59001"
+  },
+  {
+   "args": [
+    {
+     "c": "Yellowstone National Park",
+     "la": 44.796,
+     "lo": -110.614,
+     "st": "WY",
+     "z": "82190"
+    }
+   ],
+   "call": "zipSpacing",
+   "data": "real",
+   "expect": 32.966821089106794,
+   "id": "zipSpacing 82190"
+  },
+  {
+   "args": [
+    {
+     "c": "New York",
+     "la": 40.749,
+     "lo": -73.986,
+     "st": "NY",
+     "z": "10118"
+    },
+    "dominos"
+   ],
+   "call": "estimateMiles",
+   "data": "real",
+   "expect": {
+    "one": 0.4,
+    "round": 1.1,
+    "spacing": 0.2866718540922933,
+    "zipsPerStore": 5.7892290869327505
+   },
+   "id": "estimateMiles 10118 dominos"
+  },
+  {
+   "args": [
+    {
+     "c": "Big Timber",
+     "la": 45.834,
+     "lo": -109.95,
+     "st": "MT",
+     "z": "59011"
+    },
+    "dominos"
+   ],
+   "call": "estimateMiles",
+   "data": "real",
+   "expect": {
+    "one": 10.4,
+    "round": 25.9,
+    "spacing": 20.363427745637917,
+    "zipsPerStore": 5.7892290869327505
+   },
+   "id": "estimateMiles 59011 dominos"
+  },
+  {
+   "args": [
+    {
+     "c": "Brooklyn",
+     "la": 40.694,
+     "lo": -73.989,
+     "st": "NY",
+     "z": "11201"
+    },
+    "dominos"
+   ],
+   "call": "estimateMiles",
+   "data": "real",
+   "expect": {
+    "one": 1.3,
+    "round": 3.2,
+    "spacing": 1.246838645401353,
+    "zipsPerStore": 5.7892290869327505
+   },
+   "id": "estimateMiles 11201 dominos"
+  },
+  {
+   "args": [
+    {
+     "c": "New York",
+     "la": 40.749,
+     "lo": -73.986,
+     "st": "NY",
+     "z": "10118"
+    },
+    "the_cheesecake_factory"
+   ],
+   "call": "estimateMiles",
+   "data": "real",
+   "expect": {
+    "one": 2.5,
+    "round": 6.2,
+    "spacing": 0.2866718540922933,
+    "zipsPerStore": 196.08333333333334
+   },
+   "id": "estimateMiles 10118 the_cheesecake_factory"
+  },
+  {
+   "args": [
+    {
+     "c": "Big Timber",
+     "la": 45.834,
+     "lo": -109.95,
+     "st": "MT",
+     "z": "59011"
+    },
+    "zippys"
+   ],
+   "call": "estimateMiles",
+   "data": "real",
+   "expect": {
+    "one": 30.0,
+    "round": 75.0,
+    "spacing": 20.363427745637917,
+    "zipsPerStore": 1629.0
+   },
+   "id": "estimateMiles 59011 zippys"
+  },
+  {
+   "args": [
+    {
+     "c": "Los Angeles",
+     "la": 33.787,
+     "lo": -118.299,
+     "st": "CA",
+     "z": "90004"
+    },
+    "dominos"
+   ],
+   "call": "estimateMiles",
+   "data": "real",
+   "expect": {
+    "one": 2.5,
+    "round": 6.3,
+    "spacing": 3.0634594731868745,
+    "zipsPerStore": 5.7892290869327505
+   },
+   "id": "estimateMiles 90004 dominos"
+  },
+  {
+   "args": [
+    {
+     "c": "Big Timber",
+     "la": 45.834,
+     "lo": -109.95,
+     "st": "MT",
+     "z": "59011"
+    },
+    "subway"
+   ],
+   "call": "estimateMiles",
+   "data": "real",
+   "expect": {
+    "one": 6.7,
+    "round": 16.6,
+    "spacing": 20.363427745637917,
+    "zipsPerStore": 2.3811772642941476
+   },
+   "id": "estimateMiles 59011 subway"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    5
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "40_-75",
+    "40_-74"
+   ],
+   "id": "cellsFor Midtown r=5"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    10
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "40_-75",
+    "40_-74"
+   ],
+   "id": "cellsFor Midtown r=10"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    25
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "40_-75",
+    "40_-74",
+    "41_-75",
+    "41_-74"
+   ],
+   "id": "cellsFor Midtown r=25"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    50
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "40_-75",
+    "40_-74",
+    "41_-75",
+    "41_-74"
+   ],
+   "id": "cellsFor Midtown r=50"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    5
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "45_-111",
+    "45_-110"
+   ],
+   "id": "cellsFor Big Timber r=5"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    10
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "45_-111",
+    "45_-110"
+   ],
+   "id": "cellsFor Big Timber r=10"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    25
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "45_-111",
+    "45_-110",
+    "46_-110"
+   ],
+   "id": "cellsFor Big Timber r=25"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    50
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "45_-111",
+    "45_-110",
+    "45_-109",
+    "46_-110"
+   ],
+   "id": "cellsFor Big Timber r=50"
+  },
+  {
+   "args": [
+    40.9995,
+    -73.0005,
+    5
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "40_-74",
+    "40_-73",
+    "41_-74",
+    "41_-73"
+   ],
+   "id": "cellsFor a cell corner r=5"
+  },
+  {
+   "args": [
+    40.9995,
+    -73.0005,
+    10
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "40_-74",
+    "40_-73",
+    "41_-74",
+    "41_-73"
+   ],
+   "id": "cellsFor a cell corner r=10"
+  },
+  {
+   "args": [
+    40.9995,
+    -73.0005,
+    25
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "40_-74",
+    "40_-73",
+    "41_-74",
+    "41_-73"
+   ],
+   "id": "cellsFor a cell corner r=25"
+  },
+  {
+   "args": [
+    40.9995,
+    -73.0005,
+    50
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "40_-74",
+    "40_-73",
+    "41_-74",
+    "41_-73"
+   ],
+   "id": "cellsFor a cell corner r=50"
+  },
+  {
+   "args": [
+    64.5,
+    -147.3,
+    5
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "64_-148"
+   ],
+   "id": "cellsFor Fairbanks r=5"
+  },
+  {
+   "args": [
+    64.5,
+    -147.3,
+    10
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "64_-148"
+   ],
+   "id": "cellsFor Fairbanks r=10"
+  },
+  {
+   "args": [
+    64.5,
+    -147.3,
+    25
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "64_-148"
+   ],
+   "id": "cellsFor Fairbanks r=25"
+  },
+  {
+   "args": [
+    64.5,
+    -147.3,
+    50
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "64_-148",
+    "64_-146"
+   ],
+   "id": "cellsFor Fairbanks r=50"
+  },
+  {
+   "args": [
+    64.5,
+    -147.319,
+    5
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "64_-148"
+   ],
+   "id": "cellsFor Fairbanks, 0.0001 deg inside the exact reach of 64_-150 r=5"
+  },
+  {
+   "args": [
+    64.5,
+    -147.319,
+    10
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "64_-148"
+   ],
+   "id": "cellsFor Fairbanks, 0.0001 deg inside the exact reach of 64_-150 r=10"
+  },
+  {
+   "args": [
+    64.5,
+    -147.319,
+    25
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "64_-148"
+   ],
+   "id": "cellsFor Fairbanks, 0.0001 deg inside the exact reach of 64_-150 r=25"
+  },
+  {
+   "args": [
+    64.5,
+    -147.319,
+    50
+   ],
+   "call": "cellsFor",
+   "data": "real",
+   "expect": [
+    "64_-150",
+    "64_-148",
+    "64_-146"
+   ],
+   "id": "cellsFor Fairbanks, 0.0001 deg inside the exact reach of 64_-150 r=50"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    null
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "dunkin",
+      "category": "coffee",
+      "id": "dunkin@40748,-73986",
+      "lat": 40.748,
+      "lon": -73.986,
+      "mi": 0.06909409442828145,
+      "name": "Dunkin'",
+      "profiled": true,
+      "trip": 0.2
+     },
+     {
+      "brand": "gong_cha",
+      "category": "coffee",
+      "id": "gong_cha@40748,-73986",
+      "lat": 40.748,
+      "lon": -73.986,
+      "mi": 0.06909409442828145,
+      "name": "Gong Cha",
+      "profiled": false,
+      "trip": 0.2
+     },
+     {
+      "brand": "pinkberry",
+      "category": "dessert",
+      "id": "pinkberry@40748,-73986",
+      "lat": 40.748,
+      "lon": -73.986,
+      "mi": 0.06909409442828145,
+      "name": "Pinkberry",
+      "profiled": false,
+      "trip": 0.2
+     },
+     {
+      "brand": "chipotle",
+      "category": "mexican",
+      "id": "chipotle@40748,-73985",
+      "lat": 40.748,
+      "lon": -73.985,
+      "mi": 0.08668295708515282,
+      "name": "Chipotle",
+      "profiled": true,
+      "trip": 0.2
+     },
+     {
+      "brand": "starbucks",
+      "category": "coffee",
+      "id": "starbucks@40748,-73985",
+      "lat": 40.748,
+      "lon": -73.985,
+      "mi": 0.08668295708515282,
+      "name": "Starbucks",
+      "profiled": false,
+      "trip": 0.2
+     },
+     {
+      "brand": "le_pain_quotidien",
+      "category": "coffee",
+      "id": "le_pain_quotidien@40750,-73984",
+      "lat": 40.75,
+      "lon": -73.984,
+      "mi": 0.12543296582652952,
+      "name": "Le Pain Quotidien",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "krispy_kreme",
+      "category": "coffee",
+      "id": "krispy_kreme@40751,-73986",
+      "lat": 40.751,
+      "lon": -73.986,
+      "mi": 0.13818818885558098,
+      "name": "Krispy Kreme",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "blank_street_coffee",
+      "category": "coffee",
+      "id": "blank_street_coffee@40747,-73986",
+      "lat": 40.747,
+      "lon": -73.986,
+      "mi": 0.13818818885607193,
+      "name": "Blank Street Coffee",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "jimmy_johns",
+      "category": "sandwich",
+      "id": "jimmy_johns@40747,-73986",
+      "lat": 40.747,
+      "lon": -73.986,
+      "mi": 0.13818818885607193,
+      "name": "Jimmy John's",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "playa_bowls",
+      "category": "other",
+      "id": "playa_bowls@40751,-73987",
+      "lat": 40.751,
+      "lon": -73.987,
+      "mi": 0.14776939159731822,
+      "name": "Playa Bowls",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "taco_bell_q111972226",
+      "category": "mexican",
+      "id": "taco_bell_q111972226@40751,-73987",
+      "lat": 40.751,
+      "lon": -73.987,
+      "mi": 0.14776939159731822,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "pret_a_manger",
+      "category": "sandwich",
+      "id": "pret_a_manger@40747,-73987",
+      "lat": 40.747,
+      "lon": -73.987,
+      "mi": 0.147769949264735,
+      "name": "Pret A Manger",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "bonchon_chicken",
+      "category": "chicken",
+      "id": "bonchon_chicken@40747,-73985",
+      "lat": 40.747,
+      "lon": -73.985,
+      "mi": 0.14776994926499848,
+      "name": "Bonchon Chicken",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "chick_fil_a",
+      "category": "chicken",
+      "id": "chick_fil_a@40752,-73986",
+      "lat": 40.752,
+      "lon": -73.986,
+      "mi": 0.20728228328386242,
+      "name": "Chick-fil-A",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "five_guys",
+      "category": "burger",
+      "id": "five_guys@40752,-73986",
+      "lat": 40.752,
+      "lon": -73.986,
+      "mi": 0.20728228328386242,
+      "name": "Five Guys",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "just_salad",
+      "category": "other",
+      "id": "just_salad@40746,-73986",
+      "lat": 40.746,
+      "lon": -73.986,
+      "mi": 0.20728228328386242,
+      "name": "Just Salad",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "auntie_annes",
+      "category": "other",
+      "id": "auntie_annes@40751,-73989",
+      "lat": 40.751,
+      "lon": -73.989,
+      "mi": 0.20917536547648719,
+      "name": "Auntie Anne's",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "carvel",
+      "category": "dessert",
+      "id": "carvel@40751,-73989",
+      "lat": 40.751,
+      "lon": -73.989,
+      "mi": 0.20917536547648719,
+      "name": "Carvel",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "blue_bottle_coffee",
+      "category": "coffee",
+      "id": "blue_bottle_coffee@40747,-73989",
+      "lat": 40.747,
+      "lon": -73.989,
+      "mi": 0.20917891106677922,
+      "name": "Blue Bottle Coffee",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "shahs_halal_food",
+      "category": "other",
+      "id": "shahs_halal_food@40747,-73983",
+      "lat": 40.747,
+      "lon": -73.983,
+      "mi": 0.20917891106677922,
+      "name": "Shah's Halal Food",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "subway",
+      "category": "sandwich",
+      "id": "subway@40752,-73984",
+      "lat": 40.752,
+      "lon": -73.984,
+      "mi": 0.23221767882885544,
+      "name": "Subway",
+      "profiled": true,
+      "trip": 0.6
+     },
+     {
+      "brand": "sweetgreen",
+      "category": "other",
+      "id": "sweetgreen@40746,-73983",
+      "lat": 40.746,
+      "lon": -73.983,
+      "mi": 0.2600502972018984,
+      "name": "Sweetgreen",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "cinnabon",
+      "category": "dessert",
+      "id": "cinnabon@40750,-73991",
+      "lat": 40.75,
+      "lon": -73.991,
+      "mi": 0.2706851728738159,
+      "name": "Cinnabon",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "baskin_robbins",
+      "category": "dessert",
+      "id": "baskin_robbins@40748,-73981",
+      "lat": 40.748,
+      "lon": -73.981,
+      "mi": 0.2706889782956606,
+      "name": "Baskin-Robbins",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "wendys",
+      "category": "burger",
+      "id": "wendys@40752,-73990",
+      "lat": 40.752,
+      "lon": -73.99,
+      "mi": 0.29462241351638335,
+      "name": "Wendy's",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "and_pizza",
+      "category": "pizza",
+      "id": "and_pizza@40745,-73988",
+      "lat": 40.745,
+      "lon": -73.988,
+      "mi": 0.29554045617191865,
+      "name": "&pizza",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "buffalo_wild_wings",
+      "category": "chicken",
+      "id": "buffalo_wild_wings@40745,-73983",
+      "lat": 40.745,
+      "lon": -73.983,
+      "mi": 0.317874951953381,
+      "name": "Buffalo Wild Wings",
+      "profiled": true,
+      "trip": 0.8
+     },
+     {
+      "brand": "joe_and_the_juice",
+      "category": "coffee",
+      "id": "joe_and_the_juice@40745,-73989",
+      "lat": 40.745,
+      "lon": -73.989,
+      "mi": 0.317874951953381,
+      "name": "Joe & The Juice",
+      "profiled": false,
+      "trip": 0.8
+     },
+     {
+      "brand": "kfc",
+      "category": "chicken",
+      "id": "kfc@40750,-73992",
+      "lat": 40.75,
+      "lon": -73.992,
+      "mi": 0.3215725565574725,
+      "name": "KFC",
+      "profiled": false,
+      "trip": 0.8
+     },
+     {
+      "brand": "raising_canes",
+      "category": "chicken",
+      "id": "raising_canes@40751,-73992",
+      "lat": 40.751,
+      "lon": -73.992,
+      "mi": 0.34311719199498847,
+      "name": "Raising Cane's",
+      "profiled": false,
+      "trip": 0.9
+     },
+     {
+      "brand": "popeyes",
+      "category": "chicken",
+      "id": "popeyes@40748,-73993",
+      "lat": 40.748,
+      "lon": -73.993,
+      "mi": 0.3728687582212747,
+      "name": "Popeyes",
+      "profiled": false,
+      "trip": 0.9
+     },
+     {
+      "brand": "jamba",
+      "category": "dessert",
+      "id": "jamba@40748,-73994",
+      "lat": 40.748,
+      "lon": -73.994,
+      "mi": 0.4244175164503566,
+      "name": "Jamba",
+      "profiled": false,
+      "trip": 1.1
+     },
+     {
+      "brand": "dominos",
+      "category": "pizza",
+      "id": "dominos@40755,-73989",
+      "lat": 40.755,
+      "lon": -73.989,
+      "mi": 0.44330650169343594,
+      "name": "Domino's",
+      "profiled": true,
+      "trip": 1.1
+     },
+     {
+      "brand": "white_castle",
+      "category": "burger",
+      "id": "white_castle@40754,-73992",
+      "lat": 40.754,
+      "lon": -73.992,
+      "mi": 0.4668820288628461,
+      "name": "White Castle",
+      "profiled": false,
+      "trip": 1.2
+     },
+     {
+      "brand": "taco_bell",
+      "category": "mexican",
+      "id": "taco_bell@40749,-73995",
+      "lat": 40.749,
+      "lon": -73.995,
+      "mi": 0.47109648340006066,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 1.2
+     },
+     {
+      "brand": "panda_express",
+      "category": "asian",
+      "id": "panda_express@40750,-73995",
+      "lat": 40.75,
+      "lon": -73.995,
+      "mi": 0.47613291535088303,
+      "name": "Panda Express",
+      "profiled": false,
+      "trip": 1.2
+     },
+     {
+      "brand": "mortons_the_steakhouse",
+      "category": "casual",
+      "id": "mortons_the_steakhouse@40755,-73979",
+      "lat": 40.755,
+      "lon": -73.979,
+      "mi": 0.5532691602425419,
+      "name": "Morton's The Steakhouse",
+      "profiled": false,
+      "trip": 1.4
+     },
+     {
+      "brand": "applebees_neighborhood_grill_and_bar",
+      "category": "casual",
+      "id": "applebees_neighborhood_grill_and_bar@40757,-73989",
+      "lat": 40.757,
+      "lon": -73.989,
+      "mi": 0.5746231299658696,
+      "name": "Applebee's Neighborhood Grill & Bar",
+      "profiled": false,
+      "trip": 1.4
+     },
+     {
+      "brand": "dave_and_busters",
+      "category": "casual",
+      "id": "dave_and_busters@40757,-73989",
+      "lat": 40.757,
+      "lon": -73.989,
+      "mi": 0.5746231299658696,
+      "name": "Dave & Buster's",
+      "profiled": false,
+      "trip": 1.4
+     },
+     {
+      "brand": "wingstop",
+      "category": "chicken",
+      "id": "wingstop@40741,-73983",
+      "lat": 40.741,
+      "lon": -73.983,
+      "mi": 0.574628292675551,
+      "name": "Wingstop",
+      "profiled": true,
+      "trip": 1.4
+     },
+     {
+      "brand": "pizza_hut",
+      "category": "pizza",
+      "id": "pizza_hut@40743,-73978",
+      "lat": 40.743,
+      "lon": -73.978,
+      "mi": 0.5892649646958145,
+      "name": "Pizza Hut",
+      "profiled": false,
+      "trip": 1.5
+     },
+     {
+      "brand": "pressed",
+      "category": "dessert",
+      "id": "pressed@40752,-73997",
+      "lat": 40.752,
+      "lon": -73.997,
+      "mi": 0.6119467973675718,
+      "name": "Pressed",
+      "profiled": false,
+      "trip": 1.5
+     },
+     {
+      "brand": "potbelly",
+      "category": "sandwich",
+      "id": "potbelly@40752,-73974",
+      "lat": 40.752,
+      "lon": -73.974,
+      "mi": 0.6614330946245702,
+      "name": "Potbelly",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "cold_stone_creamery",
+      "category": "dessert",
+      "id": "cold_stone_creamery@40758,-73992",
+      "lat": 40.758,
+      "lon": -73.992,
+      "mi": 0.6966466483185076,
+      "name": "Cold Stone Creamery",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "ben_and_jerrys",
+      "category": "dessert",
+      "id": "ben_and_jerrys@40758,-73979",
+      "lat": 40.758,
+      "lon": -73.979,
+      "mi": 0.7217551046016922,
+      "name": "Ben & Jerry's",
+      "profiled": false,
+      "trip": 1.8
+     },
+     {
+      "brand": "amorino",
+      "category": "dessert",
+      "id": "amorino@40760,-73988",
+      "lat": 40.76,
+      "lon": -73.988,
+      "mi": 0.7672099105426777,
+      "name": "Amorino",
+      "profiled": false,
+      "trip": 1.9
+     },
+     {
+      "brand": "hard_rock_cafe",
+      "category": "casual",
+      "id": "hard_rock_cafe@40760,-73990",
+      "lat": 40.76,
+      "lon": -73.99,
+      "mi": 0.7883428233618315,
+      "name": "Hard Rock Cafe",
+      "profiled": false,
+      "trip": 2.0
+     },
+     {
+      "brand": "fogo_de_chao",
+      "category": "casual",
+      "id": "fogo_de_chao@40761,-73978",
+      "lat": 40.761,
+      "lon": -73.978,
+      "mi": 0.9288579386796515,
+      "name": "Fogo de Ch\u00e3o",
+      "profiled": false,
+      "trip": 2.3
+     },
+     {
+      "brand": "85_c_bakery_cafe",
+      "category": "coffee",
+      "id": "85_c_bakery_cafe@40759,-73999",
+      "lat": 40.759,
+      "lon": -73.999,
+      "mi": 0.9697282315694841,
+      "name": "85\u00b0C Bakery Cafe",
+      "profiled": false,
+      "trip": 2.4
+     },
+     {
+      "brand": "the_halal_guys",
+      "category": "chicken",
+      "id": "the_halal_guys@40762,-73979",
+      "lat": 40.762,
+      "lon": -73.979,
+      "mi": 0.9700689747997414,
+      "name": "The Halal Guys",
+      "profiled": false,
+      "trip": 2.4
+     },
+     {
+      "brand": "rosatis",
+      "category": "pizza",
+      "id": "rosatis@40739,-74000",
+      "lat": 40.739,
+      "lon": -74.0,
+      "mi": 1.0072241718929082,
+      "name": "Rosati's",
+      "profiled": false,
+      "trip": 2.5
+     },
+     {
+      "brand": "benihana",
+      "category": "asian",
+      "id": "benihana@40763,-73977",
+      "lat": 40.763,
+      "lon": -73.977,
+      "mi": 1.0759126216046124,
+      "name": "Benihana",
+      "profiled": false,
+      "trip": 2.7
+     },
+     {
+      "brand": "p_f_changs",
+      "category": "asian",
+      "id": "p_f_changs@40734,-73992",
+      "lat": 40.734,
+      "lon": -73.992,
+      "mi": 1.082962266235787,
+      "name": "P.F. Chang's",
+      "profiled": false,
+      "trip": 2.7
+     },
+     {
+      "brand": "ihop",
+      "category": "casual",
+      "id": "ihop@40733,-73986",
+      "lat": 40.733,
+      "lon": -73.986,
+      "mi": 1.1055055108475935,
+      "name": "IHOP",
+      "profiled": false,
+      "trip": 2.8
+     },
+     {
+      "brand": "wetzels_pretzels",
+      "category": "other",
+      "id": "wetzels_pretzels@40767,-73983",
+      "lat": 40.767,
+      "lon": -73.983,
+      "mi": 1.2535654919517634,
+      "name": "Wetzel's Pretzels",
+      "profiled": false,
+      "trip": 3.1
+     },
+     {
+      "brand": "smashburger",
+      "category": "burger",
+      "id": "smashburger@40764,-73967",
+      "lat": 40.764,
+      "lon": -73.967,
+      "mi": 1.4363249523360595,
+      "name": "Smashburger",
+      "profiled": false,
+      "trip": 3.6
+     },
+     {
+      "brand": "jets_pizza",
+      "category": "pizza",
+      "id": "jets_pizza@40762,-73964",
+      "lat": 40.762,
+      "lon": -73.964,
+      "mi": 1.460362033199084,
+      "name": "Jet's Pizza",
+      "profiled": false,
+      "trip": 3.7
+     },
+     {
+      "brand": "zaxbys",
+      "category": "chicken",
+      "id": "zaxbys@40766,-73958",
+      "lat": 40.766,
+      "lon": -73.958,
+      "mi": 1.8780885404571872,
+      "name": "Zaxby's",
+      "profiled": false,
+      "trip": 4.7
+     },
+     {
+      "brand": "papa_johns",
+      "category": "pizza",
+      "id": "papa_johns@40717,-73990",
+      "lat": 40.717,
+      "lon": -73.99,
+      "mi": 2.2209072985772504,
+      "name": "Papa John's",
+      "profiled": true,
+      "trip": 5.6
+     },
+     {
+      "brand": "qdoba",
+      "category": "mexican",
+      "id": "qdoba@40741,-74030",
+      "lat": 40.741,
+      "lon": -74.03,
+      "mi": 2.3686747227694513,
+      "name": "Qdoba",
+      "profiled": false,
+      "trip": 5.9
+     },
+     {
+      "brand": "little_caesars",
+      "category": "pizza",
+      "id": "little_caesars@40755,-73941",
+      "lat": 40.755,
+      "lon": -73.941,
+      "mi": 2.391581159329934,
+      "name": "Little Caesars",
+      "profiled": true,
+      "trip": 6.0
+     },
+     {
+      "brand": "pretzelmaker",
+      "category": "other",
+      "id": "pretzelmaker@40719,-74009",
+      "lat": 40.719,
+      "lon": -74.009,
+      "mi": 2.3972182480571647,
+      "name": "Pretzelmaker",
+      "profiled": false,
+      "trip": 6.0
+     },
+     {
+      "brand": "checkers",
+      "category": "burger",
+      "id": "checkers@40750,-73940",
+      "lat": 40.75,
+      "lon": -73.94,
+      "mi": 2.4087994920544125,
+      "name": "Checkers",
+      "profiled": false,
+      "trip": 6.0
+     },
+     {
+      "brand": "ritas_italian_ice",
+      "category": "dessert",
+      "id": "ritas_italian_ice@40738,-74030",
+      "lat": 40.738,
+      "lon": -74.03,
+      "mi": 2.4254848733416483,
+      "name": "Rita's Italian Ice",
+      "profiled": false,
+      "trip": 6.1
+     },
+     {
+      "brand": "daves_hot_chicken",
+      "category": "chicken",
+      "id": "daves_hot_chicken@40778,-73955",
+      "lat": 40.778,
+      "lon": -73.955,
+      "mi": 2.578143552572085,
+      "name": "Dave's Hot Chicken",
+      "profiled": false,
+      "trip": 6.4
+     },
+     {
+      "brand": "tim_hortons",
+      "category": "coffee",
+      "id": "tim_hortons@40721,-73944",
+      "lat": 40.721,
+      "lon": -73.944,
+      "mi": 2.9288273021059514,
+      "name": "Tim Hortons",
+      "profiled": false,
+      "trip": 7.3
+     },
+     {
+      "brand": "sonic",
+      "category": "burger",
+      "id": "sonic@40744,-73928",
+      "lat": 40.744,
+      "lon": -73.928,
+      "mi": 3.055661302386003,
+      "name": "Sonic",
+      "profiled": false,
+      "trip": 7.6
+     },
+     {
+      "brand": "saladworks",
+      "category": "other",
+      "id": "saladworks@40728,-74038",
+      "lat": 40.728,
+      "lon": -74.038,
+      "mi": 3.084859790783743,
+      "name": "Saladworks",
+      "profiled": false,
+      "trip": 7.7
+     },
+     {
+      "brand": "the_cheesecake_factory",
+      "category": "casual",
+      "id": "the_cheesecake_factory@40727,-74038",
+      "lat": 40.727,
+      "lon": -74.038,
+      "mi": 3.117972585954362,
+      "name": "The Cheesecake Factory",
+      "profiled": true,
+      "trip": 7.8
+     },
+     {
+      "brand": "blimpie",
+      "category": "sandwich",
+      "id": "blimpie@40770,-74039",
+      "lat": 40.77,
+      "lon": -74.039,
+      "mi": 3.1303800383548572,
+      "name": "Blimpie",
+      "profiled": false,
+      "trip": 7.8
+     },
+     {
+      "brand": "grimaldis_pizzeria",
+      "category": "pizza",
+      "id": "grimaldis_pizzeria@40703,-73993",
+      "lat": 40.703,
+      "lon": -73.993,
+      "mi": 3.1993935364879924,
+      "name": "Grimaldi's Pizzeria",
+      "profiled": false,
+      "trip": 8.0
+     },
+     {
+      "brand": "tropical_smoothie_cafe",
+      "category": "dessert",
+      "id": "tropical_smoothie_cafe@40744,-73925",
+      "lat": 40.744,
+      "lon": -73.925,
+      "mi": 3.211741544900603,
+      "name": "Tropical Smoothie Cafe",
+      "profiled": false,
+      "trip": 8.0
+     },
+     {
+      "brand": "firehouse_subs",
+      "category": "sandwich",
+      "id": "firehouse_subs@40718,-74034",
+      "lat": 40.718,
+      "lon": -74.034,
+      "mi": 3.3020417552396015,
+      "name": "Firehouse Subs",
+      "profiled": false,
+      "trip": 8.3
+     },
+     {
+      "brand": "dq_grill_and_chill",
+      "category": "dessert",
+      "id": "dq_grill_and_chill@40797,-74016",
+      "lat": 40.797,
+      "lon": -74.016,
+      "mi": 3.6692521444608013,
+      "name": "DQ Grill & Chill",
+      "profiled": false,
+      "trip": 9.2
+     },
+     {
+      "brand": "chuck_e_cheese",
+      "category": "pizza",
+      "id": "chuck_e_cheese@40753,-73914",
+      "lat": 40.753,
+      "lon": -73.914,
+      "mi": 3.778778915732876,
+      "name": "Chuck E. Cheese",
+      "profiled": false,
+      "trip": 9.4
+     },
+     {
+      "brand": "moes_southwest_grill",
+      "category": "mexican",
+      "id": "moes_southwest_grill@40805,-73992",
+      "lat": 40.805,
+      "lon": -73.992,
+      "mi": 3.881983787245602,
+      "name": "Moe's Southwest Grill",
+      "profiled": false,
+      "trip": 9.7
+     },
+     {
+      "brand": "flemings",
+      "category": "casual",
+      "id": "flemings@40807,-73988",
+      "lat": 40.807,
+      "lon": -73.988,
+      "mi": 4.008823451525979,
+      "name": "Fleming's",
+      "profiled": false,
+      "trip": 10.0
+     },
+     {
+      "brand": "krispy_krunchy_chicken",
+      "category": "chicken",
+      "id": "krispy_krunchy_chicken@40701,-73942",
+      "lat": 40.701,
+      "lon": -73.942,
+      "mi": 4.038261483399733,
+      "name": "Krispy Krunchy Chicken",
+      "profiled": false,
+      "trip": 10.1
+     },
+     {
+      "brand": "chilis",
+      "category": "mexican",
+      "id": "chilis@40787,-74046",
+      "lat": 40.787,
+      "lon": -74.046,
+      "mi": 4.092877790952752,
+      "name": "Chili's",
+      "profiled": false,
+      "trip": 10.2
+     },
+     {
+      "brand": "outback_steakhouse",
+      "category": "casual",
+      "id": "outback_steakhouse@40789,-74045",
+      "lat": 40.789,
+      "lon": -74.045,
+      "mi": 4.1436991865205055,
+      "name": "Outback Steakhouse",
+      "profiled": false,
+      "trip": 10.4
+     },
+     {
+      "brand": "bubbakoos_burritos",
+      "category": "mexican",
+      "id": "bubbakoos_burritos@40730,-74065",
+      "lat": 40.73,
+      "lon": -74.065,
+      "mi": 4.339125660328452,
+      "name": "Bubbakoo's Burritos",
+      "profiled": false,
+      "trip": 10.8
+     },
+     {
+      "brand": "teriyaki_madness",
+      "category": "asian",
+      "id": "teriyaki_madness@40804,-73935",
+      "lat": 40.804,
+      "lon": -73.935,
+      "mi": 4.643480870804325,
+      "name": "Teriyaki Madness",
+      "profiled": false,
+      "trip": 11.6
+     }
+    ]
+   },
+   "id": "storesNear Midtown 10118"
+  },
+  {
+   "args": [
+    40.694,
+    -73.989,
+    null
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "daves_hot_chicken",
+      "category": "chicken",
+      "id": "daves_hot_chicken@40693,-73988",
+      "lat": 40.693,
+      "lon": -73.988,
+      "mi": 0.0867090925359245,
+      "name": "Dave's Hot Chicken",
+      "profiled": false,
+      "trip": 0.2
+     },
+     {
+      "brand": "starbucks",
+      "category": "coffee",
+      "id": "starbucks@40694,-73987",
+      "lat": 40.694,
+      "lon": -73.987,
+      "mi": 0.10477464679012297,
+      "name": "Starbucks",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "jimmy_johns",
+      "category": "sandwich",
+      "id": "jimmy_johns@40693,-73991",
+      "lat": 40.693,
+      "lon": -73.991,
+      "mi": 0.1255065148050484,
+      "name": "Jimmy John's",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "blank_street_coffee",
+      "category": "coffee",
+      "id": "blank_street_coffee@40692,-73989",
+      "lat": 40.692,
+      "lon": -73.989,
+      "mi": 0.13818818885607193,
+      "name": "Blank Street Coffee",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "auntie_annes",
+      "category": "other",
+      "id": "auntie_annes@40692,-73988",
+      "lat": 40.692,
+      "lon": -73.988,
+      "mi": 0.14778528199132326,
+      "name": "Auntie Anne's",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "panda_express",
+      "category": "asian",
+      "id": "panda_express@40692,-73988",
+      "lat": 40.692,
+      "lon": -73.988,
+      "mi": 0.14778528199132326,
+      "name": "Panda Express",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "chipotle",
+      "category": "mexican",
+      "id": "chipotle@40694,-73992",
+      "lat": 40.694,
+      "lon": -73.992,
+      "mi": 0.1571619701801998,
+      "name": "Chipotle",
+      "profiled": true,
+      "trip": 0.4
+     },
+     {
+      "brand": "five_guys",
+      "category": "burger",
+      "id": "five_guys@40694,-73986",
+      "lat": 40.694,
+      "lon": -73.986,
+      "mi": 0.1571619701801998,
+      "name": "Five Guys",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "pret_a_manger",
+      "category": "sandwich",
+      "id": "pret_a_manger@40693,-73986",
+      "lat": 40.693,
+      "lon": -73.986,
+      "mi": 0.17168066132896562,
+      "name": "Pret A Manger",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "dunkin",
+      "category": "coffee",
+      "id": "dunkin@40692,-73991",
+      "lat": 40.692,
+      "lon": -73.991,
+      "mi": 0.17341866011056642,
+      "name": "Dunkin'",
+      "profiled": true,
+      "trip": 0.4
+     },
+     {
+      "brand": "just_salad",
+      "category": "other",
+      "id": "just_salad@40692,-73991",
+      "lat": 40.692,
+      "lon": -73.991,
+      "mi": 0.17341866011056642,
+      "name": "Just Salad",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "qdoba",
+      "category": "mexican",
+      "id": "qdoba@40692,-73991",
+      "lat": 40.692,
+      "lon": -73.991,
+      "mi": 0.17341866011056642,
+      "name": "Qdoba",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "taco_bell",
+      "category": "mexican",
+      "id": "taco_bell@40692,-73991",
+      "lat": 40.692,
+      "lon": -73.991,
+      "mi": 0.17341866011056642,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "playa_bowls",
+      "category": "other",
+      "id": "playa_bowls@40692,-73987",
+      "lat": 40.692,
+      "lon": -73.987,
+      "mi": 0.1734186601110162,
+      "name": "Playa Bowls",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "raising_canes",
+      "category": "chicken",
+      "id": "raising_canes@40692,-73987",
+      "lat": 40.692,
+      "lon": -73.987,
+      "mi": 0.1734186601110162,
+      "name": "Raising Cane's",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "subway",
+      "category": "sandwich",
+      "id": "subway@40692,-73987",
+      "lat": 40.692,
+      "lon": -73.987,
+      "mi": 0.1734186601110162,
+      "name": "Subway",
+      "profiled": true,
+      "trip": 0.4
+     },
+     {
+      "brand": "bonchon_chicken",
+      "category": "chicken",
+      "id": "bonchon_chicken@40692,-73986",
+      "lat": 40.692,
+      "lon": -73.986,
+      "mi": 0.20927637669444876,
+      "name": "Bonchon Chicken",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "chick_fil_a",
+      "category": "chicken",
+      "id": "chick_fil_a@40691,-73988",
+      "lat": 40.691,
+      "lon": -73.988,
+      "mi": 0.21380014075566436,
+      "name": "Chick-fil-A",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "sweetgreen",
+      "category": "other",
+      "id": "sweetgreen@40692,-73985",
+      "lat": 40.692,
+      "lon": -73.985,
+      "mi": 0.2510143423687936,
+      "name": "Sweetgreen",
+      "profiled": false,
+      "trip": 0.6
+     },
+     {
+      "brand": "popeyes",
+      "category": "chicken",
+      "id": "popeyes@40691,-73992",
+      "lat": 40.691,
+      "lon": -73.992,
+      "mi": 0.2601287027125986,
+      "name": "Popeyes",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "gong_cha",
+      "category": "coffee",
+      "id": "gong_cha@40692,-73983",
+      "lat": 40.692,
+      "lon": -73.983,
+      "mi": 0.34336348192939115,
+      "name": "Gong Cha",
+      "profiled": false,
+      "trip": 0.9
+     },
+     {
+      "brand": "ihop",
+      "category": "casual",
+      "id": "ihop@40689,-73984",
+      "lat": 40.689,
+      "lon": -73.984,
+      "mi": 0.43355021294740465,
+      "name": "IHOP",
+      "profiled": false,
+      "trip": 1.1
+     },
+     {
+      "brand": "blue_bottle_coffee",
+      "category": "coffee",
+      "id": "blue_bottle_coffee@40687,-73990",
+      "lat": 40.687,
+      "lon": -73.99,
+      "mi": 0.4864878419178804,
+      "name": "Blue Bottle Coffee",
+      "profiled": false,
+      "trip": 1.2
+     },
+     {
+      "brand": "baskin_robbins",
+      "category": "dessert",
+      "id": "baskin_robbins@40687,-73991",
+      "lat": 40.687,
+      "lon": -73.991,
+      "mi": 0.494878348956709,
+      "name": "Baskin-Robbins",
+      "profiled": false,
+      "trip": 1.2
+     },
+     {
+      "brand": "dominos",
+      "category": "pizza",
+      "id": "dominos@40687,-73991",
+      "lat": 40.687,
+      "lon": -73.991,
+      "mi": 0.494878348956709,
+      "name": "Domino's",
+      "profiled": true,
+      "trip": 1.2
+     },
+     {
+      "brand": "krispy_krunchy_chicken",
+      "category": "chicken",
+      "id": "krispy_krunchy_chicken@40686,-73991",
+      "lat": 40.686,
+      "lon": -73.991,
+      "mi": 0.5625963502249811,
+      "name": "Krispy Krunchy Chicken",
+      "profiled": false,
+      "trip": 1.4
+     },
+     {
+      "brand": "grimaldis_pizzeria",
+      "category": "pizza",
+      "id": "grimaldis_pizzeria@40703,-73993",
+      "lat": 40.703,
+      "lon": -73.993,
+      "mi": 0.6562000298732817,
+      "name": "Grimaldi's Pizzeria",
+      "profiled": false,
+      "trip": 1.6
+     },
+     {
+      "brand": "cinnabon",
+      "category": "dessert",
+      "id": "cinnabon@40703,-73994",
+      "lat": 40.703,
+      "lon": -73.994,
+      "mi": 0.6747555315633674,
+      "name": "Cinnabon",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "wetzels_pretzels",
+      "category": "other",
+      "id": "wetzels_pretzels@40685,-73978",
+      "lat": 40.685,
+      "lon": -73.978,
+      "mi": 0.8478293393834784,
+      "name": "Wetzel's Pretzels",
+      "profiled": false,
+      "trip": 2.1
+     },
+     {
+      "brand": "chuck_e_cheese",
+      "category": "pizza",
+      "id": "chuck_e_cheese@40685,-73977",
+      "lat": 40.685,
+      "lon": -73.977,
+      "mi": 0.8842765645506259,
+      "name": "Chuck E. Cheese",
+      "profiled": false,
+      "trip": 2.2
+     },
+     {
+      "brand": "pizza_hut",
+      "category": "pizza",
+      "id": "pizza_hut@40685,-73977",
+      "lat": 40.685,
+      "lon": -73.977,
+      "mi": 0.8842765645506259,
+      "name": "Pizza Hut",
+      "profiled": false,
+      "trip": 2.2
+     },
+     {
+      "brand": "cold_stone_creamery",
+      "category": "dessert",
+      "id": "cold_stone_creamery@40684,-73978",
+      "lat": 40.684,
+      "lon": -73.978,
+      "mi": 0.8997363258364375,
+      "name": "Cold Stone Creamery",
+      "profiled": false,
+      "trip": 2.2
+     },
+     {
+      "brand": "dave_and_busters",
+      "category": "casual",
+      "id": "dave_and_busters@40684,-73975",
+      "lat": 40.684,
+      "lon": -73.975,
+      "mi": 1.0076649843091479,
+      "name": "Dave & Buster's",
+      "profiled": false,
+      "trip": 2.5
+     },
+     {
+      "brand": "applebees_neighborhood_grill_and_bar",
+      "category": "casual",
+      "id": "applebees_neighborhood_grill_and_bar@40683,-73976",
+      "lat": 40.683,
+      "lon": -73.976,
+      "mi": 1.020558071500303,
+      "name": "Applebee's Neighborhood Grill & Bar",
+      "profiled": false,
+      "trip": 2.6
+     },
+     {
+      "brand": "carvel",
+      "category": "dessert",
+      "id": "carvel@40682,-73977",
+      "lat": 40.682,
+      "lon": -73.977,
+      "mi": 1.0405404602611505,
+      "name": "Carvel",
+      "profiled": false,
+      "trip": 2.6
+     },
+     {
+      "brand": "papa_johns",
+      "category": "pizza",
+      "id": "papa_johns@40680,-73981",
+      "lat": 40.68,
+      "lon": -73.981,
+      "mi": 1.0542216706729886,
+      "name": "Papa John's",
+      "profiled": true,
+      "trip": 2.6
+     },
+     {
+      "brand": "kfc",
+      "category": "chicken",
+      "id": "kfc@40682,-73976",
+      "lat": 40.682,
+      "lon": -73.976,
+      "mi": 1.073008665803661,
+      "name": "KFC",
+      "profiled": false,
+      "trip": 2.7
+     },
+     {
+      "brand": "ben_and_jerrys",
+      "category": "dessert",
+      "id": "ben_and_jerrys@40694,-73968",
+      "lat": 40.694,
+      "lon": -73.968,
+      "mi": 1.1001337886969542,
+      "name": "Ben & Jerry's",
+      "profiled": false,
+      "trip": 2.8
+     },
+     {
+      "brand": "wingstop",
+      "category": "chicken",
+      "id": "wingstop@40680,-73975",
+      "lat": 40.68,
+      "lon": -73.975,
+      "mi": 1.2139705195046644,
+      "name": "Wingstop",
+      "profiled": true,
+      "trip": 3.0
+     },
+     {
+      "brand": "taco_bell_q111972226",
+      "category": "mexican",
+      "id": "taco_bell_q111972226@40708,-74005",
+      "lat": 40.708,
+      "lon": -74.005,
+      "mi": 1.279894393765935,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 3.2
+     },
+     {
+      "brand": "joe_and_the_juice",
+      "category": "coffee",
+      "id": "joe_and_the_juice@40706,-74008",
+      "lat": 40.706,
+      "lon": -74.008,
+      "mi": 1.2953827570422876,
+      "name": "Joe & The Juice",
+      "profiled": false,
+      "trip": 3.2
+     },
+     {
+      "brand": "jets_pizza",
+      "category": "pizza",
+      "id": "jets_pizza@40679,-73973",
+      "lat": 40.679,
+      "lon": -73.973,
+      "mi": 1.3329971055783751,
+      "name": "Jet's Pizza",
+      "profiled": false,
+      "trip": 3.3
+     },
+     {
+      "brand": "and_pizza",
+      "category": "pizza",
+      "id": "and_pizza@40706,-74009",
+      "lat": 40.706,
+      "lon": -74.009,
+      "mi": 1.3360501643853644,
+      "name": "&pizza",
+      "profiled": false,
+      "trip": 3.3
+     },
+     {
+      "brand": "le_pain_quotidien",
+      "category": "coffee",
+      "id": "le_pain_quotidien@40704,-74011",
+      "lat": 40.704,
+      "lon": -74.011,
+      "mi": 1.343690783757233,
+      "name": "Le Pain Quotidien",
+      "profiled": false,
+      "trip": 3.4
+     },
+     {
+      "brand": "ritas_italian_ice",
+      "category": "dessert",
+      "id": "ritas_italian_ice@40701,-74013",
+      "lat": 40.701,
+      "lon": -74.013,
+      "mi": 1.347053165809038,
+      "name": "Rita's Italian Ice",
+      "profiled": false,
+      "trip": 3.4
+     },
+     {
+      "brand": "wendys",
+      "category": "burger",
+      "id": "wendys@40701,-74013",
+      "lat": 40.701,
+      "lon": -74.013,
+      "mi": 1.347053165809038,
+      "name": "Wendy's",
+      "profiled": false,
+      "trip": 3.4
+     },
+     {
+      "brand": "potbelly",
+      "category": "sandwich",
+      "id": "potbelly@40704,-74012",
+      "lat": 40.704,
+      "lon": -74.012,
+      "mi": 1.3888793353144333,
+      "name": "Potbelly",
+      "profiled": false,
+      "trip": 3.5
+     },
+     {
+      "brand": "shahs_halal_food",
+      "category": "other",
+      "id": "shahs_halal_food@40680,-73968",
+      "lat": 40.68,
+      "lon": -73.968,
+      "mi": 1.465009025578677,
+      "name": "Shah's Halal Food",
+      "profiled": false,
+      "trip": 3.7
+     },
+     {
+      "brand": "krispy_kreme",
+      "category": "coffee",
+      "id": "krispy_kreme@40711,-74009",
+      "lat": 40.711,
+      "lon": -74.009,
+      "mi": 1.573904938815787,
+      "name": "Krispy Kreme",
+      "profiled": false,
+      "trip": 3.9
+     },
+     {
+      "brand": "pinkberry",
+      "category": "dessert",
+      "id": "pinkberry@40672,-73977",
+      "lat": 40.672,
+      "lon": -73.977,
+      "mi": 1.6449746721478948,
+      "name": "Pinkberry",
+      "profiled": false,
+      "trip": 4.1
+     },
+     {
+      "brand": "jamba",
+      "category": "dessert",
+      "id": "jamba@40711,-74011",
+      "lat": 40.711,
+      "lon": -74.011,
+      "mi": 1.645493903119822,
+      "name": "Jamba",
+      "profiled": false,
+      "trip": 4.1
+     },
+     {
+      "brand": "mortons_the_steakhouse",
+      "category": "casual",
+      "id": "mortons_the_steakhouse@40710,-74014",
+      "lat": 40.71,
+      "lon": -74.014,
+      "mi": 1.7137678515252606,
+      "name": "Morton's The Steakhouse",
+      "profiled": false,
+      "trip": 4.3
+     },
+     {
+      "brand": "pretzelmaker",
+      "category": "other",
+      "id": "pretzelmaker@40713,-74013",
+      "lat": 40.713,
+      "lon": -74.013,
+      "mi": 1.8176230521522103,
+      "name": "Pretzelmaker",
+      "profiled": false,
+      "trip": 4.5
+     },
+     {
+      "brand": "ikea",
+      "category": "other",
+      "id": "ikea@40672,-74012",
+      "lat": 40.672,
+      "lon": -74.012,
+      "mi": 1.9398187256482948,
+      "name": "IKEA",
+      "profiled": false,
+      "trip": 4.8
+     },
+     {
+      "brand": "pressed",
+      "category": "dessert",
+      "id": "pressed@40725,-73995",
+      "lat": 40.725,
+      "lon": -73.995,
+      "mi": 2.1648468037511357,
+      "name": "Pressed",
+      "profiled": false,
+      "trip": 5.4
+     },
+     {
+      "brand": "little_caesars",
+      "category": "pizza",
+      "id": "little_caesars@40681,-73949",
+      "lat": 40.681,
+      "lon": -73.949,
+      "mi": 2.280077243670791,
+      "name": "Little Caesars",
+      "profiled": true,
+      "trip": 5.7
+     },
+     {
+      "brand": "buffalo_wild_wings",
+      "category": "chicken",
+      "id": "buffalo_wild_wings@40701,-73943",
+      "lat": 40.701,
+      "lon": -73.943,
+      "mi": 2.4577495379367487,
+      "name": "Buffalo Wild Wings",
+      "profiled": true,
+      "trip": 6.1
+     },
+     {
+      "brand": "sonic",
+      "category": "burger",
+      "id": "sonic@40701,-73943",
+      "lat": 40.701,
+      "lon": -73.943,
+      "mi": 2.4577495379367487,
+      "name": "Sonic",
+      "profiled": false,
+      "trip": 6.1
+     },
+     {
+      "brand": "the_halal_guys",
+      "category": "chicken",
+      "id": "the_halal_guys@40732,-73984",
+      "lat": 40.732,
+      "lon": -73.984,
+      "mi": 2.6386016787770057,
+      "name": "The Halal Guys",
+      "profiled": false,
+      "trip": 6.6
+     },
+     {
+      "brand": "amorino",
+      "category": "dessert",
+      "id": "amorino@40733,-73994",
+      "lat": 40.733,
+      "lon": -73.994,
+      "mi": 2.707363167005378,
+      "name": "Amorino",
+      "profiled": false,
+      "trip": 6.8
+     },
+     {
+      "brand": "p_f_changs",
+      "category": "asian",
+      "id": "p_f_changs@40734,-73992",
+      "lat": 40.734,
+      "lon": -73.992,
+      "mi": 2.7682260145668685,
+      "name": "P.F. Chang's",
+      "profiled": false,
+      "trip": 6.9
+     },
+     {
+      "brand": "checkers",
+      "category": "burger",
+      "id": "checkers@40697,-73935",
+      "lat": 40.697,
+      "lon": -73.935,
+      "mi": 2.836435799358281,
+      "name": "Checkers",
+      "profiled": false,
+      "trip": 7.1
+     },
+     {
+      "brand": "firehouse_subs",
+      "category": "sandwich",
+      "id": "firehouse_subs@40718,-74034",
+      "lat": 40.718,
+      "lon": -74.034,
+      "mi": 2.8818903924087476,
+      "name": "Firehouse Subs",
+      "profiled": false,
+      "trip": 7.2
+     },
+     {
+      "brand": "tim_hortons",
+      "category": "coffee",
+      "id": "tim_hortons@40721,-73944",
+      "lat": 40.721,
+      "lon": -73.944,
+      "mi": 3.0059046849774282,
+      "name": "Tim Hortons",
+      "profiled": false,
+      "trip": 7.5
+     },
+     {
+      "brand": "rosatis",
+      "category": "pizza",
+      "id": "rosatis@40739,-74000",
+      "lat": 40.739,
+      "lon": -74.0,
+      "mi": 3.1621495049658246,
+      "name": "Rosati's",
+      "profiled": false,
+      "trip": 7.9
+     },
+     {
+      "brand": "the_cheesecake_factory",
+      "category": "casual",
+      "id": "the_cheesecake_factory@40727,-74038",
+      "lat": 40.727,
+      "lon": -74.038,
+      "mi": 3.432928070071988,
+      "name": "The Cheesecake Factory",
+      "profiled": true,
+      "trip": 8.6
+     },
+     {
+      "brand": "saladworks",
+      "category": "other",
+      "id": "saladworks@40728,-74038",
+      "lat": 40.728,
+      "lon": -74.038,
+      "mi": 3.4791886668588874,
+      "name": "Saladworks",
+      "profiled": false,
+      "trip": 8.7
+     },
+     {
+      "brand": "tropical_smoothie_cafe",
+      "category": "dessert",
+      "id": "tropical_smoothie_cafe@40649,-73959",
+      "lat": 40.649,
+      "lon": -73.959,
+      "mi": 3.484105884881003,
+      "name": "Tropical Smoothie Cafe",
+      "profiled": false,
+      "trip": 8.7
+     },
+     {
+      "brand": "white_castle",
+      "category": "burger",
+      "id": "white_castle@40700,-73913",
+      "lat": 40.7,
+      "lon": -73.913,
+      "mi": 4.002783086287461,
+      "name": "White Castle",
+      "profiled": false,
+      "trip": 10.0
+     },
+     {
+      "brand": "blimpie",
+      "category": "sandwich",
+      "id": "blimpie@40732,-74057",
+      "lat": 40.732,
+      "lon": -74.057,
+      "mi": 4.424551824053453,
+      "name": "Blimpie",
+      "profiled": false,
+      "trip": 11.1
+     },
+     {
+      "brand": "85_c_bakery_cafe",
+      "category": "coffee",
+      "id": "85_c_bakery_cafe@40759,-73999",
+      "lat": 40.759,
+      "lon": -73.999,
+      "mi": 4.521537290301382,
+      "name": "85\u00b0C Bakery Cafe",
+      "profiled": false,
+      "trip": 11.3
+     },
+     {
+      "brand": "hard_rock_cafe",
+      "category": "casual",
+      "id": "hard_rock_cafe@40760,-73990",
+      "lat": 40.76,
+      "lon": -73.99,
+      "mi": 4.5605108347733045,
+      "name": "Hard Rock Cafe",
+      "profiled": false,
+      "trip": 11.4
+     },
+     {
+      "brand": "fogo_de_chao",
+      "category": "casual",
+      "id": "fogo_de_chao@40761,-73978",
+      "lat": 40.761,
+      "lon": -73.978,
+      "mi": 4.664997394405923,
+      "name": "Fogo de Ch\u00e3o",
+      "profiled": false,
+      "trip": 11.7
+     },
+     {
+      "brand": "bubbakoos_burritos",
+      "category": "mexican",
+      "id": "bubbakoos_burritos@40730,-74065",
+      "lat": 40.73,
+      "lon": -74.065,
+      "mi": 4.69365157272209,
+      "name": "Bubbakoo's Burritos",
+      "profiled": false,
+      "trip": 11.7
+     },
+     {
+      "brand": "smashburger",
+      "category": "burger",
+      "id": "smashburger@40727,-73909",
+      "lat": 40.727,
+      "lon": -73.909,
+      "mi": 4.770171818055427,
+      "name": "Smashburger",
+      "profiled": false,
+      "trip": 11.9
+     },
+     {
+      "brand": "benihana",
+      "category": "asian",
+      "id": "benihana@40763,-73977",
+      "lat": 40.763,
+      "lon": -73.977,
+      "mi": 4.8087184962174145,
+      "name": "Benihana",
+      "profiled": false,
+      "trip": 12.0
+     }
+    ]
+   },
+   "id": "storesNear Brooklyn 11201"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    null
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "dominos",
+      "category": "pizza",
+      "id": "dominos@45670,-110546",
+      "lat": 45.67,
+      "lon": -110.546,
+      "mi": 30.887539291821422,
+      "name": "Domino's",
+      "profiled": true,
+      "trip": 77.2
+     },
+     {
+      "brand": "dq_grill_and_chill",
+      "category": "dessert",
+      "id": "dq_grill_and_chill@45655,-110570",
+      "lat": 45.655,
+      "lon": -110.57,
+      "mi": 32.352353871708054,
+      "name": "DQ Grill & Chill",
+      "profiled": false,
+      "trip": 80.9
+     },
+     {
+      "brand": "taco_johns",
+      "category": "mexican",
+      "id": "taco_johns@45654,-110571",
+      "lat": 45.654,
+      "lon": -110.571,
+      "mi": 32.42360161435843,
+      "name": "Taco John's",
+      "profiled": false,
+      "trip": 81.1
+     },
+     {
+      "brand": "subway",
+      "category": "sandwich",
+      "id": "subway@45642,-110572",
+      "lat": 45.642,
+      "lon": -110.572,
+      "mi": 32.797620780884635,
+      "name": "Subway",
+      "profiled": true,
+      "trip": 82.0
+     },
+     {
+      "brand": "taco_bell",
+      "category": "mexican",
+      "id": "taco_bell@45640,-110575",
+      "lat": 45.64,
+      "lon": -110.575,
+      "mi": 32.98638407194353,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 82.5
+     },
+     {
+      "brand": "krispy_krunchy_chicken",
+      "category": "chicken",
+      "id": "krispy_krunchy_chicken@46435,-109812",
+      "lat": 46.435,
+      "lon": -109.812,
+      "mi": 42.04792372430855,
+      "name": "Krispy Krunchy Chicken",
+      "profiled": false,
+      "trip": 105.1
+     }
+    ]
+   },
+   "id": "storesNear Big Timber 59011"
+  },
+  {
+   "args": [
+    45.7833,
+    -108.5007,
+    null
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "taco_johns",
+      "category": "mexican",
+      "id": "taco_johns@45783,-108501",
+      "lat": 45.783,
+      "lon": -108.501,
+      "mi": 0.025270874261312772,
+      "name": "Taco John's",
+      "profiled": false,
+      "trip": 0.1
+     },
+     {
+      "brand": "dickeys_barbecue_pit",
+      "category": "casual",
+      "id": "dickeys_barbecue_pit@45783,-108502",
+      "lat": 45.783,
+      "lon": -108.502,
+      "mi": 0.06598044792871029,
+      "name": "Dickey's Barbecue Pit",
+      "profiled": false,
+      "trip": 0.2
+     },
+     {
+      "brand": "jimmy_johns",
+      "category": "sandwich",
+      "id": "jimmy_johns@45783,-108507",
+      "lat": 45.783,
+      "lon": -108.507,
+      "mi": 0.30426957949940164,
+      "name": "Jimmy John's",
+      "profiled": false,
+      "trip": 0.8
+     },
+     {
+      "brand": "hardees",
+      "category": "burger",
+      "id": "hardees@45787,-108510",
+      "lat": 45.787,
+      "lon": -108.51,
+      "mi": 0.5158971376382152,
+      "name": "Hardee's",
+      "profiled": false,
+      "trip": 1.3
+     },
+     {
+      "brand": "kfc",
+      "category": "chicken",
+      "id": "kfc@45789,-108510",
+      "lat": 45.789,
+      "lon": -108.51,
+      "mi": 0.5965683007470542,
+      "name": "KFC",
+      "profiled": false,
+      "trip": 1.5
+     },
+     {
+      "brand": "perkins",
+      "category": "casual",
+      "id": "perkins@45790,-108510",
+      "lat": 45.79,
+      "lon": -108.51,
+      "mi": 0.644272969684267,
+      "name": "Perkins",
+      "profiled": false,
+      "trip": 1.6
+     },
+     {
+      "brand": "starbucks",
+      "category": "coffee",
+      "id": "starbucks@45792,-108513",
+      "lat": 45.792,
+      "lon": -108.513,
+      "mi": 0.844123613930978,
+      "name": "Starbucks",
+      "profiled": false,
+      "trip": 2.1
+     },
+     {
+      "brand": "krispy_krunchy_chicken",
+      "category": "chicken",
+      "id": "krispy_krunchy_chicken@45770,-108493",
+      "lat": 45.77,
+      "lon": -108.493,
+      "mi": 0.9910401212909915,
+      "name": "Krispy Krunchy Chicken",
+      "profiled": false,
+      "trip": 2.5
+     },
+     {
+      "brand": "subway",
+      "category": "sandwich",
+      "id": "subway@45793,-108518",
+      "lat": 45.793,
+      "lon": -108.518,
+      "mi": 1.0695501136245236,
+      "name": "Subway",
+      "profiled": true,
+      "trip": 2.7
+     },
+     {
+      "brand": "dominos",
+      "category": "pizza",
+      "id": "dominos@45777,-108528",
+      "lat": 45.777,
+      "lon": -108.528,
+      "mi": 1.3856565977945987,
+      "name": "Domino's",
+      "profiled": true,
+      "trip": 3.5
+     },
+     {
+      "brand": "baskin_robbins",
+      "category": "dessert",
+      "id": "baskin_robbins@45800,-108479",
+      "lat": 45.8,
+      "lon": -108.479,
+      "mi": 1.5570405616994467,
+      "name": "Baskin-Robbins",
+      "profiled": false,
+      "trip": 3.9
+     },
+     {
+      "brand": "applebees_neighborhood_grill_and_bar",
+      "category": "casual",
+      "id": "applebees_neighborhood_grill_and_bar@45802,-108480",
+      "lat": 45.802,
+      "lon": -108.48,
+      "mi": 1.632153834395807,
+      "name": "Applebee's Neighborhood Grill & Bar",
+      "profiled": false,
+      "trip": 4.1
+     },
+     {
+      "brand": "arbys",
+      "category": "sandwich",
+      "id": "arbys@45784,-108542",
+      "lat": 45.784,
+      "lon": -108.542,
+      "mi": 1.9905919911540066,
+      "name": "Arby's",
+      "profiled": false,
+      "trip": 5.0
+     },
+     {
+      "brand": "taco_bell",
+      "category": "mexican",
+      "id": "taco_bell@45784,-108542",
+      "lat": 45.784,
+      "lon": -108.542,
+      "mi": 1.9905919911540066,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 5.0
+     },
+     {
+      "brand": "dq_grill_and_chill",
+      "category": "dessert",
+      "id": "dq_grill_and_chill@45784,-108543",
+      "lat": 45.784,
+      "lon": -108.543,
+      "mi": 2.0387622253327575,
+      "name": "DQ Grill & Chill",
+      "profiled": false,
+      "trip": 5.1
+     },
+     {
+      "brand": "chipotle",
+      "category": "mexican",
+      "id": "chipotle@45809,-108473",
+      "lat": 45.809,
+      "lon": -108.473,
+      "mi": 2.2212161076613337,
+      "name": "Chipotle",
+      "profiled": true,
+      "trip": 5.6
+     },
+     {
+      "brand": "papa_murphys",
+      "category": "pizza",
+      "id": "papa_murphys@45784,-108547",
+      "lat": 45.784,
+      "lon": -108.547,
+      "mi": 2.231449158459645,
+      "name": "Papa Murphy's",
+      "profiled": false,
+      "trip": 5.6
+     },
+     {
+      "brand": "firehouse_subs",
+      "category": "sandwich",
+      "id": "firehouse_subs@45809,-108472",
+      "lat": 45.809,
+      "lon": -108.472,
+      "mi": 2.2504858813284487,
+      "name": "Firehouse Subs",
+      "profiled": false,
+      "trip": 5.6
+     },
+     {
+      "brand": "sonic",
+      "category": "burger",
+      "id": "sonic@45809,-108472",
+      "lat": 45.809,
+      "lon": -108.472,
+      "mi": 2.2504858813284487,
+      "name": "Sonic",
+      "profiled": false,
+      "trip": 5.6
+     },
+     {
+      "brand": "cinnabon",
+      "category": "dessert",
+      "id": "cinnabon@45804,-108537",
+      "lat": 45.804,
+      "lon": -108.537,
+      "mi": 2.2591602017674655,
+      "name": "Cinnabon",
+      "profiled": false,
+      "trip": 5.6
+     },
+     {
+      "brand": "papa_johns",
+      "category": "pizza",
+      "id": "papa_johns@45810,-108472",
+      "lat": 45.81,
+      "lon": -108.472,
+      "mi": 2.3053870973359247,
+      "name": "Papa John's",
+      "profiled": true,
+      "trip": 5.8
+     },
+     {
+      "brand": "godfathers_pizza",
+      "category": "pizza",
+      "id": "godfathers_pizza@45815,-108470",
+      "lat": 45.815,
+      "lon": -108.47,
+      "mi": 2.642784523588987,
+      "name": "Godfather's Pizza",
+      "profiled": false,
+      "trip": 6.6
+     },
+     {
+      "brand": "panda_express",
+      "category": "asian",
+      "id": "panda_express@45784,-108556",
+      "lat": 45.784,
+      "lon": -108.556,
+      "mi": 2.665020958066428,
+      "name": "Panda Express",
+      "profiled": false,
+      "trip": 6.7
+     },
+     {
+      "brand": "pizza_ranch",
+      "category": "pizza",
+      "id": "pizza_ranch@45823,-108470",
+      "lat": 45.823,
+      "lon": -108.47,
+      "mi": 3.1162318937064586,
+      "name": "Pizza Ranch",
+      "profiled": false,
+      "trip": 7.8
+     },
+     {
+      "brand": "huhot",
+      "category": "casual",
+      "id": "huhot@45754,-108562",
+      "lat": 45.754,
+      "lon": -108.562,
+      "mi": 3.581533958130983,
+      "name": "HuHot",
+      "profiled": false,
+      "trip": 9.0
+     },
+     {
+      "brand": "texas_roadhouse",
+      "category": "casual",
+      "id": "texas_roadhouse@45754,-108562",
+      "lat": 45.754,
+      "lon": -108.562,
+      "mi": 3.581533958130983,
+      "name": "Texas Roadhouse",
+      "profiled": false,
+      "trip": 9.0
+     },
+     {
+      "brand": "wingstop",
+      "category": "chicken",
+      "id": "wingstop@45784,-108576",
+      "lat": 45.784,
+      "lon": -108.576,
+      "mi": 3.6285868040280684,
+      "name": "Wingstop",
+      "profiled": true,
+      "trip": 9.1
+     },
+     {
+      "brand": "scooters_coffee",
+      "category": "coffee",
+      "id": "scooters_coffee@45784,-108578",
+      "lat": 45.784,
+      "lon": -108.578,
+      "mi": 3.724946702808742,
+      "name": "Scooter's Coffee",
+      "profiled": false,
+      "trip": 9.3
+     },
+     {
+      "brand": "chick_fil_a",
+      "category": "chicken",
+      "id": "chick_fil_a@45758,-108569",
+      "lat": 45.758,
+      "lon": -108.569,
+      "mi": 3.727111023764987,
+      "name": "Chick-fil-A",
+      "profiled": false,
+      "trip": 9.3
+     },
+     {
+      "brand": "outback_steakhouse",
+      "category": "casual",
+      "id": "outback_steakhouse@45754,-108567",
+      "lat": 45.754,
+      "lon": -108.567,
+      "mi": 3.7827811456294125,
+      "name": "Outback Steakhouse",
+      "profiled": false,
+      "trip": 9.5
+     },
+     {
+      "brand": "fuddruckers",
+      "category": "burger",
+      "id": "fuddruckers@45752,-108566",
+      "lat": 45.752,
+      "lon": -108.566,
+      "mi": 3.8187294900868873,
+      "name": "Fuddruckers",
+      "profiled": false,
+      "trip": 9.5
+     },
+     {
+      "brand": "chuck_e_cheese",
+      "category": "pizza",
+      "id": "chuck_e_cheese@45772,-108579",
+      "lat": 45.772,
+      "lon": -108.579,
+      "mi": 3.853154766531076,
+      "name": "Chuck E. Cheese",
+      "profiled": false,
+      "trip": 9.6
+     },
+     {
+      "brand": "buffalo_wild_wings",
+      "category": "chicken",
+      "id": "buffalo_wild_wings@45762,-108576",
+      "lat": 45.762,
+      "lon": -108.576,
+      "mi": 3.916045268481657,
+      "name": "Buffalo Wild Wings",
+      "profiled": true,
+      "trip": 9.8
+     },
+     {
+      "brand": "krispy_kreme",
+      "category": "coffee",
+      "id": "krispy_kreme@45770,-108581",
+      "lat": 45.77,
+      "lon": -108.581,
+      "mi": 3.9772885116188155,
+      "name": "Krispy Kreme",
+      "profiled": false,
+      "trip": 9.9
+     },
+     {
+      "brand": "qdoba",
+      "category": "mexican",
+      "id": "qdoba@45755,-108576",
+      "lat": 45.755,
+      "lon": -108.576,
+      "mi": 4.122449961978756,
+      "name": "Qdoba",
+      "profiled": false,
+      "trip": 10.3
+     },
+     {
+      "brand": "mooyah",
+      "category": "burger",
+      "id": "mooyah@45756,-108583",
+      "lat": 45.756,
+      "lon": -108.583,
+      "mi": 4.392211253755152,
+      "name": "Mooyah",
+      "profiled": false,
+      "trip": 11.0
+     },
+     {
+      "brand": "ihop",
+      "category": "casual",
+      "id": "ihop@45756,-108585",
+      "lat": 45.756,
+      "lon": -108.585,
+      "mi": 4.47945328831453,
+      "name": "IHOP",
+      "profiled": false,
+      "trip": 11.2
+     },
+     {
+      "brand": "cold_stone_creamery",
+      "category": "dessert",
+      "id": "cold_stone_creamery@45753,-108587",
+      "lat": 45.753,
+      "lon": -108.587,
+      "mi": 4.6566021032704725,
+      "name": "Cold Stone Creamery",
+      "profiled": false,
+      "trip": 11.6
+     },
+     {
+      "brand": "famous_daves",
+      "category": "casual",
+      "id": "famous_daves@45756,-108592",
+      "lat": 45.756,
+      "lon": -108.592,
+      "mi": 4.787565151175098,
+      "name": "Famous Dave's",
+      "profiled": false,
+      "trip": 12.0
+     }
+    ]
+   },
+   "id": "storesNear Billings, inside 45_-109"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    null
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [
+     "40_-75",
+     "40_-74"
+    ],
+    "partial": false,
+    "radius": 5,
+    "status": "need",
+    "stores": []
+   },
+   "id": "storesNear Midtown, no tiles loaded",
+   "tiles": []
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    null
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [
+     "40_-75"
+    ],
+    "partial": false,
+    "radius": 5,
+    "status": "need",
+    "stores": []
+   },
+   "id": "storesNear Midtown, only 40_-74 loaded",
+   "tiles": [
+    "40_-74"
+   ]
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    {
+     "failed": {
+      "40_-75": true
+     }
+    }
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": true,
+    "radius": 5,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "dunkin",
+      "category": "coffee",
+      "id": "dunkin@40748,-73986",
+      "lat": 40.748,
+      "lon": -73.986,
+      "mi": 0.06909409442828145,
+      "name": "Dunkin'",
+      "profiled": true,
+      "trip": 0.2
+     },
+     {
+      "brand": "gong_cha",
+      "category": "coffee",
+      "id": "gong_cha@40748,-73986",
+      "lat": 40.748,
+      "lon": -73.986,
+      "mi": 0.06909409442828145,
+      "name": "Gong Cha",
+      "profiled": false,
+      "trip": 0.2
+     },
+     {
+      "brand": "pinkberry",
+      "category": "dessert",
+      "id": "pinkberry@40748,-73986",
+      "lat": 40.748,
+      "lon": -73.986,
+      "mi": 0.06909409442828145,
+      "name": "Pinkberry",
+      "profiled": false,
+      "trip": 0.2
+     },
+     {
+      "brand": "chipotle",
+      "category": "mexican",
+      "id": "chipotle@40748,-73985",
+      "lat": 40.748,
+      "lon": -73.985,
+      "mi": 0.08668295708515282,
+      "name": "Chipotle",
+      "profiled": true,
+      "trip": 0.2
+     },
+     {
+      "brand": "starbucks",
+      "category": "coffee",
+      "id": "starbucks@40748,-73985",
+      "lat": 40.748,
+      "lon": -73.985,
+      "mi": 0.08668295708515282,
+      "name": "Starbucks",
+      "profiled": false,
+      "trip": 0.2
+     },
+     {
+      "brand": "le_pain_quotidien",
+      "category": "coffee",
+      "id": "le_pain_quotidien@40750,-73984",
+      "lat": 40.75,
+      "lon": -73.984,
+      "mi": 0.12543296582652952,
+      "name": "Le Pain Quotidien",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "krispy_kreme",
+      "category": "coffee",
+      "id": "krispy_kreme@40751,-73986",
+      "lat": 40.751,
+      "lon": -73.986,
+      "mi": 0.13818818885558098,
+      "name": "Krispy Kreme",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "blank_street_coffee",
+      "category": "coffee",
+      "id": "blank_street_coffee@40747,-73986",
+      "lat": 40.747,
+      "lon": -73.986,
+      "mi": 0.13818818885607193,
+      "name": "Blank Street Coffee",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "jimmy_johns",
+      "category": "sandwich",
+      "id": "jimmy_johns@40747,-73986",
+      "lat": 40.747,
+      "lon": -73.986,
+      "mi": 0.13818818885607193,
+      "name": "Jimmy John's",
+      "profiled": false,
+      "trip": 0.3
+     },
+     {
+      "brand": "playa_bowls",
+      "category": "other",
+      "id": "playa_bowls@40751,-73987",
+      "lat": 40.751,
+      "lon": -73.987,
+      "mi": 0.14776939159731822,
+      "name": "Playa Bowls",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "taco_bell_q111972226",
+      "category": "mexican",
+      "id": "taco_bell_q111972226@40751,-73987",
+      "lat": 40.751,
+      "lon": -73.987,
+      "mi": 0.14776939159731822,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "pret_a_manger",
+      "category": "sandwich",
+      "id": "pret_a_manger@40747,-73987",
+      "lat": 40.747,
+      "lon": -73.987,
+      "mi": 0.147769949264735,
+      "name": "Pret A Manger",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "bonchon_chicken",
+      "category": "chicken",
+      "id": "bonchon_chicken@40747,-73985",
+      "lat": 40.747,
+      "lon": -73.985,
+      "mi": 0.14776994926499848,
+      "name": "Bonchon Chicken",
+      "profiled": false,
+      "trip": 0.4
+     },
+     {
+      "brand": "chick_fil_a",
+      "category": "chicken",
+      "id": "chick_fil_a@40752,-73986",
+      "lat": 40.752,
+      "lon": -73.986,
+      "mi": 0.20728228328386242,
+      "name": "Chick-fil-A",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "five_guys",
+      "category": "burger",
+      "id": "five_guys@40752,-73986",
+      "lat": 40.752,
+      "lon": -73.986,
+      "mi": 0.20728228328386242,
+      "name": "Five Guys",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "just_salad",
+      "category": "other",
+      "id": "just_salad@40746,-73986",
+      "lat": 40.746,
+      "lon": -73.986,
+      "mi": 0.20728228328386242,
+      "name": "Just Salad",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "auntie_annes",
+      "category": "other",
+      "id": "auntie_annes@40751,-73989",
+      "lat": 40.751,
+      "lon": -73.989,
+      "mi": 0.20917536547648719,
+      "name": "Auntie Anne's",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "carvel",
+      "category": "dessert",
+      "id": "carvel@40751,-73989",
+      "lat": 40.751,
+      "lon": -73.989,
+      "mi": 0.20917536547648719,
+      "name": "Carvel",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "blue_bottle_coffee",
+      "category": "coffee",
+      "id": "blue_bottle_coffee@40747,-73989",
+      "lat": 40.747,
+      "lon": -73.989,
+      "mi": 0.20917891106677922,
+      "name": "Blue Bottle Coffee",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "shahs_halal_food",
+      "category": "other",
+      "id": "shahs_halal_food@40747,-73983",
+      "lat": 40.747,
+      "lon": -73.983,
+      "mi": 0.20917891106677922,
+      "name": "Shah's Halal Food",
+      "profiled": false,
+      "trip": 0.5
+     },
+     {
+      "brand": "subway",
+      "category": "sandwich",
+      "id": "subway@40752,-73984",
+      "lat": 40.752,
+      "lon": -73.984,
+      "mi": 0.23221767882885544,
+      "name": "Subway",
+      "profiled": true,
+      "trip": 0.6
+     },
+     {
+      "brand": "sweetgreen",
+      "category": "other",
+      "id": "sweetgreen@40746,-73983",
+      "lat": 40.746,
+      "lon": -73.983,
+      "mi": 0.2600502972018984,
+      "name": "Sweetgreen",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "cinnabon",
+      "category": "dessert",
+      "id": "cinnabon@40750,-73991",
+      "lat": 40.75,
+      "lon": -73.991,
+      "mi": 0.2706851728738159,
+      "name": "Cinnabon",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "baskin_robbins",
+      "category": "dessert",
+      "id": "baskin_robbins@40748,-73981",
+      "lat": 40.748,
+      "lon": -73.981,
+      "mi": 0.2706889782956606,
+      "name": "Baskin-Robbins",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "wendys",
+      "category": "burger",
+      "id": "wendys@40752,-73990",
+      "lat": 40.752,
+      "lon": -73.99,
+      "mi": 0.29462241351638335,
+      "name": "Wendy's",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "and_pizza",
+      "category": "pizza",
+      "id": "and_pizza@40745,-73988",
+      "lat": 40.745,
+      "lon": -73.988,
+      "mi": 0.29554045617191865,
+      "name": "&pizza",
+      "profiled": false,
+      "trip": 0.7
+     },
+     {
+      "brand": "buffalo_wild_wings",
+      "category": "chicken",
+      "id": "buffalo_wild_wings@40745,-73983",
+      "lat": 40.745,
+      "lon": -73.983,
+      "mi": 0.317874951953381,
+      "name": "Buffalo Wild Wings",
+      "profiled": true,
+      "trip": 0.8
+     },
+     {
+      "brand": "joe_and_the_juice",
+      "category": "coffee",
+      "id": "joe_and_the_juice@40745,-73989",
+      "lat": 40.745,
+      "lon": -73.989,
+      "mi": 0.317874951953381,
+      "name": "Joe & The Juice",
+      "profiled": false,
+      "trip": 0.8
+     },
+     {
+      "brand": "kfc",
+      "category": "chicken",
+      "id": "kfc@40750,-73992",
+      "lat": 40.75,
+      "lon": -73.992,
+      "mi": 0.3215725565574725,
+      "name": "KFC",
+      "profiled": false,
+      "trip": 0.8
+     },
+     {
+      "brand": "raising_canes",
+      "category": "chicken",
+      "id": "raising_canes@40751,-73992",
+      "lat": 40.751,
+      "lon": -73.992,
+      "mi": 0.34311719199498847,
+      "name": "Raising Cane's",
+      "profiled": false,
+      "trip": 0.9
+     },
+     {
+      "brand": "popeyes",
+      "category": "chicken",
+      "id": "popeyes@40748,-73993",
+      "lat": 40.748,
+      "lon": -73.993,
+      "mi": 0.3728687582212747,
+      "name": "Popeyes",
+      "profiled": false,
+      "trip": 0.9
+     },
+     {
+      "brand": "jamba",
+      "category": "dessert",
+      "id": "jamba@40748,-73994",
+      "lat": 40.748,
+      "lon": -73.994,
+      "mi": 0.4244175164503566,
+      "name": "Jamba",
+      "profiled": false,
+      "trip": 1.1
+     },
+     {
+      "brand": "dominos",
+      "category": "pizza",
+      "id": "dominos@40755,-73989",
+      "lat": 40.755,
+      "lon": -73.989,
+      "mi": 0.44330650169343594,
+      "name": "Domino's",
+      "profiled": true,
+      "trip": 1.1
+     },
+     {
+      "brand": "white_castle",
+      "category": "burger",
+      "id": "white_castle@40754,-73992",
+      "lat": 40.754,
+      "lon": -73.992,
+      "mi": 0.4668820288628461,
+      "name": "White Castle",
+      "profiled": false,
+      "trip": 1.2
+     },
+     {
+      "brand": "taco_bell",
+      "category": "mexican",
+      "id": "taco_bell@40749,-73995",
+      "lat": 40.749,
+      "lon": -73.995,
+      "mi": 0.47109648340006066,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 1.2
+     },
+     {
+      "brand": "panda_express",
+      "category": "asian",
+      "id": "panda_express@40750,-73995",
+      "lat": 40.75,
+      "lon": -73.995,
+      "mi": 0.47613291535088303,
+      "name": "Panda Express",
+      "profiled": false,
+      "trip": 1.2
+     },
+     {
+      "brand": "mortons_the_steakhouse",
+      "category": "casual",
+      "id": "mortons_the_steakhouse@40755,-73979",
+      "lat": 40.755,
+      "lon": -73.979,
+      "mi": 0.5532691602425419,
+      "name": "Morton's The Steakhouse",
+      "profiled": false,
+      "trip": 1.4
+     },
+     {
+      "brand": "applebees_neighborhood_grill_and_bar",
+      "category": "casual",
+      "id": "applebees_neighborhood_grill_and_bar@40757,-73989",
+      "lat": 40.757,
+      "lon": -73.989,
+      "mi": 0.5746231299658696,
+      "name": "Applebee's Neighborhood Grill & Bar",
+      "profiled": false,
+      "trip": 1.4
+     },
+     {
+      "brand": "dave_and_busters",
+      "category": "casual",
+      "id": "dave_and_busters@40757,-73989",
+      "lat": 40.757,
+      "lon": -73.989,
+      "mi": 0.5746231299658696,
+      "name": "Dave & Buster's",
+      "profiled": false,
+      "trip": 1.4
+     },
+     {
+      "brand": "wingstop",
+      "category": "chicken",
+      "id": "wingstop@40741,-73983",
+      "lat": 40.741,
+      "lon": -73.983,
+      "mi": 0.574628292675551,
+      "name": "Wingstop",
+      "profiled": true,
+      "trip": 1.4
+     },
+     {
+      "brand": "pizza_hut",
+      "category": "pizza",
+      "id": "pizza_hut@40743,-73978",
+      "lat": 40.743,
+      "lon": -73.978,
+      "mi": 0.5892649646958145,
+      "name": "Pizza Hut",
+      "profiled": false,
+      "trip": 1.5
+     },
+     {
+      "brand": "pressed",
+      "category": "dessert",
+      "id": "pressed@40752,-73997",
+      "lat": 40.752,
+      "lon": -73.997,
+      "mi": 0.6119467973675718,
+      "name": "Pressed",
+      "profiled": false,
+      "trip": 1.5
+     },
+     {
+      "brand": "potbelly",
+      "category": "sandwich",
+      "id": "potbelly@40752,-73974",
+      "lat": 40.752,
+      "lon": -73.974,
+      "mi": 0.6614330946245702,
+      "name": "Potbelly",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "cold_stone_creamery",
+      "category": "dessert",
+      "id": "cold_stone_creamery@40758,-73992",
+      "lat": 40.758,
+      "lon": -73.992,
+      "mi": 0.6966466483185076,
+      "name": "Cold Stone Creamery",
+      "profiled": false,
+      "trip": 1.7
+     },
+     {
+      "brand": "ben_and_jerrys",
+      "category": "dessert",
+      "id": "ben_and_jerrys@40758,-73979",
+      "lat": 40.758,
+      "lon": -73.979,
+      "mi": 0.7217551046016922,
+      "name": "Ben & Jerry's",
+      "profiled": false,
+      "trip": 1.8
+     },
+     {
+      "brand": "amorino",
+      "category": "dessert",
+      "id": "amorino@40760,-73988",
+      "lat": 40.76,
+      "lon": -73.988,
+      "mi": 0.7672099105426777,
+      "name": "Amorino",
+      "profiled": false,
+      "trip": 1.9
+     },
+     {
+      "brand": "hard_rock_cafe",
+      "category": "casual",
+      "id": "hard_rock_cafe@40760,-73990",
+      "lat": 40.76,
+      "lon": -73.99,
+      "mi": 0.7883428233618315,
+      "name": "Hard Rock Cafe",
+      "profiled": false,
+      "trip": 2.0
+     },
+     {
+      "brand": "fogo_de_chao",
+      "category": "casual",
+      "id": "fogo_de_chao@40761,-73978",
+      "lat": 40.761,
+      "lon": -73.978,
+      "mi": 0.9288579386796515,
+      "name": "Fogo de Ch\u00e3o",
+      "profiled": false,
+      "trip": 2.3
+     },
+     {
+      "brand": "85_c_bakery_cafe",
+      "category": "coffee",
+      "id": "85_c_bakery_cafe@40759,-73999",
+      "lat": 40.759,
+      "lon": -73.999,
+      "mi": 0.9697282315694841,
+      "name": "85\u00b0C Bakery Cafe",
+      "profiled": false,
+      "trip": 2.4
+     },
+     {
+      "brand": "the_halal_guys",
+      "category": "chicken",
+      "id": "the_halal_guys@40762,-73979",
+      "lat": 40.762,
+      "lon": -73.979,
+      "mi": 0.9700689747997414,
+      "name": "The Halal Guys",
+      "profiled": false,
+      "trip": 2.4
+     },
+     {
+      "brand": "rosatis",
+      "category": "pizza",
+      "id": "rosatis@40739,-74000",
+      "lat": 40.739,
+      "lon": -74.0,
+      "mi": 1.0072241718929082,
+      "name": "Rosati's",
+      "profiled": false,
+      "trip": 2.5
+     },
+     {
+      "brand": "benihana",
+      "category": "asian",
+      "id": "benihana@40763,-73977",
+      "lat": 40.763,
+      "lon": -73.977,
+      "mi": 1.0759126216046124,
+      "name": "Benihana",
+      "profiled": false,
+      "trip": 2.7
+     },
+     {
+      "brand": "p_f_changs",
+      "category": "asian",
+      "id": "p_f_changs@40734,-73992",
+      "lat": 40.734,
+      "lon": -73.992,
+      "mi": 1.082962266235787,
+      "name": "P.F. Chang's",
+      "profiled": false,
+      "trip": 2.7
+     },
+     {
+      "brand": "ihop",
+      "category": "casual",
+      "id": "ihop@40733,-73986",
+      "lat": 40.733,
+      "lon": -73.986,
+      "mi": 1.1055055108475935,
+      "name": "IHOP",
+      "profiled": false,
+      "trip": 2.8
+     },
+     {
+      "brand": "wetzels_pretzels",
+      "category": "other",
+      "id": "wetzels_pretzels@40767,-73983",
+      "lat": 40.767,
+      "lon": -73.983,
+      "mi": 1.2535654919517634,
+      "name": "Wetzel's Pretzels",
+      "profiled": false,
+      "trip": 3.1
+     },
+     {
+      "brand": "smashburger",
+      "category": "burger",
+      "id": "smashburger@40764,-73967",
+      "lat": 40.764,
+      "lon": -73.967,
+      "mi": 1.4363249523360595,
+      "name": "Smashburger",
+      "profiled": false,
+      "trip": 3.6
+     },
+     {
+      "brand": "jets_pizza",
+      "category": "pizza",
+      "id": "jets_pizza@40762,-73964",
+      "lat": 40.762,
+      "lon": -73.964,
+      "mi": 1.460362033199084,
+      "name": "Jet's Pizza",
+      "profiled": false,
+      "trip": 3.7
+     },
+     {
+      "brand": "zaxbys",
+      "category": "chicken",
+      "id": "zaxbys@40766,-73958",
+      "lat": 40.766,
+      "lon": -73.958,
+      "mi": 1.8780885404571872,
+      "name": "Zaxby's",
+      "profiled": false,
+      "trip": 4.7
+     },
+     {
+      "brand": "papa_johns",
+      "category": "pizza",
+      "id": "papa_johns@40717,-73990",
+      "lat": 40.717,
+      "lon": -73.99,
+      "mi": 2.2209072985772504,
+      "name": "Papa John's",
+      "profiled": true,
+      "trip": 5.6
+     },
+     {
+      "brand": "little_caesars",
+      "category": "pizza",
+      "id": "little_caesars@40755,-73941",
+      "lat": 40.755,
+      "lon": -73.941,
+      "mi": 2.391581159329934,
+      "name": "Little Caesars",
+      "profiled": true,
+      "trip": 6.0
+     },
+     {
+      "brand": "checkers",
+      "category": "burger",
+      "id": "checkers@40750,-73940",
+      "lat": 40.75,
+      "lon": -73.94,
+      "mi": 2.4087994920544125,
+      "name": "Checkers",
+      "profiled": false,
+      "trip": 6.0
+     },
+     {
+      "brand": "daves_hot_chicken",
+      "category": "chicken",
+      "id": "daves_hot_chicken@40778,-73955",
+      "lat": 40.778,
+      "lon": -73.955,
+      "mi": 2.578143552572085,
+      "name": "Dave's Hot Chicken",
+      "profiled": false,
+      "trip": 6.4
+     },
+     {
+      "brand": "tim_hortons",
+      "category": "coffee",
+      "id": "tim_hortons@40721,-73944",
+      "lat": 40.721,
+      "lon": -73.944,
+      "mi": 2.9288273021059514,
+      "name": "Tim Hortons",
+      "profiled": false,
+      "trip": 7.3
+     },
+     {
+      "brand": "sonic",
+      "category": "burger",
+      "id": "sonic@40744,-73928",
+      "lat": 40.744,
+      "lon": -73.928,
+      "mi": 3.055661302386003,
+      "name": "Sonic",
+      "profiled": false,
+      "trip": 7.6
+     },
+     {
+      "brand": "grimaldis_pizzeria",
+      "category": "pizza",
+      "id": "grimaldis_pizzeria@40703,-73993",
+      "lat": 40.703,
+      "lon": -73.993,
+      "mi": 3.1993935364879924,
+      "name": "Grimaldi's Pizzeria",
+      "profiled": false,
+      "trip": 8.0
+     },
+     {
+      "brand": "tropical_smoothie_cafe",
+      "category": "dessert",
+      "id": "tropical_smoothie_cafe@40744,-73925",
+      "lat": 40.744,
+      "lon": -73.925,
+      "mi": 3.211741544900603,
+      "name": "Tropical Smoothie Cafe",
+      "profiled": false,
+      "trip": 8.0
+     },
+     {
+      "brand": "ritas_italian_ice",
+      "category": "dessert",
+      "id": "ritas_italian_ice@40704,-73958",
+      "lat": 40.704,
+      "lon": -73.958,
+      "mi": 3.437567799041569,
+      "name": "Rita's Italian Ice",
+      "profiled": false,
+      "trip": 8.6
+     },
+     {
+      "brand": "chuck_e_cheese",
+      "category": "pizza",
+      "id": "chuck_e_cheese@40753,-73914",
+      "lat": 40.753,
+      "lon": -73.914,
+      "mi": 3.778778915732876,
+      "name": "Chuck E. Cheese",
+      "profiled": false,
+      "trip": 9.4
+     },
+     {
+      "brand": "moes_southwest_grill",
+      "category": "mexican",
+      "id": "moes_southwest_grill@40805,-73992",
+      "lat": 40.805,
+      "lon": -73.992,
+      "mi": 3.881983787245602,
+      "name": "Moe's Southwest Grill",
+      "profiled": false,
+      "trip": 9.7
+     },
+     {
+      "brand": "qdoba",
+      "category": "mexican",
+      "id": "qdoba@40692,-73991",
+      "lat": 40.692,
+      "lon": -73.991,
+      "mi": 3.9470574258117828,
+      "name": "Qdoba",
+      "profiled": false,
+      "trip": 9.9
+     },
+     {
+      "brand": "flemings",
+      "category": "casual",
+      "id": "flemings@40807,-73988",
+      "lat": 40.807,
+      "lon": -73.988,
+      "mi": 4.008823451525979,
+      "name": "Fleming's",
+      "profiled": false,
+      "trip": 10.0
+     },
+     {
+      "brand": "krispy_krunchy_chicken",
+      "category": "chicken",
+      "id": "krispy_krunchy_chicken@40701,-73942",
+      "lat": 40.701,
+      "lon": -73.942,
+      "mi": 4.038261483399733,
+      "name": "Krispy Krunchy Chicken",
+      "profiled": false,
+      "trip": 10.1
+     },
+     {
+      "brand": "outback_steakhouse",
+      "category": "casual",
+      "id": "outback_steakhouse@40812,-73982",
+      "lat": 40.812,
+      "lon": -73.982,
+      "mi": 4.3579557796967645,
+      "name": "Outback Steakhouse",
+      "profiled": false,
+      "trip": 10.9
+     },
+     {
+      "brand": "teriyaki_madness",
+      "category": "asian",
+      "id": "teriyaki_madness@40804,-73935",
+      "lat": 40.804,
+      "lon": -73.935,
+      "mi": 4.643480870804325,
+      "name": "Teriyaki Madness",
+      "profiled": false,
+      "trip": 11.6
+     },
+     {
+      "brand": "blimpie",
+      "category": "sandwich",
+      "id": "blimpie@40820,-73988",
+      "lat": 40.82,
+      "lon": -73.988,
+      "mi": 4.906796415780387,
+      "name": "Blimpie",
+      "profiled": false,
+      "trip": 12.3
+     }
+    ]
+   },
+   "id": "storesNear Midtown, 40_-75 failed",
+   "tiles": [
+    "40_-74"
+   ]
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    null
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": true,
+    "radius": 50,
+    "status": "ok",
+    "stores": [
+     {
+      "brand": "dominos",
+      "category": "pizza",
+      "id": "dominos@45670,-110546",
+      "lat": 45.67,
+      "lon": -110.546,
+      "mi": 30.887539291821422,
+      "name": "Domino's",
+      "profiled": true,
+      "trip": 77.2
+     },
+     {
+      "brand": "dq_grill_and_chill",
+      "category": "dessert",
+      "id": "dq_grill_and_chill@45655,-110570",
+      "lat": 45.655,
+      "lon": -110.57,
+      "mi": 32.352353871708054,
+      "name": "DQ Grill & Chill",
+      "profiled": false,
+      "trip": 80.9
+     },
+     {
+      "brand": "taco_johns",
+      "category": "mexican",
+      "id": "taco_johns@45654,-110571",
+      "lat": 45.654,
+      "lon": -110.571,
+      "mi": 32.42360161435843,
+      "name": "Taco John's",
+      "profiled": false,
+      "trip": 81.1
+     },
+     {
+      "brand": "subway",
+      "category": "sandwich",
+      "id": "subway@45642,-110572",
+      "lat": 45.642,
+      "lon": -110.572,
+      "mi": 32.797620780884635,
+      "name": "Subway",
+      "profiled": true,
+      "trip": 82.0
+     },
+     {
+      "brand": "taco_bell",
+      "category": "mexican",
+      "id": "taco_bell@45640,-110575",
+      "lat": 45.64,
+      "lon": -110.575,
+      "mi": 32.98638407194353,
+      "name": "Taco Bell",
+      "profiled": false,
+      "trip": 82.5
+     },
+     {
+      "brand": "krispy_krunchy_chicken",
+      "category": "chicken",
+      "id": "krispy_krunchy_chicken@46435,-109812",
+      "lat": 46.435,
+      "lon": -109.812,
+      "mi": 42.04792372430855,
+      "name": "Krispy Krunchy Chicken",
+      "profiled": false,
+      "trip": 105.1
+     }
+    ]
+   },
+   "id": "storesNear Big Timber, 45_-109 from another run",
+   "tileRun": {
+    "45_-109": "2020-01-01-00-00-00"
+   }
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    null
+   ],
+   "call": "storesNear",
+   "data": "real",
+   "expect": {
+    "need": [
+     "45_-111",
+     "45_-110"
+    ],
+    "partial": false,
+    "radius": 5,
+    "status": "need",
+    "stores": []
+   },
+   "id": "storesNear Big Timber, nothing loaded",
+   "tiles": []
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    "dominos",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "store": {
+     "brand": "dominos",
+     "category": "pizza",
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989,
+     "mi": 0.44330650169343594,
+     "name": "Domino's",
+     "profiled": true,
+     "trip": 1.1
+    }
+   },
+   "id": "nearestStore Midtown dominos"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    "the_cheesecake_factory",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "store": {
+     "brand": "the_cheesecake_factory",
+     "category": "casual",
+     "id": "the_cheesecake_factory@40727,-74038",
+     "lat": 40.727,
+     "lon": -74.038,
+     "mi": 3.117972585954362,
+     "name": "The Cheesecake Factory",
+     "profiled": true,
+     "trip": 7.8
+    }
+   },
+   "id": "nearestStore Midtown the_cheesecake_factory"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    "subway",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "store": {
+     "brand": "subway",
+     "category": "sandwich",
+     "id": "subway@40752,-73984",
+     "lat": 40.752,
+     "lon": -73.984,
+     "mi": 0.23221767882885544,
+     "name": "Subway",
+     "profiled": true,
+     "trip": 0.6
+    }
+   },
+   "id": "nearestStore Midtown subway"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    "taco_bell",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 5,
+    "status": "ok",
+    "store": {
+     "brand": "taco_bell",
+     "category": "mexican",
+     "id": "taco_bell@40749,-73995",
+     "lat": 40.749,
+     "lon": -73.995,
+     "mi": 0.47109648340006066,
+     "name": "Taco Bell",
+     "profiled": false,
+     "trip": 1.2
+    }
+   },
+   "id": "nearestStore Midtown taco_bell"
+  },
+  {
+   "args": [
+    40.749,
+    -73.986,
+    "zippys",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [
+     "41_-75",
+     "41_-74"
+    ],
+    "partial": false,
+    "radius": 25,
+    "status": "need",
+    "store": null
+   },
+   "id": "nearestStore Midtown zippys"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    "dominos",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "store": {
+     "brand": "dominos",
+     "category": "pizza",
+     "id": "dominos@45670,-110546",
+     "lat": 45.67,
+     "lon": -110.546,
+     "mi": 30.887539291821422,
+     "name": "Domino's",
+     "profiled": true,
+     "trip": 77.2
+    }
+   },
+   "id": "nearestStore Big Timber dominos"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    "the_cheesecake_factory",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "store": null
+   },
+   "id": "nearestStore Big Timber the_cheesecake_factory"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    "subway",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "store": {
+     "brand": "subway",
+     "category": "sandwich",
+     "id": "subway@45642,-110572",
+     "lat": 45.642,
+     "lon": -110.572,
+     "mi": 32.797620780884635,
+     "name": "Subway",
+     "profiled": true,
+     "trip": 82.0
+    }
+   },
+   "id": "nearestStore Big Timber subway"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    "taco_bell",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "store": {
+     "brand": "taco_bell",
+     "category": "mexican",
+     "id": "taco_bell@45640,-110575",
+     "lat": 45.64,
+     "lon": -110.575,
+     "mi": 32.98638407194353,
+     "name": "Taco Bell",
+     "profiled": false,
+     "trip": 82.5
+    }
+   },
+   "id": "nearestStore Big Timber taco_bell"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    "zippys",
+    null
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": false,
+    "radius": 50,
+    "status": "ok",
+    "store": null
+   },
+   "id": "nearestStore Big Timber zippys"
+  },
+  {
+   "args": [
+    45.834,
+    -109.95,
+    "dominos",
+    {
+     "failed": {
+      "45_-111": true
+     }
+    }
+   ],
+   "call": "nearestStore",
+   "data": "real",
+   "expect": {
+    "need": [],
+    "partial": true,
+    "radius": 50,
+    "status": "ok",
+    "store": null
+   },
+   "id": "nearestStore Big Timber dominos, 45_-111 failed",
+   "tiles": [
+    "45_-109",
+    "45_-110",
+    "46_-110"
+   ]
+  }
+ ],
+ "run": "2026-10-31-13-32-34"
+}

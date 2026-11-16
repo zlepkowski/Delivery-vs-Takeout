@@ -1,0 +1,118 @@
+{
+  "id": "chipotle",
+  "asOf": "2026-11-12",
+  "menu": [
+    {
+      "name": "Item A",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "10007",
+          "state": "NY",
+          "price": 4.0,
+          "url": "https://example.com/a"
+        },
+        {
+          "zip": "60602",
+          "state": "IL",
+          "price": 5.0,
+          "url": "https://example.com/a"
+        },
+        {
+          "zip": "85004",
+          "state": "AZ",
+          "price": 6.0,
+          "url": "https://example.com/a"
+        }
+      ]
+    },
+    {
+      "name": "Item B",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "10007",
+          "state": "NY",
+          "price": 8.99,
+          "url": "https://example.com/b"
+        },
+        {
+          "zip": "60602",
+          "state": "IL",
+          "price": 9.02,
+          "url": "https://example.com/b"
+        }
+      ]
+    },
+    {
+      "name": "Item C",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "10007",
+          "state": "NY",
+          "price": 12.0,
+          "url": "https://example.com/c"
+        },
+        {
+          "zip": "85004",
+          "state": "AZ",
+          "price": 13.0,
+          "url": "https://example.com/c"
+        }
+      ]
+    },
+    {
+      "name": "Item D",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "10007",
+          "state": "NY",
+          "price": 2.5,
+          "url": "https://example.com/d"
+        },
+        {
+          "zip": "60602",
+          "state": "IL",
+          "price": 3.0,
+          "url": "https://example.com/d"
+        },
+        {
+          "zip": "85004",
+          "state": "AZ",
+          "price": 2.5,
+          "url": "https://example.com/d"
+        }
+      ]
+    },
+    {
+      "name": "Item E",
+      "dealItem": false,
+      "prices": [
+        {
+          "zip": "10007",
+          "state": "NY",
+          "price": 1.1,
+          "url": "https://example.com/e"
+        },
+        {
+          "zip": "60602",
+          "state": "IL",
+          "price": 1.2,
+          "url": "https://example.com/e"
+        }
+      ]
+    }
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "amexGoldDirect": false,
+  "platforms": {
+    "dd": "Example evidence https://example.com/x"
+  },
+  "markup": {
+    "useCategory": true
+  },
+  "notes": "Fixture for tests/unit/build-profiles.test.js. The prices are invented; only the rules are under test."
+}

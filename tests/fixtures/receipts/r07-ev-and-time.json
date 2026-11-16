@@ -1,0 +1,51 @@
+{
+  "id": "r07-ev-and-time",
+  "title": "An EV on a pickup trip: the drive line is Charging, wear still applies, and time is priced when hourly is set",
+  "refs": ["§13 scenario 4", "§4.2 step 7", "D-029 §5.7", "D-029 §7"],
+  "patch": {"fuel": "ev"},
+  "cases": [
+    {
+      "call": "calc", "channel": "direct-p",
+      "expect": {
+        "lines": [["Food", 26.98], ["Tax", 2.30], ["Charging", 0.34], ["Wear", 0.60], ["TOTAL", 30.22]],
+        "parts": {"food": 26.98, "fees": 0, "tax": 2.30, "tip": 0, "drive": 0.94},
+        "gross": 30.22, "net": 30.22
+      },
+      "work": [
+        "energy = 6 mi ÷ 3.5 mi/kWh × $0.20 = 0.342857 → 0.34 (the row says Charging, not Gas)",
+        "wear = 6 × 0.10 = 0.60 (EVs pay wear too, D-029 §7); drive = 0.94",
+        "gross = 26.98 + 2.30 + 0.94 = 30.22"
+      ]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "patch": {"hourly": 20},
+      "expect": {
+        "lines": [["Food", 26.98], ["Tax", 2.30], ["Charging", 0.34], ["Wear", 0.60], ["Time", 5.33], ["TOTAL", 35.55]],
+        "parts": {"food": 26.98, "fees": 0, "tax": 2.30, "tip": 0, "drive": 6.27},
+        "gross": 35.55, "net": 35.55
+      },
+      "work": [
+        "time = $20/h × 16 min ÷ 60 = 5.3333 → 5.33",
+        "drive = 0.34 + 0.60 + 5.33 = 6.27; gross = 26.98 + 2.30 + 6.27 = 35.55"
+      ]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "override": {"miles": 20},
+      "expect": {
+        "lines": [["Food", 26.98], ["Tax", 2.30], ["Charging", 1.14], ["Wear", 2.00], ["TOTAL", 32.42]],
+        "net": 32.42
+      },
+      "work": [
+        "Override miles = 20: energy = 20 ÷ 3.5 × 0.20 = 1.142857 → 1.14; wear = 2.00",
+        "gross = 26.98 + 2.30 + 3.14 = 32.42"
+      ]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {"net": 46.10, "parts": {"food": 31.11, "fees": 7.66, "tax": 2.66, "tip": 4.67, "drive": 0}},
+      "work": ["Delivery has no drive cost, so the EV doesn't change dd-d (r01)."]
+    }
+  ]
+}

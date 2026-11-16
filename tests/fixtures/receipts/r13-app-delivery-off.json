@@ -1,0 +1,64 @@
+{
+  "id": "r13-app-delivery-off",
+  "title": "noDelivery (D-033): an app whose delivery fees aren't entered keeps its pickup and loses only its delivery channel",
+  "refs": ["D-033", "D-032", "D-029 §3", "§9.3"],
+  "dataNote": "The base state (Domino's: large pizza + 2 L Coke). In the app, forEngine sets noDelivery on its copy when only an app's delivery inputs are null; here it's set directly.",
+  "patch": {"plats": {"dd": {"noDelivery": true}}},
+  "cases": [
+    {
+      "call": "allResults",
+      "expect": {
+        "order": ["direct-p", "dd-p", "ue-p", "ue-d"],
+        "net": {"direct-p": 30.70, "dd-p": 35.19, "ue-p": 35.19, "ue-d": 45.10}
+      },
+      "work": [
+        "r01's ranking without dd-d: direct-p 30.70, dd-p 35.19, ue-p 35.19 (tie keeps CHANNELS order), ue-d 45.10.",
+        "dd-d (46.10 in r01) is left out, never priced at $0."
+      ]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {"result": null},
+      "work": ["noDelivery === true removes dd-d (engine contract §3)."]
+    },
+    {
+      "call": "calc", "channel": "dd-p",
+      "expect": {
+        "lines": [["Food", 31.11], ["Tax", 2.66], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 35.19]],
+        "net": 35.19, "name": "DoorDash · pickup"
+      },
+      "work": [
+        "food = 26.98 × 1.153 = 31.10794 → 31.11; app pickup has no fees",
+        "tax = 31.11 × 8.54% = 2.656794 → 2.66; tip 0% (left out); drive = 0.82 + 0.60 = 1.42",
+        "gross = 31.11 + 2.66 + 1.42 = 35.19"
+      ]
+    },
+    {
+      "call": "calc", "channel": "ue-p",
+      "patch": {"plats": {"ue": {"noDelivery": true, "delFee": null, "svcMin": null, "memberMin": null}}},
+      "expect": {
+        "lines": [["Food", 31.11], ["Tax", 2.66], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 35.19]],
+        "net": 35.19
+      },
+      "work": ["Pickup reads none of the delivery inputs, so null delFee, svcMin and memberMin change nothing: as dd-p, 35.19."]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "patch": {"plats": {"ue": {"noDelivery": false}}},
+      "expect": {"net": 45.10},
+      "work": ["noDelivery false is the same as missing: ue-d is r01's 45.10 (1.99 delivery + 4.67 service)."]
+    },
+    {
+      "call": "calc", "channel": "ue-d",
+      "patch": {"plats": {"ue": {"noDelivery": "yes"}}},
+      "expect": {"net": 45.10},
+      "work": ["Only the boolean true removes the channel: the string \"yes\" leaves ue-d available, 45.10."]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "patch": {"plats": {"direct": {"on": true, "noDelivery": true}}},
+      "expect": {"net": 30.70},
+      "work": ["noDelivery is read for the apps only; direct availability is plats.direct.on and rest.directDelivery. direct-p 30.70 as r01."]
+    }
+  ]
+}

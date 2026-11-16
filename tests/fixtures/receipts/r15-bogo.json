@@ -1,0 +1,175 @@
+{
+  "id": "r15-bogo",
+  "title": "Buy one, get one free on Uber Eats (D-036): the second large pizza is free at its own marked-up price",
+  "refs": ["D-036", "engine contract §5.4, §6", "§9.2", "§9.4"],
+  "dataNote": "A user-entered app promo, like every promo (D-032). Cart: 2 large ExtravaganZZa + a 2 L Coke.",
+  "patch": {"cart": {"0": 2, "6": 1}, "promos": {"ue": {"type": "bogo", "value": 0, "cap": 0, "min": 0, "item": 0}}},
+  "cases": [
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "expect": {"lines": [["Food", 56.46], ["Delivery fee", 1.99], ["Service fee", 8.47], ["Tax", 2.66], ["Tip", 8.47], ["Promo", -25.35], ["TOTAL", 52.7]], "parts": {"food": 56.46, "fees": 10.46, "tax": 2.66, "tip": 8.47, "drive": 0}, "gross": 78.05, "disc": 25.35, "credit": 0, "off": 25.35, "net": 52.7, "notes": ["BOGO: Large (14\") ExtravaganZZa"]},
+      "work": [
+        "food: 21.99 × 2 × 1.153 = 50.70894, + 4.99 × 1.153 = 5.75347 → 56.46241 → 56.46",
+        "delivery 1.99; service = max(56.46 × 15% = 8.469, 3) → 8.47; fees = 10.46",
+        "BOGO: min 0 met; item 0 has q = 2 → free = floor(2/2) = 1; promo = 21.99 × 1 × 1.153 = 25.35447 → 25.35",
+        "tax on the discounted food: (56.46 − 25.35) × 8.54% = 31.11 × 0.0854 = 2.656794 → 2.66",
+        "§9.4 tip on the pre-discount food: 56.46 × 15% = 8.469 → 8.47",
+        "gross = 56.46 + 10.46 + 2.66 + 8.47 = 78.05; net = 78.05 − 25.35 = 52.70"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-p",
+      "expect": {"lines": [["Food", 56.46], ["Tax", 2.66], ["Gas", 0.82], ["Wear", 0.6], ["Promo", -25.35], ["TOTAL", 35.19]], "gross": 60.54, "net": 35.19, "notes": ["BOGO: Large (14\") ExtravaganZZa"]},
+      "work": [
+        "BOGO applies to pickup too (like percent and dollar): promo 25.35, tax 2.66, tip 0, drive 1.42",
+        "gross = 56.46 + 2.66 + 1.42 = 60.54; net = 35.19, the same as r01's one-pizza ue-p (food − promo = 31.11 = r01's food)"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "dd-d",
+      "expect": {"parts": {"food": 56.46, "fees": 11.46, "tax": 4.82, "tip": 8.47, "drive": 0}, "net": 81.21, "notes": []},
+      "work": [
+        "The BOGO is Uber Eats' own: DoorDash pays full price. delivery 2.99 + service 8.47 = 11.46",
+        "tax = 56.46 × 8.54% = 4.821684 → 4.82; gross = 56.46 + 11.46 + 4.82 + 8.47 = 81.21"
+      ]
+    },
+    {
+      "call": "allResults",
+      "expect": {"order": ["ue-p", "ue-d", "direct-p", "dd-p", "dd-d"], "net": {"ue-p": 35.19, "ue-d": 52.7, "direct-p": 54.57, "dd-p": 62.7, "dd-d": 81.21}},
+      "work": [
+        "direct-p: menuSub 43.98 + 4.99 = 48.97; tax 4.182038 → 4.18; + 1.42 = 54.57",
+        "dd-p: 56.46 + 4.82 + 1.42 = 62.70",
+        "The BOGO puts Uber Eats delivery (52.70) ahead of ordering direct for pickup (54.57)"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"cart": {"0": 1, "6": 1}},
+      "expect": {"net": 45.1, "disc": 0, "notes": []},
+      "work": [
+        "One pizza: free = floor(1/2) = 0, so no promo, no Promo row, no note: r01's ue-d 45.10"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-p",
+      "patch": {"cart": {"0": 3}},
+      "expect": {"lines": [["Food", 76.06], ["Tax", 4.33], ["Gas", 0.82], ["Wear", 0.6], ["Promo", -25.35], ["TOTAL", 56.46]], "net": 56.46},
+      "work": [
+        "Three pizzas: free = floor(3/2) = 1. food = 21.99 × 3 × 1.153 = 76.06341 → 76.06; promo 25.35",
+        "tax = (76.06 − 25.35) × 8.54% = 50.71 × 0.0854 = 4.330634 → 4.33; gross = 76.06 + 4.33 + 1.42 = 81.81; net = 56.46"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-p",
+      "patch": {"cart": {"0": 4}, "promos": {"ue": {"cap": 30}}},
+      "expect": {"lines": [["Food", 101.42], ["Tax", 6.1], ["Gas", 0.82], ["Wear", 0.6], ["Promo", -30], ["TOTAL", 78.94]], "net": 78.94},
+      "work": [
+        "Four pizzas: free = 2, 21.99 × 2 × 1.153 = 50.70894; cap $30 → promo 30.00",
+        "food = 21.99 × 4 × 1.153 = 101.41788 → 101.42; tax = (101.42 − 30) × 8.54% = 71.42 × 0.0854 = 6.099268 → 6.10",
+        "gross = 101.42 + 6.10 + 1.42 = 108.94; net = 78.94"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"rest": {"menu": [{"name": "Large (14\") ExtravaganZZa", "price": 21.99, "dealItem": false, "markup": {"ue": 10}}, {"name": "Large (14\") The People's Pizza - Deluxe", "price": 21.99, "dealItem": false}, {"name": "Hot Buffalo Wings (8 pc)", "price": 11.99, "dealItem": false}, {"name": "Stuffed Cheesy Bread (8 pc)", "price": 9.99, "dealItem": false}, {"name": "Parmesan Bread Bites (16 pc)", "price": 6.99, "dealItem": false}, {"name": "5-Cheese Mac & Cheese", "price": 9.49, "dealItem": false}, {"name": "Coke® (2 L)", "price": 4.99, "dealItem": false}, {"name": "Domino's Marbled Cookie Brownie", "price": 9.99, "dealItem": false}]}},
+      "expect": {"lines": [["Food", 54.13], ["Delivery fee", 1.99], ["Service fee", 8.12], ["Tax", 2.56], ["Tip", 8.12], ["Promo", -24.19], ["TOTAL", 50.73]], "net": 50.73},
+      "work": [
+        "Why per-item markup comes first: the pizza's own ue markup is 10%. food = 21.99 × 2 × 1.10 = 48.378, + 5.75347 = 54.13147 → 54.13",
+        "promo = 21.99 × 1 × 1.10 = 24.189 → 24.19 (at the chain's 15.3% it would be 25.35)",
+        "service = max(54.13 × 15% = 8.1195, 3) → 8.12; fees = 10.11; tax = (54.13 − 24.19) × 8.54% = 29.94 × 0.0854 = 2.556876 → 2.56",
+        "tip = 8.1195 → 8.12; gross = 54.13 + 10.11 + 2.56 + 8.12 = 74.92; net = 74.92 − 24.19 = 50.73"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"promos": {"ue": {"min": 56.46}}},
+      "expect": {"net": 52.7, "disc": 25.35},
+      "work": [
+        "§9.2 minimum on the marked-up food, at equality: 56.46 ≥ 56.46, so the BOGO applies (52.70)"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"promos": {"ue": {"min": 56.47}}},
+      "expect": {"lines": [["Food", 56.46], ["Delivery fee", 1.99], ["Service fee", 8.47], ["Tax", 4.82], ["Tip", 8.47], ["TOTAL", 80.21]], "net": 80.21, "notes": []},
+      "work": [
+        "56.46 < 56.47: no promo. tax = 56.46 × 8.54% = 4.821684 → 4.82; 56.46 + 10.46 + 4.82 + 8.47 = 80.21"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"promos": {"ue": {"item": 8}}},
+      "expect": {"net": 80.21, "disc": 0},
+      "work": [
+        "item 8 is past the 8-item menu (0–7): no promo, 80.21"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"promos": {"ue": {"item": 0.5}}},
+      "expect": {"net": 80.21, "disc": 0},
+      "work": [
+        "0.5 isn't an integer: no promo"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"promos": {"ue": {"item": "0"}}},
+      "expect": {"net": 80.21, "disc": 0},
+      "work": [
+        "\"0\" is a string, not a menu index: no promo"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"promos": {"ue": {"item": null}}},
+      "expect": {"net": 80.21, "disc": 0},
+      "work": [
+        "No item picked: no promo"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-d",
+      "patch": {"promos": {"ue": {"item": 2}}},
+      "expect": {"net": 80.21, "disc": 0},
+      "work": [
+        "Item 2 (wings) isn't in the cart: no promo"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-p",
+      "patch": {"cart": {"0": 1, "6": 1}},
+      "override": {"cart": {"0": 2}},
+      "expect": {"parts": {"food": 50.71, "tax": 2.17, "drive": 1.42}, "disc": 25.35, "net": 28.95},
+      "work": [
+        "The BOGO reads the overridden cart: food = 21.99 × 2 × 1.153 = 50.70894 → 50.71; promo 25.35",
+        "tax = (50.71 − 25.35) × 8.54% = 25.36 × 0.0854 = 2.165744 → 2.17; gross = 50.71 + 2.17 + 1.42 = 54.30; net 28.95"
+      ]
+    },
+    {
+      "call": "calc",
+      "channel": "ue-p",
+      "patch": {"rest": {"id": "taco_bell", "name": "Taco Bell", "profiled": false, "menu": [], "deal": null, "directDelivery": false, "directSvc": null, "amexGoldDirect": false, "platforms": ["dd", "ue", "gh"], "markup": {"dd": 15.3, "ue": 15.3, "gh": 15.3}, "markupEst": true}, "manualSubtotal": 20},
+      "expect": {"lines": [["Food", 23.06], ["Tax", 1.97], ["Gas", 0.82], ["Wear", 0.6], ["TOTAL", 26.45]], "net": 26.45, "notes": ["Estimate"]},
+      "work": [
+        "An unprofiled brand has no menu, so a BOGO never applies: food = 20 × 1.153 = 23.06",
+        "tax = 23.06 × 8.54% = 1.969324 → 1.97; gross = 23.06 + 1.97 + 1.42 = 26.45"
+      ]
+    }
+  ]
+}

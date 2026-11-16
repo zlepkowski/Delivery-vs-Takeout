@@ -1,0 +1,495 @@
+{
+  "provider": "overpass",
+  "case": "constructed_dense",
+  "recorded": null,
+  "constructed": "Constructed by hand to Overpass's documented JSON output format (https://dev.overpass-api.de/output_formats.html#json): the places, ids and coordinates are made up, not OpenStreetMap data. overpass-api.de and its mirror couldn't be reached from the recording session (ISS-040, D-040).",
+  "request": {
+    "method": "GET",
+    "url": "(see build.py: /nearby?lat=40.749&lon=-73.986&radius=2)"
+  },
+  "response": {
+    "status": 200,
+    "contentType": "application/json",
+    "bodyKind": "json",
+    "body": {
+      "version": 0.6,
+      "generator": "Overpass API 0.7.62 (constructed fixture)",
+      "osm3s": {
+        "timestamp_osm_base": "2026-11-16T00:00:00Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+      },
+      "elements": [
+        {
+          "type": "node",
+          "id": 9,
+          "lat": 40.7491,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 9"
+          }
+        },
+        {
+          "type": "node",
+          "id": 10,
+          "lat": 40.7491,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 10"
+          }
+        },
+        {
+          "type": "node",
+          "id": 101,
+          "lat": 40.7492,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 101"
+          }
+        },
+        {
+          "type": "node",
+          "id": 102,
+          "lat": 40.7494,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 102"
+          }
+        },
+        {
+          "type": "node",
+          "id": 103,
+          "lat": 40.7496,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 103"
+          }
+        },
+        {
+          "type": "node",
+          "id": 104,
+          "lat": 40.7498,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 104"
+          }
+        },
+        {
+          "type": "node",
+          "id": 105,
+          "lat": 40.75,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 105"
+          }
+        },
+        {
+          "type": "node",
+          "id": 106,
+          "lat": 40.7502,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 106"
+          }
+        },
+        {
+          "type": "node",
+          "id": 107,
+          "lat": 40.7504,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 107"
+          }
+        },
+        {
+          "type": "node",
+          "id": 108,
+          "lat": 40.7506,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 108"
+          }
+        },
+        {
+          "type": "node",
+          "id": 109,
+          "lat": 40.7508,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 109"
+          }
+        },
+        {
+          "type": "node",
+          "id": 110,
+          "lat": 40.751,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 110"
+          }
+        },
+        {
+          "type": "node",
+          "id": 111,
+          "lat": 40.7512,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 111"
+          }
+        },
+        {
+          "type": "node",
+          "id": 112,
+          "lat": 40.7514,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 112"
+          }
+        },
+        {
+          "type": "node",
+          "id": 113,
+          "lat": 40.7516,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 113"
+          }
+        },
+        {
+          "type": "node",
+          "id": 114,
+          "lat": 40.7518,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 114"
+          }
+        },
+        {
+          "type": "node",
+          "id": 115,
+          "lat": 40.752,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 115"
+          }
+        },
+        {
+          "type": "node",
+          "id": 116,
+          "lat": 40.7522,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 116"
+          }
+        },
+        {
+          "type": "node",
+          "id": 117,
+          "lat": 40.7524,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 117"
+          }
+        },
+        {
+          "type": "node",
+          "id": 118,
+          "lat": 40.7526,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 118"
+          }
+        },
+        {
+          "type": "node",
+          "id": 119,
+          "lat": 40.7528,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 119"
+          }
+        },
+        {
+          "type": "node",
+          "id": 120,
+          "lat": 40.753,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 120"
+          }
+        },
+        {
+          "type": "node",
+          "id": 121,
+          "lat": 40.7532,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 121"
+          }
+        },
+        {
+          "type": "node",
+          "id": 122,
+          "lat": 40.7534,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 122"
+          }
+        },
+        {
+          "type": "node",
+          "id": 123,
+          "lat": 40.7536,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 123"
+          }
+        },
+        {
+          "type": "node",
+          "id": 124,
+          "lat": 40.7538,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 124"
+          }
+        },
+        {
+          "type": "node",
+          "id": 125,
+          "lat": 40.754,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 125"
+          }
+        },
+        {
+          "type": "node",
+          "id": 126,
+          "lat": 40.7542,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 126"
+          }
+        },
+        {
+          "type": "node",
+          "id": 127,
+          "lat": 40.7544,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 127"
+          }
+        },
+        {
+          "type": "node",
+          "id": 128,
+          "lat": 40.7546,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 128"
+          }
+        },
+        {
+          "type": "node",
+          "id": 129,
+          "lat": 40.7548,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 129"
+          }
+        },
+        {
+          "type": "node",
+          "id": 130,
+          "lat": 40.755,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 130"
+          }
+        },
+        {
+          "type": "node",
+          "id": 131,
+          "lat": 40.7552,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 131"
+          }
+        },
+        {
+          "type": "node",
+          "id": 132,
+          "lat": 40.7554,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 132"
+          }
+        },
+        {
+          "type": "node",
+          "id": 133,
+          "lat": 40.7556,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 133"
+          }
+        },
+        {
+          "type": "node",
+          "id": 134,
+          "lat": 40.7558,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 134"
+          }
+        },
+        {
+          "type": "node",
+          "id": 135,
+          "lat": 40.756,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 135"
+          }
+        },
+        {
+          "type": "node",
+          "id": 136,
+          "lat": 40.7562,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 136"
+          }
+        },
+        {
+          "type": "node",
+          "id": 137,
+          "lat": 40.7564,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 137"
+          }
+        },
+        {
+          "type": "node",
+          "id": 138,
+          "lat": 40.7566,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 138"
+          }
+        },
+        {
+          "type": "node",
+          "id": 139,
+          "lat": 40.7568,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 139"
+          }
+        },
+        {
+          "type": "node",
+          "id": 140,
+          "lat": 40.757,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 140"
+          }
+        },
+        {
+          "type": "node",
+          "id": 141,
+          "lat": 40.7572,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 141"
+          }
+        },
+        {
+          "type": "node",
+          "id": 142,
+          "lat": 40.7574,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 142"
+          }
+        },
+        {
+          "type": "node",
+          "id": 143,
+          "lat": 40.7576,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 143"
+          }
+        },
+        {
+          "type": "node",
+          "id": 144,
+          "lat": 40.7578,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 144"
+          }
+        },
+        {
+          "type": "node",
+          "id": 145,
+          "lat": 40.758,
+          "lon": -73.986,
+          "tags": {
+            "amenity": "restaurant",
+            "name": "Fixture Place 145"
+          }
+        }
+      ]
+    }
+  }
+}

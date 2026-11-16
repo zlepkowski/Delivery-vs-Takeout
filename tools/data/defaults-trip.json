@@ -1,0 +1,48 @@
+{
+  "asOf": "2026-11-13",
+  "about": "Sourced trip defaults: vehicle wear ($/mi), home EV electricity ($/kWh), local driving speed (mph) and default tip percentages (delivery, pickup). Evidence only; read by the app build, not by the page.",
+  "values": {
+    "wear": {
+      "value": 0.1104,
+      "est": false,
+      "source": "https://newsroom.aaa.com/wp-content/uploads/2025/09/AAA-Brochure-Your-Driving-Cost-9.2025.pdf",
+      "read": "2026-11-13",
+      "quote": "Operating Costs / maintenance: 11.44¢ (Midsize Pickup), 11.36¢ (1/2 Ton Pickup), 9.75¢ (Hybrid), 10.07¢ (Electric), 11.04¢ (2025 Weighted Average)",
+      "reason": "Converted 11.04 cents per mile to dollars (÷100). AAA's 2025 fact sheet (https://newsroom.aaa.com/wp-content/uploads/2025/09/UPDATE-AAA-Fact-Sheet-Your-Driving-Cost-9.2025-1.pdf, read 2026-11-13) defines this line as 'Maintenance, Repair & Tires 11.04¢/mile'. Brochure 'maintenance' row is the same figure."
+    },
+    "kwh": {
+      "value": 0.1816,
+      "est": false,
+      "source": "https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a",
+      "read": "2026-11-13",
+      "quote": "Table 5.6.A ... August 2026 and 2025 (Cents per Kilowatthour). U.S. Total: 18.16 (Residential August 2026), 17.57 (Residential August 2025)",
+      "reason": "Latest month on the page: August 2026 (EIA Electric Power Monthly, release 2026-10-23). U.S. Total, Residential column, 18.16 cents/kWh converted to $/kWh (÷100). EIA notes 2026 values are preliminary estimates. Mirror of the table's August 2026 release, not a derived figure."
+    },
+    "speed": {
+      "value": 27,
+      "est": true,
+      "source": "https://rosap.ntl.bts.gov/view/dot/73764/dot_73764_DS1.pdf",
+      "read": "2026-11-13",
+      "quote": "Table 7-4 Commute Patterns by Mode of Transportation, 2022, Privately owned vehicle: Average Commute Trip Length (Miles) 13.56; Average Commute Travel Time (Minutes) 26.94; Average Commute Speed (Miles per Hour) 26.59",
+      "reason": "The report's own figure: Table 7-4, privately owned vehicle, 2022, Average Commute Speed 26.59 mph (computed by FHWA per trip, using trips with both mileage and time), rounded to 27. Not 13.56 / 26.94 x 60 = 30.2: the ratio of mean length to mean time isn't the mean speed. est: a commute speed stands in for a local errand trip; the report gives no per-trip private-vehicle speed for other purposes (Table 7-5 by metro size: 23.2 mph at 3M+ to 31.4 rural). Orchestrator correction 2026-11-13: the researcher had derived 30."
+    },
+    "tipDel": {
+      "value": 15,
+      "est": false,
+      "decision": "D-032",
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No reachable page states a typical tip (ISS-033). 15% for delivery is the product owner's choice (2026-11-13), not a sourced figure; the user can change it."
+    },
+    "tipPick": {
+      "value": 0,
+      "est": false,
+      "decision": "D-032",
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "As tipDel: 0% for pickup is the product owner's choice (2026-11-13)."
+    }
+  }
+}

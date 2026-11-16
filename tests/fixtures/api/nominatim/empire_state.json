@@ -1,0 +1,51 @@
+{
+  "provider": "nominatim",
+  "case": "empire_state",
+  "recorded": "2026-11-16",
+  "request": {
+    "method": "GET",
+    "url": "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+  },
+  "response": {
+    "status": 200,
+    "contentType": "application/json; charset=utf-8",
+    "bodyKind": "json",
+    "body": [
+      {
+        "place_id": 360001846,
+        "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+        "osm_type": "way",
+        "osm_id": 34633854,
+        "lat": "40.7484421",
+        "lon": "-73.9856589",
+        "category": "office",
+        "type": "yes",
+        "place_rank": 30,
+        "importance": 0.5803438355141769,
+        "addresstype": "office",
+        "name": "Empire State Building",
+        "display_name": "Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States",
+        "address": {
+          "office": "Empire State Building",
+          "house_number": "350",
+          "road": "5th Avenue",
+          "neighbourhood": "Koreatown",
+          "suburb": "Manhattan",
+          "county": "New York County",
+          "city": "New York",
+          "state": "New York",
+          "ISO3166-2-lvl4": "US-NY",
+          "postcode": "10118",
+          "country": "United States",
+          "country_code": "us"
+        },
+        "boundingbox": [
+          "40.7479255",
+          "40.7489585",
+          "-73.9865012",
+          "-73.9848166"
+        ]
+      }
+    ]
+  }
+}

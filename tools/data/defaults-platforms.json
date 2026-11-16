@@ -1,0 +1,177 @@
+{
+  "about": "Default app fees for the state layer (D-032: official numbers only). A value the app doesn't publish is null: the page asks the user for it, and leaves that app out of the comparison until then.",
+  "asOf": "2026-11-13",
+  "values": {
+    "dd.delFee": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "DoorDash's page says the delivery fee varies by merchant and gives no amount. Empty by D-032: the user enters it from their checkout."
+    },
+    "dd.memberMin": {
+      "est": false,
+      "quote": "a subscription program that offers a $0 delivery fee and reduced service fees for subscribers when ordering $12 or more from any DashPass-eligible restaurant (look for the checkmark). The subscription is $9.99/month",
+      "read": "2026-11-13",
+      "reason": "Quote sits in the page's Caviar FAQ block but names the DoorDash platform as well. The DashPass terms on the same page give no separate minimum.",
+      "source": "https://help.doordash.com/en-us/consumers/article/what-fees-do-i-pay",
+      "value": 12
+    },
+    "dd.memberSvc": {
+      "est": false,
+      "quote": "The service fee may vary but is 15% of your subtotal for most orders (and 5% for most eligible DashPass restaurant orders).",
+      "read": "2026-11-13",
+      "reason": "Stated for markets not yet on the new fee model. Member benefit is a reduced service fee, not a fixed percent cap. Kept as published (D-032); same market caveat as dd.svc.",
+      "source": "https://help.doordash.com/en-us/consumers/article/what-fees-do-i-pay",
+      "value": 5
+    },
+    "dd.pickDisc": {
+      "value": 0,
+      "est": false,
+      "decision": "D-032",
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No standing pickup discount is published ('There are no service fees on pickup orders', help.doordash.com fee page). 0 means no discount; a promo goes in the promo fields. Product rule D-032."
+    },
+    "dd.svc": {
+      "est": false,
+      "quote": "The service fee may vary but is 15% of your subtotal for most orders (and 5% for most eligible DashPass restaurant orders). A flat, minimum service fee may apply.",
+      "read": "2026-11-13",
+      "reason": "Figure is from the section for markets NOT yet on the new fee model (California, Chicago, Colorado, DC, Massachusetts, Minnesota, NYC, Puerto Rico, Seattle). Markets on the new model (rolling out late July 2026) price the service fee by distance and order size. Kept as DoorDash's own published figure (D-032, official numbers only); the page and the UI must say it may not match the user's market.",
+      "source": "https://help.doordash.com/en-us/consumers/article/what-fees-do-i-pay",
+      "value": 15
+    },
+    "dd.svcMin": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "DoorDash's page says 'A flat, minimum service fee may apply' with no amount. Empty by D-032."
+    },
+    "gh.delFee": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+    },
+    "gh.memberMin": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+    },
+    "gh.memberSvc": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+    },
+    "gh.pickDisc": {
+      "value": 0,
+      "est": false,
+      "decision": "D-032",
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No standing pickup discount assumed; a promo goes in the promo fields. Product rule D-032."
+    },
+    "gh.svc": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+    },
+    "gh.svcMin": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+    },
+    "regFee": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "DoorDash's terms confirm regulatory fees exist in some places but give no amounts or city list on a readable page. Empty by D-032."
+    },
+    "smallFee": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "As smallMin: no published amount. Empty by D-032."
+    },
+    "smallMin": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "DoorDash's page says a small-order fee may apply 'if your subtotal is below a certain amount' with no amount or threshold. Empty by D-032."
+    },
+    "ue.delFee": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+    },
+    "ue.memberMin": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+    },
+    "ue.memberSvc": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+    },
+    "ue.pickDisc": {
+      "value": 0,
+      "est": false,
+      "decision": "D-032",
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "No standing pickup discount assumed; a promo goes in the promo fields. Product rule D-032."
+    },
+    "ue.svc": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+    },
+    "ue.svcMin": {
+      "value": null,
+      "est": false,
+      "source": null,
+      "read": "2026-11-13",
+      "quote": "",
+      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+    }
+  }
+}

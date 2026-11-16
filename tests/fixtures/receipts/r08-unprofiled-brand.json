@@ -1,0 +1,74 @@
+{
+  "id": "r08-unprofiled-brand",
+  "title": "An unprofiled brand (Taco Bell): typed subtotal, category markup, every app, no direct delivery, flagged Estimate",
+  "refs": ["D-006", "D-028", "§9.3", "D-029 §2.1", "D-029 §4"],
+  "dataNote": "rest is what restFor(\"taco_bell\") builds: Taco Bell is unprofiled (D-028), category mexican, whose default markup in tools/data/categories.json is 12.6 for dd, ue and gh (est). The state layer copies that markup into plats.",
+  "patch": {
+    "rest": {
+      "id": "taco_bell", "name": "Taco Bell", "profiled": false, "menu": [], "deal": null,
+      "directDelivery": false, "directSvc": null, "amexGoldDirect": false,
+      "platforms": ["dd", "ue", "gh"], "markup": {"dd": 12.6, "ue": 12.6, "gh": 12.6}, "markupEst": true
+    },
+    "manualSubtotal": 20,
+    "plats": {"dd": {"markup": 12.6}, "ue": {"markup": 12.6}, "gh": {"markup": 12.6}}
+  },
+  "cases": [
+    {
+      "call": "allResults",
+      "expect": {
+        "order": ["direct-p", "dd-p", "ue-p", "gh-p", "ue-d", "gh-d", "dd-d"],
+        "net": {"direct-p": 23.13, "dd-p": 25.86, "ue-p": 25.86, "gh-p": 25.86, "ue-d": 33.19, "gh-d": 33.69, "dd-d": 34.19}
+      },
+      "work": [
+        "No direct delivery for an unprofiled brand: 7 channels, not 8.",
+        "Three pickup ties at 25.86 keep CHANNELS order: dd, ue, gh."
+      ]
+    },
+    {
+      "call": "calc", "channel": "direct-p",
+      "expect": {
+        "lines": [["Food", 20], ["Tax", 1.71], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 23.13]],
+        "net": 23.13, "notes": ["Estimate"]
+      },
+      "work": [
+        "The cart is the typed subtotal, 20.00 (the base cart is ignored for an unprofiled brand)",
+        "tax = 20 × 8.54% = 1.708 → 1.71; gross = 20 + 1.71 + 1.42 = 23.13"
+      ]
+    },
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {
+        "lines": [["Food", 22.52], ["Delivery fee", 2.99], ["Service fee", 3.38], ["Tax", 1.92], ["Tip", 3.38], ["TOTAL", 34.19]],
+        "parts": {"food": 22.52, "fees": 6.37, "tax": 1.92, "tip": 3.38, "drive": 0},
+        "net": 34.19, "notes": ["Estimate"]
+      },
+      "work": [
+        "food = 20 × 1.126 = 22.52",
+        "service = max(22.52 × 15% = 3.378, 3.00) → 3.38; fees = 2.99 + 3.38 = 6.37",
+        "tax = 22.52 × 8.54% = 1.923208 → 1.92; tip = 22.52 × 15% = 3.378 → 3.38",
+        "gross = 22.52 + 6.37 + 1.92 + 3.38 = 34.19"
+      ]
+    },
+    {
+      "call": "calc", "channel": "direct-d",
+      "expect": {"result": null},
+      "work": ["Removed (D-006, §9.3), never $0."]
+    },
+    {
+      "call": "cartInfo",
+      "expect": {"menuSub": 20, "dealSub": 20, "qty": 0, "eligQty": 0, "dealReady": false, "shortBy": 0}
+    },
+    {
+      "call": "calc", "channel": "ue-p",
+      "override": {"manualSubtotal": 35.5},
+      "expect": {
+        "lines": [["Food", 39.97], ["Tax", 3.41], ["Gas", 0.82], ["Wear", 0.60], ["TOTAL", 44.80]],
+        "net": 44.80
+      },
+      "work": [
+        "Override the typed subtotal to 35.50: food = 35.5 × 1.126 = 39.973 → 39.97",
+        "tax = 39.97 × 8.54% = 3.413438 → 3.41; gross = 39.97 + 3.41 + 1.42 = 44.80"
+      ]
+    }
+  ]
+}

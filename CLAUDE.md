@@ -61,7 +61,7 @@ CONTEXT:   spec sections (§n), decision IDs (D-nnn), known traps
 - **Never invent a data number.** Every data file carries a provenance header.
 - **Never skip, loosen or delete a test** to get green. Expected values never come from the code under test.
 - **No secrets in the repo.**
-- **Only the orchestrator commits.** Branch: `claude/sharp-heisenberg-tbo63x` (merges to `main` by PR, only when the user asks). Push with `git push -u origin <branch>`.
+- **Only the orchestrator commits.** Branch: the session's assigned branch; `docs/progress.md` names the current one (merges to `main` by PR, only when the user asks). Push with `git push -u origin <branch>`.
 
 ## Commands (from the repo root)
 

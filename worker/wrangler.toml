@@ -1,0 +1,18 @@
+# Pickup or Delivery: the optional Worker (docs/api-contract.md §0, §9).
+# No secrets in this file. USER_AGENT is set at deploy time: wrangler secret put USER_AGENT
+
+name = "pickup-or-delivery"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+OSRM_URL = "https://router.project-osrm.org"
+NOMINATIM_URL = "https://nominatim.openstreetmap.org"
+OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+ALLOW_ORIGINS = "https://zlepkowski.github.io"
+
+# The KV cache (§5). Create the namespace with `wrangler kv namespace create POD_CACHE`,
+# then uncomment this block and paste the id it prints in place of the placeholder.
+# [[kv_namespaces]]
+# binding = "POD_CACHE"
+# id = "REPLACE_WITH_KV_NAMESPACE_ID"

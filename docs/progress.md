@@ -1,15 +1,27 @@
 # Progress
 
-**Current phase:** 1 (Data rebuild), not started
-**Last updated:** 2026-11-12
-**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/sharp-heisenberg-tbo63x` (base: `main`)
+**Current phase:** 9 (Phase E: deep links) is **done**. Next is **Phase 10 (Ship)**, to start in a **fresh session**, with the user's `/goal`
+**Last updated:** 2026-11-16
+**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/blissful-goldberg-jwe17y` (the Phase 9 session branch, fast-forwarded from the Phase 2 tip to `claude/charming-heisenberg-wag8bg` at `c332e15`, the Phase 8 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
 ## Resume here
 
-1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
+1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`. **Run `npm ci` first** if `node_modules` is missing (a fresh container has none, and `npm test` then fails on `acorn`).
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **ISS-006** is closed: `.claude/settings.json` sets auto-compact at 60%.
-4. Before Phase 1 can start, **ISS-001** has to be resolved: the network allowlist blocks every data source. Request the hosts listed there with the environment tools, in one approval.
+3. **Phase 10 (Ship):** done when CI is green, BUILD.md is updated to v5, and the site is live on Pages after the merge to `main`. BUILD.md is the v4 spec kept as reference; v5 folds in D-001 to D-041 and the nine contracts (where they differ, the contracts and decisions already win). In particular §11 Phase E becomes D-016/D-041 (no platform pre-builds a cart; links open the app, the chain's site or a map). **The merge to `main` and turning Pages on are the user's**: open a PR only when the user asks (ISS-005: default branch `main`, Settings → Pages → Source: GitHub Actions).
+4. **What Phase 10 inherits from Phase 9 (D-041):**
+   - Nine contracts: engine, state, geo, insights, UI, VIN, API, and now **links** (`docs/links-contract.md`). `POD.links.forChannel(ch, S, D)` is pure; `src/data/links.js` is written by hand by the orchestrator (the `cards.js` pattern), every URL with how and when it was seen working.
+   - On 2026-11-16's data: DoorDash rows search by name (the user confirmed the format); Uber Eats and Grubhub rows open the app's home page (their searches didn't search for the user); ordering direct links to the 9 profiled chains' home pages; direct pickup also gets Google Maps directions to the store, or a map search by name with no store. A new search format or a newly profiled chain is a data change with a check (a data test pins `LINKS.order`'s keys to `PROFILES`').
+   - **The Phase 7 baseline e2e** (`worker.e2e.js`, `BASE_REV = '556bc34'`) now removes exactly the hand-off blocks and the fine-print links line before comparing (links contract §4). A later phase that changes `#app` on purpose re-baselines it by decision again.
+   - Not loaded from the session: Dunkin's and Little Caesars' home pages (hosts not allowed; both say so in their `source`), and Google's Maps URLs documentation (not on the allowlist).
+5. **Open questions carried forward:**
+   - **ISS-042 (new):** websites for unprofiled chains and independents (Wikidata P856, ATP's per-store `website`, OSM's `website` tag).
+   - **ISS-004 (the user, for the Worker deploy only):** a Cloudflare account; no keys are needed.
+   - **ISS-040:** the Overpass fixtures are constructed; one real recording closes it.
+   - **ISS-036, ISS-032 (need the user):** per-item app prices; stacked ZIP coordinates.
+   - ISS-034, ISS-035, ISS-030, ISS-031, ISS-037, ISS-039, D-028.
+6. **Network:** unchanged in Phase 9; the environment **Delivery-vs-Takeout** is at the 20-host cap (ISS-001). Phase 10 needs none unless the user wants a link or a source re-checked.
+7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
 
@@ -22,16 +34,16 @@
 | # | Phase | Owner | Status | Done when |
 |---|---|---|---|---|
 | 0 | Scaffold | Opus | ✅ done | `npm test` green; the empty page loads from file:// with 0 console errors; agents and skills in place |
-| 1 | Data rebuild | researcher + Opus (cards) | ⬜ | Schema tests pass. ZIPs = 42,354 / 18,908. Every credit has a tier, source URL and date. Store tiles build; fixtures committed |
-| 2 | Engine (§4) | Opus (oracle) → builder | ⬜ | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
-| 3 | Geography + stores near you | builder | ⬜ | 59011 vs 10118 estimates differ ≥10×; `storesNear` passes fixture tests; an uncached ZIP takes <10 ms |
-| 4 | State, derivations, wallet (§5) | builder | ⬜ | Cascade tests pass; `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
-| 5 | UI + 9 insights + "Near you" picker | builder | ⬜ | The §13 manual checklist is automated in Playwright; 0 console errors; phone and desktop screenshots reviewed |
+| 1 | Data rebuild | researcher + Opus (cards) | ✅ done (`32dae9b`) | Schema tests pass. ZIPs = 42,354 / 18,908. Every credit has a tier, source URL and date. Store tiles build; fixtures committed |
+| 2 | Engine (§4) | Opus (oracle) → builder | ✅ done | Matches the Python oracle on 500 seeded scenarios; hand-worked receipts and §9 trap tests pass |
+| 3 | Geography + stores near you | Opus (contract) → builder | ✅ done | 59011 vs 10118 estimates differ ≥10× (10.4 vs 0.4 mi, 26×); `storesNear` passes fixture tests (129 hand-worked + 71 real-data cases); an uncached ZIP takes <10 ms (mean ≈ 4 ms) |
+| 4 | State, derivations, wallet (§5) | Opus (contract) → builder | ✅ done | Cascade tests pass (80 hand-worked scenarios + named tests); `syncCredits` keeps used/manual/opt-in; a throwing storage falls back to defaults |
+| 5 | UI + 9 insights + "Near you" picker | Opus (contracts, e2e) → builder | ✅ done | The §13 manual checklist is automated in Playwright (19 checklist tests + 2 smoke, 0 console errors); phone and desktop screenshots reviewed; insights match a Python reference on 41 fixtures and 500 seeded scenarios |
 | — | **v4 parity milestone** | | | |
-| 6 | Phase B: per-item markup | Opus (oracle) → builder | ⬜ | Oracle updated first; BOGO cases pass; profiles migrated |
-| 7 | Phase A static: VIN lookup, weekly gas + store refresh | researcher + builder | ⬜ | Big Timber → Domino's ≈ the real ~33 mi; the scheduled refresh passes a dry run |
-| 8 | Phase A backend: Worker behind the seam | api-builder | ⬜ | Fixture tests pass; the site is identical with the Worker off |
-| 9 | Phase E: deep links | builder | ⬜ | Link-builder tests pass; every result row hands off |
+| 6 | Phase B: per-item markup | Opus (oracle) → builder | ✅ done | Oracle updated first (`0b2d290`, before any code); BOGO cases pass (receipt r15, 17 cases; 4 insight fixtures; 4 e2e); profiles migrated to object items (`1359cf6`, shape only) |
+| 7 | Phase A static: VIN lookup, weekly gas + store refresh | Opus (contracts, references, e2e) → researcher + builder | ✅ done | Big Timber → Domino's ≈ the real ~33 mi (38.6 mi one way from the Livingston store, +17%; the old estimator said 10.4); the scheduled refresh passes a dry run (live sources, fresh caches, every gate) |
+| 8 | Phase A backend: Worker behind the seam | Opus (contract, references, e2e) → api-builder + builder | ✅ done | Fixture tests pass (103 hand-worked Worker cases + 67 Worker unit tests, 140 seam cases + 30 `send()` tests, 2,000 seeded seam calls vs the Python reference); the site is identical with the Worker off (`#app` byte-identical to the Phase 7 page built from git, in 3 flows, and with the Worker failing 4 ways) |
+| 9 | Phase E: deep links | Opus (contract, data, references, e2e) → builder + tester | ✅ done | Link-builder tests pass (88 hand-worked cases and 2,000 seeded calls vs the Python reference; 121 unit tests; 15 mutants caught); every result row hands off (every brand × channel in the unit tests; 6 e2e flows and an independent on the page, 0 console errors) |
 | 10 | Ship | tester + Opus | ⬜ | CI green; BUILD.md updated to v5; live on Pages after the merge to `main` |
 
 ## Log
@@ -53,3 +65,294 @@
 - Workers are dispatched as `general-purpose` Haiku agents that read their agent file and skill first, until a fresh session loads them by name (D-019).
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
+
+### Phase 10: Ship (2026-11-16, in progress)
+
+Branch `claude/zen-hamilton-bp88d4` (this session's; fast-forwarded from the Phase 2 tip to `claude/blissful-goldberg-jwe17y` at `71264c5`, the Phase 9 tip). Baseline at the start: `npm test` exits 0 from a fresh `npm ci` (es5 20 files, unit 1,364/1,364, every oracle line, e2e 60/60); CI green at `71264c5`. On GitHub: Pages off (`has_pages: false`), default branch still `claude/sharp-heisenberg-tbo63x` (ISS-005), no PRs.
+
+| Task | Status | Commit |
+|---|---|---|
+| 10.1 BUILD.md v5 (orchestrator): the map to D-001…D-041 and the nine contracts, same section numbers as v4 so every `BUILD.md §n` citation still resolves; §11 Phase E per D-016/D-041; README status. Review CHANGES-REQUESTED (an ambiguous markup sentence, the three unprofiled chains' reasons, r06's scope, nits) → fixed | ✅ | `425b080`, `268a84e` |
+| 10.2 Tester: `tests/unit/docs-build.test.js`, 25 tests: paths, links, ids, load order, storage key, contracts, every `BUILD.md §n` citation in the repo, and each stated number pinned to its source (data, `check-site.js` thresholds, DEFAULTS, npm scripts, the highest D-id, profile markups). Review fix round 1 (surviving mutants, a too-wide .gitignore exemption); 64 tester + 6 orchestrator mutants caught | ✅ | `1edd6c5` |
+| 10.3 Live dry run of the Pages build (`ATP_RUN=latest bash tools/build-site.sh`). **Dry runs 1 and 2 failed every candidate** from a fresh cache: ATP's host intermittently answers a Range GET with `200` (D-039 amendment). Dry run 3, with 10.3a, from a fresh cache: run 2026-11-07 skipped for its cut-off Taco Bell file (ISS-039, by design), **run 2026-10-31 built (339 members, 1,020 ranged requests, 4 retries) and passed all five gates**: 273 brands, 847 tiles, 182,567 stores; canary 82 brands within 5 mi of 10118; GAS_WEEK 2026-11-09; Big Timber → the Livingston Domino's 38.6 mi one way. The run 2026-10-24 has a cut-off Jack in the Box file too (ISS-043). The built site served over http under `/Delivery-vs-Takeout/` (as Pages serves it): the example prices, 15 brands near 10118 from the built tiles, hand-offs on every row, 0 console errors, no horizontal scroll at 390 and 1280 px; screenshots reviewed | ✅ | — |
+| 10.3a Researcher: `build-stores.py` retries an ignored Range (closed unread), 6 attempts with 1-2-4-8-16 s backoff; a 4xx or a wrong length fails at once. Tester: `tests/unit/build-stores-range.test.js`, 9 tests (6 of the first 7 fail on the old generator). Review APPROVE + fix round (a 503 case) | ✅ | `f78b879`, `d29b938` |
+| 10.4 CI green, PR to `main`, Pages on, merge, deploy | in progress | — |
+| 10.5 Close | pending | — |
+
+### Phase 9: Phase E, deep links (2026-11-16, done)
+
+Branch `claude/blissful-goldberg-jwe17y` (this session's; fast-forwarded from the Phase 2 tip to `claude/charming-heisenberg-wag8bg` at `c332e15`, the Phase 8 tip). User decisions at the start: the user opened three sample app searches for "Ben & Jerry's": **DoorDash's search worked; Uber Eats (a human check) and Grubhub (an address prompt) went to their home pages**; and **Google Maps** for directions.
+
+| Task | Status | Commit |
+|---|---|---|
+| 9.1 D-041, `docs/links-contract.md`; UI contract §5.5/§5.10 amended; ISS-042 (websites for unprofiled chains and independents) | ✅ | `4123339` |
+| 9.2 `src/data/links.js` (orchestrator, cards.js pattern): app formats, Google Maps formats, the 9 profiled chains' home pages, each with how and when it was seen working (7 loaded in Chromium 2026-11-16; Dunkin' from Phase 1's research; Little Caesars' 301 target) | ✅ | `4123339` |
+| 9.3 References first: `tests/oracle/links.py`, 85 hand-worked cases (`tests/fixtures/links/build.py`, asserted against the reference), `links_runner.js`, `run.py` links checks (cases + 2,000 seeded calls); `tests/e2e/links.e2e.js`; `worker.e2e.js` re-baselined by D-041 | ✅ e2e red by design until 9.4 | `4123339` |
+| 9.4 Builder: `src/js/links.js`, `render.js` hand-offs and the fine-print line, css | ✅ 1 loop; re-verified: es5 20 files, unit 1,243, links 85/85 + 2,000/2,000, e2e 60/60; reviewer APPROVE, no findings; screenshots reviewed at 390 and 1280 px | `e792441` |
+| 9.5 Tester: `links.test.js` and `data-links.test.js`; 14/14 mutants caught by `links.test.js` alone (3 re-run by the orchestrator). The orchestrator's own `https:`-for-`https://` mutant survived everything: 3 hand-worked cases (88 now) and new fuzzer shapes fixed it; contract §1 clarified (Little Caesars' link domain, tester finding). Review CHANGES-REQUESTED (substring domain check, count floor, a vacuous `__proto__` test) → fix round 1, each fix verified by its mutant | ✅ 121 tests in the two files; unit 1,364 | `03ca191`, latest |
+| 9.6 Close: full suite from a fresh clone at `71b3e2c` with its own `npm ci` (es5 20 files; unit 1,364/1,364; oracle every line: receipts 91/91, 0 of 500 scenarios, geo 129/71/330, insights 47/47 and 0 of 500, VIN 117/117 + 4,000/4,000, api 133/133 + 2,000/2,000, links 88/88 + 2,000/2,000; e2e 60/60); CI green on GitHub from `e792441` on; screenshots reviewed (the example and Applebee's at 390 px, the results and fine print at 1280 px: links wrap inside their buttons, no horizontal scroll); reflector approved with three fixes (decisions.md, Skill updates) | ✅ | latest |
+
+**Review evidence for the Phase 9 reflector** (all fixed unless noted):
+- **A "well-known" URL format is a hunch until someone opens it.** The session couldn't render any app's search (their data comes from API hosts outside the allowlist, behind bot checks), so the user opened three sample links. Two of the three search formats that look standard didn't search (Uber Eats: a human check; Grubhub: an address prompt; both then their home page). Without that 30-second check, two of three app rows would have shipped a link that drops the user on a home page while saying "Search". Lesson: a URL is data; record who saw it work, and when (D-041).
+- **curl and a browser disagree about the same page.** `www.dominos.com/menu` answered 404 to curl and 200 with an order menu in Chromium (a JavaScript app's shell); `www.chipotle.com/order` redirected home; Papa Johns' `/order/menu` still shows its error page (ISS-024). A link check renders the page, and a home page outlives a deep path.
+- **Navigations bled into each other in a shared browser page:** a slow redirect from one URL landed during the next `goto` and produced errors attributed to the wrong site. One fresh context per URL fixed it.
+- **A JSON round trip changes Python strings.** `"\ud83c\udf2e"` is two lone surrogates in Python memory but one emoji once written to JSON and read back (by Python or JS). The fixture builder checks the cases as they read back from the file, not as built in memory.
+- **The reference's rounding was chosen for JS's rule, then proven to matter:** `toFixed` rounds an exact tie up (`0.015625` → `0.01563`) where Python's `format` rounds to even; the hand-worked tie case fails Python's own `.5f` (mutant check before any JS existed).
+- **The fuzzer's first draft barely reached one branch:** directions came up 52 times in 2,000 calls (direct pickup is 1 channel in 8). Measured per-kind counts through the reference before relying on it and weighted the direct channels (158 → 162).
+- **A mutant nobody listed survived every test and the fuzzer:** checking `"https:"` instead of `"https://"`. No input had `https:` without the slashes. The orchestrator's own extra mutant found it after the tester's 14 passed; fixed with 3 hand-worked cases and new fuzzer shapes. Lesson: a prefix check needs an input that matches a shorter prefix.
+- **Re-baselining a byte-identical test without loosening it:** strip only the named Phase 9 elements, after asserting their shape (one hand-off block per result row, one links line), and add a same-code Worker-off vs Worker-failing comparison with everything included.
+- **Two e2e slips caught before running:** a step clicked "Show me an example" after a brand was chosen (the button only exists with no brand: it would wait 30 s); and the independent's store id was guessed (`point()` rounds to 3 decimals) instead of asserting the parts the link uses (the `brand@` prefix and the point). A `waitForEvent('page')` started before a click that never happens leaves an unhandled rejection after the test: start both with `Promise.all`.
+- **Environment:** this fresh container had no `node_modules`; the first baseline `npm test` failed on `acorn`. `npm ci` first in a new session.
+- **Stop hooks:** asked to commit three times while the builder was mid-edit or the review pending. Uncommitted builder edits were left alone until re-verified; verified work was then committed with "review pending" in the message (the Phase 4 precedent), and the reviews approved.
+- **The test review (9.5) found three holes the 14 mutants didn't:** the "chain link on its own domain" check was a substring match, so `https://www.dominos.co/` passed because "dominos.co" sits inside "dominos.com" (blocker; now a whole-label regex, and `dominos.co`, `ominos.com` and `dominos.com.evil.example` each fail it); the case-count floor stayed at 85 after the orchestrator added 3 cases, so deleting them went unnoticed (floor 88, the 3 ids asserted by name); and a `__proto__` test ran on a dataset with no `LINKS`, so step 1 returned `[]` before any brand lookup and it couldn't fail for its stated reason (now on a copy of `T` without the own key). Lessons: a domain check matches whole labels; raise a count floor whenever cases are added; a guard-path dataset makes any later assertion vacuous.
+- **A mutant run in a scratch copy reported "caught" for the wrong reason:** `data-links.test.js` reads `tools/data/profiles/`, which the orchestrator's copy lacked, so the test failed on every input, mutated or not. Caught by also running the restored, unmutated copy (it failed too). Lesson: a mutant harness first shows the unmutated copy passing.
+- **Builder: DONE in 1 loop; reviewer of 9.4: APPROVE, no findings** (it probed inherited properties, a `String` object name, `javascript:` templates). The contract named every trap up front (lone surrogates, `toFixed`, own properties), and the fixtures held the expected values.
+
+### Phase 8: Phase A backend: the Worker behind the seam (2026-11-16, done)
+
+Branch `claude/charming-heisenberg-wag8bg` (this session's; fast-forwarded to `claude/phase-7-vin-lookup-refresh-3kq5sh` at `556bc34`, the Phase 7 tip). User decisions at the start: **OpenStreetMap providers** (OSRM, Nominatim, Overpass; no keys), the **host swap** (newsroom.aaa.com, rosap.ntl.bts.gov and www.dunkindonuts.com out; router.project-osrm.org, nominatim.openstreetmap.org and overpass.kumi.systems in; ISS-001), and **independents in Phase 8**.
+
+| Task | Status | Commit |
+|---|---|---|
+| 8.1 D-040, `docs/api-contract.md`; state, engine and UI contracts amended in place (the Worker-off path is Phase 7's by construction: `opts.api` absent) | ✅ | `0b8d25b` |
+| 8.2 References first: 6 OSRM/Nominatim answers recorded (Big Timber → the Livingston Domino's 33.9 mi by road), 4 constructed Overpass answers (ISS-040), `tests/fixtures/api/build.py` → `cases.json`, 37 state scenarios, the oracle's `rest_for`, `run.py` api checks (staleness + 2,000 seeded seam calls vs JS) | ✅ | `0b8d25b` |
+| Tests first (orchestrator): `worker-cases.test.js`, `api-cases.test.js`, `tests/e2e/worker.e2e.js` | ✅ | `be8813f`, `2320149` |
+| 8.3 api-builder: `worker/`; review fix rounds: KV calls raced against 1 s, safe-integer ids; ISS-041 (two orchestrator expectations wrong); then the `{ok: null}` cache hit (orchestrator, `7c0ab6d`) | ✅ 104/104 cases | `eaa7be9`, `7c0ab6d` |
+| 8.4a builder: `src/js/config.js`, `src/js/api.js`, `restFor` independents, `state.js` D-040; review APPROVE + fix round (`__proto__` as an own key, the 1000-mile bound) | ✅ api-cases 140, scenarios 173, oracle 2,000/2,000 | `99b4cee` |
+| 8.4b builder: `app.js`, `render.js`, css; review CHANGES-REQUESTED (an empty wrapper in `#near` with the Worker off), fix round, re-review APPROVE; patchChildren keeps leading blocks on a count change | ✅ worker.e2e 12/12 (incl. byte-identical to the Phase 7 page built from git); all e2e 54/54 | `4ac3bb9` |
+| 8.5 tester: `worker.test.js` (67: methods, paths, odd queries, every provider's timeout, a network guard) and `api-send.test.js` (30: `send()` with a fake XHR); both reviewed, fix rounds, mutants caught | ✅ | `f53891b`, `ccd3937` |
+| 8.6 Close: full suite from a fresh clone at `4ac3bb9` with its own `npm ci` (76 s: es5 18 files, 1,243 unit, every oracle line incl. api 133/133 + 2,000/2,000, 54 e2e); screenshots reviewed at 390 and 1280 px (the tag-breaking bug found and fixed); reflector approved with two fixes | ✅ | this commit |
+
+**Phase 8 notes for a resuming session.**
+- **Deploying the Worker** (ISS-004, the user's): `worker/README.md`: a Cloudflare account, a KV namespace, `USER_AGENT` as a secret, `ALLOW_ORIGINS`, then `apiBase` in `src/js/config.js`. Committed `apiBase` is `""`: the Worker is off.
+- **The Phase 7 baseline test** (`worker.e2e.js`, `BASE_REV = '556bc34'`) builds the Phase 7 page from git and requires `#app` to be byte-identical with the Worker off. **A later phase that changes the page on purpose must re-baseline it by decision** (e.g. to that phase's own "before" commit). CI fetches the full history for it.
+- **ISS-040:** the Overpass fixtures are constructed; recording one real answer closes it.
+
+**Review evidence for the Phase 8 reflector** (all fixed unless noted):
+- **"Identical" tested against itself.** The first "Worker failing = Worker off" e2e compared two copies of the new code, so an always-written empty `<div></div>` in `#near` passed both sides; the reviewer found it (blocker, 8.4b). Now the e2e builds the real Phase 7 page from git and compares `#app` byte for byte (`2320149`). Lesson: a "nothing changes" guarantee is tested against the old code, not the new code in another mode.
+- **The orchestrator's reference had slips, caught two ways.** Two `/drive` expectations (an edge pair 0.69 mi apart expected "too far"; 1.447° = 99.98 mi expected "over 100") were wrong; the api-builder refused to bend the code and logged ISS-041. A hand guess (`1.0005 * 1000` is 1000.4999…) was caught by an `assert` inside `build.py`. Lesson: compute a boundary's both sides in the reference and assert every hand guess there.
+- **Awaited calls that never settle.** The contract said what a throwing KV does, not a hung one: a hung `get` kept the request open forever (blocker, 8.3). Now each KV call is raced against 1 s. And in the test runner, a never-settling promise doesn't hold Node's event loop, so node:test ended the file with every later case "cancelled" instead of failing; racing against a ref'd timer fixed it (`worker-cases.test.js`).
+- **Cached and user-derived keys and values.** A KV value `{ok: null}` was served as a 200 (8.5a review; contract §5 now says only a plain-object body is a hit). An address typed `__proto__` became the answer table's prototype through plain assignment, so the geocode was re-asked on every render (8.4a review; `remember` uses `Object.defineProperty`).
+- **A test sandbox shaped the code.** Two state test sandboxes didn't load `api.js`, so the builder copied the key helpers into `state.js` (and said so under ASSUMPTIONS). The orchestrator replaced the copies with `POD.api` calls and added `api.js` to the sandboxes. Lesson: change the sandbox, never duplicate a function to fit one.
+- **The browser's own console errors.** Chromium logs "Failed to load resource" for a Worker 404/5xx/abort; page code can't suppress it (the 8.4b builder found it). The e2e allows it exactly and counted, as for tiles and VIN (UI §0).
+- **Over-specified tests.** The orchestrator's e2e regex required "mi" before "Estimate", which pushed the builder into a row layout unlike the chain rows; and the screenshot review then found the tag breaking letter by letter (overflow-wrap on the whole row). No test caught the layout. Lesson: e2e asserts content, not incidental order; overflow-wrap goes on the text element only; screenshots catch what scroll checks don't.
+- **Card slips the workers corrected by following the contract:** `%E0%A4%A` decodes to 3 characters (sent upstream, not a 400), and `encodeURIComponent` leaves `'` as is (not `%27`). Also: the 8.4a card's DONE WHEN ran `npm run test:e2e` while the orchestrator added `worker.e2e.js` after dispatch, so the builder reported BLOCKED on a test for the next task.
+- **A reviewer false positive.** "No D-040 state tests" came from reading only the test-file diff; the 37 scenarios live in `tests/fixtures/state/scenarios.json`. Dismissed with 6/6 mutants caught. Lesson for review: generated cases live in fixture files.
+- **A core render change inside a fix round.** The 8.4b builder changed `patchChildren` (keep the leading blocks on a count change) to meet the "last block in #near" rule; it was right, but it changed UI §2's rule, so the orchestrator amended the contract and sent the round to a focused re-review. Pairing now also requires the element's own tag and attributes to match.
+- **Shared scratchpad collisions.** Parallel testers overwrote each other's `mutate.js`; one mutant pass was discarded. Workers now use private subdirectories.
+- **Network:** `overpass-api.de` reset every TLS handshake from the session's egress and its mirror never answered; the permission check then refused more attempts (ISS-040). Recording stopped there.
+
+### Phase 7: Phase A static: VIN lookup, model-year mpg, weekly gas + store refresh (2026-11-16, done)
+
+Branch `claude/phase-7-vin-lookup-refresh-3kq5sh` (this session's; fast-forwarded to `claude/awesome-goodall-4qdauw` at `02db8d6`, the Phase 6 tip).
+
+| Task | Status | Commit |
+|---|---|---|
+| 7.1 D-037 (fuel economy by model year, **user decision**), D-038 (VIN lookup from the browser), D-039 (weekly refresh: gas + stores at deploy, gates, dry run); state and UI contracts amended; `docs/vin-contract.md` | ✅ | `5305c8a` |
+| 7.2 References first: `tests/oracle/vin.py` (VIN contract + the car-table helpers), 117 hand-worked cases, 10 vPIC answers recorded 2026-11-16 (`tests/fixtures/vin/`), `run.py` VIN checks (+ 4,000 seeded calls); 27 year scenarios; tester: `build-states.test.js` (21, ISS-011) | ✅ references 117/117 before any code | `9347c12` |
+| 7.3 Tester: `build-cars.test.js` (28: D-023 + D-037 rules) and `data-car-years.test.js` (14, EPA figures worked by hand); researcher: `build-cars.py` writes `CAR_YEARS` (86 makes, 1,030 models, 3,554 runs, 55 KB; `CAR_DATA` unchanged) | ✅ 53/53; ISS-011 closed | `d573421`, `9f1d2e2` |
+| 7.4 Builder: `state.js` (`year`, `carMakes`/`carModels`/`carYears`/`carLookup`, `setCar` 5th argument) and `src/js/vin.js` | ✅ scenarios 134/134; VIN 117/117 + 4,000/4,000 vs the reference; reviewer APPROVE, should-fix logged (ISS-037) | `022089e` |
+| 7.5 Orchestrator e2e `tests/e2e/vin.e2e.js` first; builder: VIN box, year select, EPA-year line, fine print; fix round (the latest action wins; the example clears the VIN message) | ✅ vin.e2e 17/17; reviewer APPROVE + 2 should-fixes done | `12d34d3`, `8b27bc4`, `5b49390` |
+| 7.6 Researcher: `tools/check-site.js` (5 gates + report), `build-site.sh` rebuilds `states.js` (with `GAS_WEEK`), `pages.yml` `dry_run`; fix rounds: `latest.json` run resolution (ISS-038), store-run fallback (D-039 amendment); tester: `check-site.test.js` (28) + `pages-workflow.test.js` (10) | ✅ 31/32 mutants caught (1 equivalent) | `e31bb4e`, `93eadd2` |
+| 7.7 Dry run: `bash tools/build-site.sh` against the live sources, fresh caches, `ATP_RUN` = latest | ✅ exit 0. Candidates 2026-11-07 / 10-31 / 10-24; 11-07 skipped (`taco_bell_us.geojson isn't valid JSON`, ISS-039); 10-31: `check-site: OK` brands, drift, canary, states, es5; 273 brands, 847 tiles, 182,567 stores; canary 82 brands within 5 mi of 10118; GAS_WEEK 2026-11-09; Big Timber `dominos@45670,-110546`, 30.9 mi straight, trip 77.2, one way 38.6. The built site opened in Chromium (network blocked): 59011 + Domino's shows "77.2 mi round trip", the fine print "(week of 2026-11-09)", 0 console errors. A live VIN lookup from the repo's `index.html` over `file://` decoded NHTSA's sample (24 mpg), 0 errors | — |
+| 7.8 Close: full suite in a clean worktree at `93eadd2` with its own `npm ci` (es5 16 files; unit 860/860; oracle receipts 91/91, 0 of 500 scenarios, geo 129/71/330, insights 47/47 + 0 of 500, VIN 117/117 + 4,000/4,000; e2e 42/42); screenshots reviewed (car section after a lookup and with an unlisted year, phone and desktop; the first-visit page with the new fine print); reflector approved with three changes (decisions.md, Skill updates; `bd6cd48`) | ✅ | latest |
+
+**Done-when, as measured.** Big Timber (59011) → Domino's: the nearest store is `dominos@45670,-110546` in Livingston, MT, 30.9 mi straight, trip 77.2 mi, 38.6 mi one way: +17% on the real ~33 mi drive (inside D-039's 25%; the 1.25 winding factor overshoots on an interstate), against the old estimator's 10.4 mi (−69%). The scheduled refresh passed its dry run: `ATP_CACHE=<fresh> bash tools/build-site.sh <scratch>` with `ATP_RUN` = latest and a fresh EIA cache exited 0 with every gate OK, after skipping the newest run for a cut-off upstream file (the D-039 fallback working as designed).
+
+**Phase 7 notes for a resuming session.**
+- Seven contracts now: engine, state (amended by D-037), geo, insights, UI (amended by D-037/D-038/D-039), VIN (D-038). Each changes only by a decision, with references and fixtures first.
+- The car is `(make, model, year)`. `year === null` means the model's newest EPA year (today's figures for a listed car); an integer year uses that year's figure or none (manual inputs). `CAR_YEARS` covers model years 2000 on.
+- The VIN goes from the browser to NHTSA (vPIC sends `Access-Control-Allow-Origin: *`; checked live from `file://`) and is never saved. The e2e never reaches the network.
+- The weekly Pages build tries up to 3 ATP runs, newest first, and deploys the first that passes every gate; gas is rebuilt every time. On 2026-11-16 it skips `2026-11-07` (ISS-039) and builds `2026-10-31`.
+- `--test-name-pattern` with a negative lookahead doesn't filter on this Node: use `--test-skip-pattern`.
+
+**Review evidence for the Phase 7 reflector** (all fixed unless noted):
+- **Measuring before deciding found the product question.** NHTSA's own sample VIN is a 2003 Accord: EPA's 2003 records give 24 mpg, `CAR_DATA` (newest year) gave 38, so a VIN would have made driving ~40% cheaper. The orchestrator measured the year table's size (EPA file already allowed) and asked the user, who chose year-aware data (D-037).
+- **Only a dry run against the scheduled inputs found the refresh's real failures.** Pinned runs passed; `ATP_RUN=latest` with a fresh cache found ATP's `history.json` a week behind `latest.json` (ISS-038), replicas of `latest.json` disagreeing, and a cut-off spider file in the newest run (ISS-039). The design changed (D-039 amendment): per-source fallback, so a broken store run can't block the weekly gas. Lesson: a dry run of a scheduled job uses exactly the schedule's inputs (latest, fresh caches), never a pinned stand-in.
+- **The orchestrator's e2e assumed the page could keep a clean console on an HTTP 500.** Chromium logs its own resource error for a failed XHR, as for a missing tile. The builder reported BLOCKED with the evidence instead of bending the test; the UI contract §0 now names both browser-made errors, each allowed exactly and only in its test (`12d34d3`).
+- **The orchestrator's DONE WHENs used `--test-name-pattern='^(?!D-037)'`, which this Node doesn't filter on.** Two workers diagnosed it independently and used `--test-skip-pattern` (tester report, 7.3b).
+- **A tester pinned a real figure under the wrong record and wrote a false justification.** "Chevrolet BOLT 2020 = 35e (the baseModel is BOLT)": EPA files the 2017–2023 car as `Bolt EV`; `BOLT` exists only for 2027. The value was right, the key wasn't. The orchestrator checked the raw records and fixed it (`d573421`). Lesson: a pinned figure's key (make, model, year) is checked in the source as carefully as the number.
+- **A guard floor was impossible:** `checked > 1000` counted `CAR_DATA`'s 344 models against `CAR_YEARS`' 1,030. The researcher reported BLOCKED and didn't edit the test; the floor is now ≥ 340 (`9f1d2e2`).
+- **Writing the e2e found a contract flaw before the builder did:** "a model change resets the year" would lose the VIN's year after "Pick the model below" (vPIC's `330i` vs EPA's `3 Series`). Amended before any UI code (`d573421`). Lesson: walk each message's suggested next action through the contract.
+- **A builder's deviation was better than the contract:** bumping the lookup sequence on a refused VIN (listed under ASSUMPTIONS). The review then found a hand-picked car could be overwritten by a pending answer, and the example didn't clear the message. The contract now says "the latest action wins" (`8b27bc4`, `5b49390`).
+- **An API-enumerating test table blocked a correct builder:** `state.test.js`'s junk-argument `CALLS` must list every `POD.state` function, and the card didn't mention it. Lesson: a card that adds exports names the tables that enumerate the API.
+- **Latent, logged:** `setPath` can write `make`/`model`/`year` without `setCar`'s rules (ISS-037, review of 7.4; not reachable from the page).
+- **Stop hooks:** asked to commit and push 8 times while workers were mid-edit. Only verified files were staged by name. Commits whose tests were red by design (tests first) were pushed for durability, each saying so in its message; CI was red on the branch for those pushes.
+- **Process:** a reviewer wrote a scratch file under `/tmp` instead of the scratchpad (deleted). A researcher ran `npm ci` in the repo when `node_modules` was missing (harmless).
+
+### Phase 6: Phase B, per-item markup and BOGO (2026-11-14, done)
+
+Branch `claude/awesome-goodall-4qdauw` (this session's; fast-forwarded to `claude/hopeful-clarke-omoss1` at `77495f1`, the Phase 5 tip).
+
+| Task | Status | Commit |
+|---|---|---|
+| 6.1 D-036; engine, insights, state and UI contracts amended; `engine.py`/`insights.py` first; fuzzer with per-item overrides (valid and malformed) and BOGO promos plus a coverage floor; receipts migrated to object items (all 65 kept their values) and hand-worked r14 (9 cases) and r15 (17 cases); 4 insight fixtures; state scenarios; `bogo.e2e.js` | ✅ receipts 91/91 vs the oracle before any code | `0b2d290`, `a3ff9db` (ISS-036) |
+| 6.3 Researcher: `build-profiles.py` writes object items, validates a sourced per-item markup; `profiles.js` regenerated (shape only, checked item by item) | ✅ 64/64 generator and data tests | `1359cf6` |
+| 6.2 Builder: `engine.js`, `insights.js`, `state.js`; the builder's cart-line guards written into the contract and oracle | ✅ 0 of 500 / 2,000 / 3,000 scenarios on three seeds; reviewer: no math defect, 1 should-fix | `f3af8a8` |
+| 6.2 review fix: a BOGO Minimum candidate must make something free (contract, reference, fixtures first) | ✅ insights 47/47, 0 of 2,000 | `d5c7f2e`, `0f907b5` |
+| 6.4 Builder: BOGO on the page (type option, "Free item" select, note); fix 1: the note spans the desktop grid row (screenshot review); fix 2: settings patch deeper so a select clicked right after typing keeps the click (second review, reproduced first) | ✅ | `0f907b5`, `b45868b` (test), latest |
+| 6.5 Tester: named D-036 tests (engine, state, generator), restFor tests made to bite on object items again, floors raised; 10 mutants each caught by its own file (2 re-run by the orchestrator) | ✅ unit 731/731 | `0f907b5` |
+| 6.6 Close: full suite in a clean worktree at `3502730` with its own `npm ci` (es5 15 files; unit 731/731; oracle receipts 91/91, 0 of 500 scenarios, geo 129/129 + 71/71 + 330/330, insights 47/47 and 0 of 500; e2e 25/25); screenshots reviewed (BOGO settings and receipt at 390 and 1280 px, the unprofiled note, the order rows, the desktop results column); reflector approved with one fix (decisions.md, Skill updates: a builder reports a guard under ASSUMPTIONS, it can't edit the contract) | ✅ | latest |
+
+**Phase 6 notes for a resuming session.**
+- Per-item markup changes no real total yet (ISS-036); BOGO works on real data. Both are fully pinned by receipts, fuzzing and named tests.
+- The sum-rounded-once rule is load-bearing for the receipts: rounding each item first would move 150 of 190 app totals (D-036, measured before choosing).
+
+**Review evidence for the Phase 6 reflector** (all fixed unless noted):
+- **Measuring before choosing a formula avoided a cascade.** Per-item rounding (the literal app receipt) would have changed 150 of 190 hand-worked app totals by a cent; the unrounded sum changed none. The decision records both numbers (D-036). Lesson: before amending a formula, run the old fixtures through each candidate and count what moves.
+- **The worker's defensive guards outran the contract.** The engine builder skipped a non-number quantity and a non-object menu entry, which the contract didn't say; the oracle would have thrown on them. The orchestrator wrote the guards into the contract and the oracle and made the fuzzer generate them (0 differ on 3,000 scenarios). Lesson: an ASSUMPTIONS line in a builder report is a contract gap; close it in the contract and the reference, not just in the code.
+- **A shape migration made tests vacuous, silently.** `engine.test.js`'s restFor tests indexed menu items as arrays (`r.menu[0][1] = 999`, `again.menu[0][1]`); on object items they wrote stray keys and compared `undefined === undefined`, and still passed. Both reviewers flagged it; the tester rewrote them with write-landed checks. Lesson: when a data shape changes, grep every test for the old accessors (`[0]`, `[1]`, `[2]`) and treat a still-passing old-shape test as broken.
+- **Advice that's true but useless.** Minimum offered "Adding 1 × Coke brings it to $41.43: $6.24 more" for a BOGO whose minimum, once reached, frees nothing. The orchestrator's own fixture locked it in with a comment saying "no saving". Lesson: an insight's premise (here "a promo just out of reach") must hold in the counterfactual, not just its trigger.
+- **Screenshots caught a layout bug no test checked:** on the desktop grid the "needs a menu" note took one cell and shifted every promo label off its input. A row-alignment assertion now guards it. Lesson from Phase 5 again: review screenshots of every new control in each state (here: unprofiled).
+- **The lost-click class came back inside one section.** Phase 5 fixed lost clicks between sections, but `patchChildren` replaced a whole `.app-settings` block when one number box committed, so a select clicked right after typing lost the click (the second reviewer read it from the code; the orchestrator reproduced it: no element focused after the click). Lesson: the type-then-click rule applies to every new control in a re-rendered container, and the test must check the clicked element survived (identity + focus), not only the outcome.
+- **Rejection branches without fixtures:** the generator's per-item rules shipped with 6 of 11 branches tested; review found dropping `0 <= v` passed every test. 5 fixtures added; the mutant is caught.
+- **Stop hooks vs parallel workers (again):** the hook asked to commit 6 times while workers were mid-edit. Only verified files were staged by name each time; red intermediate commits (reference before code) were committed but not pushed until the tree was green.
+
+### Phase 5: UI + 9 insights + "Near you" picker (2026-11-14, done)
+
+Branch `claude/hopeful-clarke-omoss1` (this session's; fast-forwarded to `claude/exciting-rubin-7evr9n` at `7fc7184`, the Phase 4 tip).
+
+| Task | Status | Commit |
+|---|---|---|
+| 5.1 D-033: app pickup priced without the app's delivery fees (`noDelivery` on `forEngine`'s copy). Contracts, oracle, receipt r13, state scenarios and the forEngine unit test first; builder: engine `available`, state `forEngine` | ✅ 601/601 unit; receipts 65/65; 0 of 500 scenarios; reviewer: code correct, 3 doc fixes applied | `e216570` |
+| 5.2 D-034: insights contract `docs/insights-contract.md`, Python reference `tests/oracle/insights.py`, hand-checked fixture cases, `run.py` insights checks (fixtures + 500 seeded scenarios); builder: `src/js/insights.js`; review fix round (restricted gold-partner rule, never-throw guards, 7 edge fixtures for surviving mutants) | ✅ 644/644 unit; 41/41 fixtures; 0 of 500 and 0 of 1,500 on a second seed; reviewer APPROVE + should-fixes done | `c65f1e3`, `f10e69f` |
+| 5.3 D-035: UI contract `docs/ui-contract.md`; e2e checklist `tests/e2e/checklist.e2e.js` + `helpers.js` (temp site with fixture tiles; expected prices from the saved state through the verified modules); builder slice A (core flow), contract amended after slice A (lost clicks, desktop gap, clipped results); slice B (wallet, settings, render-only-what-changed); review fix round (missing-name order, credit refusal; D-031 amended: `setCar` clears a stale mpg) | ✅ checklist 19/19, smoke 2/2, unit 649/649; reviewer APPROVE + fixes; screenshots reviewed at 390 and 1280 px | `5f60686`, `2f657df`, `da81998`, `e705a87` |
+| 5.4 Close: tester added `tests/unit/ui-util.test.js` (17: `POD.util.esc`, load order, DOM-free load; 4 of 4 mutants caught); full suite in a clean worktree at `c1c58b4` (es5 15 files, unit 649, oracle receipts 65/65 + 0 of 500 + geo 129/71/330 + insights 41/41 + 0 of 500, e2e 21) and again on the final tree (unit 666); screenshots reviewed; reflector approved with one change (decisions.md, Skill updates) | ✅ | `c1c58b4`, latest |
+
+**Phase 5 notes for a resuming session.**
+- Five contracts now define the app: engine, geo, state, insights, UI. Each changes only by a decision, with the reference/fixtures/tests first.
+- Locally, without built tiles, every store search logs the browser's missing-file errors and falls back to the estimator; that's expected (D-035). The e2e and Pages have tiles.
+- Workers can run in parallel when their SCOPEs are disjoint; stage a shared file (e.g. `index.html`) as a constructed blob if one worker's line must be committed without another's.
+
+**Review evidence for the Phase 5 reflector** (all fixed unless noted):
+- **Designing the first screen found a dead end before any code.** Under D-032 (every app delivery fee empty) `forEngine` switched whole apps off, so a new user would see one route (direct pickup). D-033 split pickup from delivery inputs (`e216570`). Lesson: before building a screen, compute what it shows with the real defaults.
+- **Hand-working insight fixtures, the orchestrator was wrong 3 times and the reference right each time:** each time another insight (Nuance) also fired for the state being worked (`c65f1e3`). Lesson: insights are a cross-product; when working one by hand, check every other insight's condition for that state too.
+- **The insights review found 4 mutants that survived 34 fixtures and 500 seeded scenarios:** `>=` vs `>` at an exact break-even, a dropped `+ 0` (−0), and two iteration caps. The differential runner's JSON round trip erased −0 before comparing. Fixed with boundary fixtures and a −0 check before JSON (`f10e69f`). Lesson: pin every boundary at equality in fixtures; check for −0 before serializing.
+- **A new consumer of credits missed the §9.1 tier rule:** Wallet would have said a restricted gold-partner credit "works when you order direct" (latent; no such card today). Closed in the contract (`f10e69f`). Lesson: every module that reads credits applies the restricted/locked rule itself.
+- **The UI builders' BLOCKED reports caught 2 orchestrator test bugs:** an unprofiled brand's `manualSubtotal` 0 is valid, so the page shows "Add something…" rather than a missing field; and Domino's is #33 of 82 at 10118, behind "Show all" (`2f657df`). Lesson: before writing an e2e expectation, run the data path (`missing`, `storesNear` rank) in Node for that exact state.
+- **A full-replace render lost clicks:** mouse down blurs a box → `change` → re-render replaces the button under the pointer → no click. Found by the slice A builder, not by the spec. Fixed by writing only changed blocks, with an e2e "type then click" test (`5f60686`, `2f657df`).
+- **"0 console errors" vs a missing tile:** the browser logs its own resource error for a missing script, which the page can't suppress. The e2e stays inside the fixture tiles, and one test allows only that error (D-035).
+- **Screenshots caught what no test checked:** the sticky results card clipped the fee inputs (unreachable), a desktop gap, a wrapping price. Lesson: review screenshots after each UI slice, not only at the phase end; a sticky panel needs `max-height` + `overflow-y: auto`.
+- **The UI review found a Phase 4 state bug:** `setCar` to an unlisted car kept the previous car's 46 mpg, so the page priced the old car silently. A field that's derived in one mode and typed in another must be cleared when the user switches modes (D-031 amended, fix round 1).
+- **A scratch copy wiped the repo's `node_modules`:** at the close, `npm ci` ran in a stale scratch copy whose `node_modules` was a symlink to the real repo's (`ci.log`: "Removing non-directory …/wt/node_modules"), and the real `node_modules` was emptied; the next unit run failed on a missing `acorn`. The orchestrator traced it, restored with `npm ci`, removed the stale copies, and added a test-runner rule.
+- **Parallel workers on disjoint files worked:** the insights fix round and the UI slice ran at once; the UI builder diagnosed an unrelated unit failure as someone else's uncommitted edit by reverting only its own files in a scratch copy. The stop hook asked for commits 5 times; only verified work was committed, and `index.html` was staged as a constructed blob (`git update-index --cacheinfo`) so the insights commit didn't carry the UI builder's half-done line.
+
+### Phase 4: State, derivations, wallet (2026-11-13, done)
+
+Same branch as Phase 3 (`claude/exciting-rubin-7evr9n`).
+
+| Task | Status | Commit |
+|---|---|---|
+| 4.1 Sourced defaults (D-032: official numbers only; tips 15/0 by the user): `tools/data/defaults-*.json` evidence, `tools/build-defaults.py` → `src/data/defaults.js`; state contract draft (D-031) | ✅ researcher + orchestrator corrections (speed 30 → 27; Uber fees from a grocery guide withdrawn); network swap approved by the user (ISS-001) | `7d3d496` |
+| 4.2 Hand-worked scenarios `tests/fixtures/state/` (`build.py` → `scenarios.json`, 74 + 12 period cases; priced cases agree with `tests/oracle/engine.py`), contract wording made exact | ✅ | `9f5f449` |
+| 4.3 Scenario runner (contract §0 checked on every step), builder `src/js/state.js`, review fix round (D-031 amendment: `need` clears the trip; `setPath` plain values; `pickStore` id check; 9-digit manual keys; 6 new scenarios) | ✅ 93/93 scenarios; 7 orchestrator mutants caught; reviewer CHANGES-REQUESTED → fixed | `cc1da6a`, `a5b725d`, `fc052cb`, `5cbada0`, `9a17357`, `36c734b` |
+| 4.4 Tester: `tests/unit/state.test.js` (22: the three done-when conditions by name, round-trip property, junk input, pollution, forEngine, realms) and `tests/unit/data-defaults.test.js` (11: schema, evidence, header, byte-for-byte rebuild); 16 + 5 tester mutants and 3 orchestrator mutants caught; reviewer APPROVE + 4 should-fixes (fixed) | ✅ 590/590 unit | `858890d`, `a7861b6` |
+| 4.5 Close: full suite in a clean worktree at `a7861b6` (es5 13 files, 590 unit, oracle 58/58 receipts + 0 of 500 scenarios + geo 129/71/330, 2 e2e); no UI change, so the screenshots show the same placeholder page, fine at phone and desktop; reflector approved with three fixes (decisions.md, Skill updates) | ✅ | `c02e7a5`, latest |
+
+**Phase 4 notes for a resuming session.**
+- `docs/state-contract.md` is the spec for `POD.state`. Change it only by a decision: scenarios first (`tests/fixtures/state/build.py`, then regenerate), the code after.
+- The real defaults leave all three apps switched off until the user enters their fees (D-032, ISS-034). That's deliberate, not a bug.
+
+**Review evidence for the Phase 4 reflector** (all fixed unless noted):
+- **The orchestrator's runner repeated ISS-008 a third time.** `plain()` copied arrays with `v.map(plain)`, and `map` builds its result with the VM array's own constructor, so 37 of 87 scenarios failed on prototypes. The builder diagnosed it and reported BLOCKED without touching the test (`a5b725d`). Lesson: realm-neutral means `Array.from(v, f)`, a `for` loop into `[]`, or JSON. Never `map`/`filter`/`slice` on a VM array.
+- **"Change nothing while tiles load" kept a stale distance** (contract flaw, reviewer blocker). Switching brands, moving, or unpinning while tiles loaded left the previous trip in `S`, which then priced the new brand. Lesson: when an input changes, a derived field whose new value isn't known yet must be cleared, not kept. "Don't invent a number" includes "don't keep an old one" (`9a17357`).
+- **A derived field that isn't saved has to be re-derived on every path.** `milesSrc` came back `null` after a reload of a pinned trip. The orchestrator caught it while drafting tests, not the scenarios (`5cbada0`). Lesson: for each unsaved field, check that `derive` sets it in every branch.
+- **`setPath` deep-copied any value**, so a cyclic object overflowed the stack. Restricting it to plain values removed the copy and the bug (`9a17357`). `pickStore` trusted `id` and `brand` separately, and a mismatch silently dropped the pick.
+- **The orchestrator's hand-worked expectation was wrong once:** it listed `gas` as missing for a state with no car, but `gas` comes from the state's row. The builder reported BLOCKED with the contract line instead of bending the code (`36c734b`). The rule "report, don't edit the fixture" worked as intended.
+- **The test review found 4 holes the hand-worked scenarios happened to cover.** The new file alone missed a save without `cart`/`dealOn`, a `syncCredits` that ignores opt-ins, `setPath` accepting objects, and a regex that only matched 2-segment paths. Lesson: each test file should bite on its own; check it against mutants with the other files absent.
+- **Scope slip:** the builder appended an issue to `docs/issues.md` (outside SCOPE) under an ID already in use (ISS-031). Reverted. Lesson from Phase 1 again: workers report and the orchestrator logs, at max+1.
+- **Research (4.1):** the researcher computed an average speed as mean length ÷ mean time (30 mph) where the report gives the mean of per-trip speeds (26.59 → 27), and took Uber fees from a grocery-delivery guide (the wrong product). Both were caught by the orchestrator reading the sources. Lesson: a derived number needs the source's own figure if one exists, and fee evidence must be for restaurant delivery.
+- **The orchestrator's question to the user understated an option's effect** ("Grubhub would start excluded"). In fact all three apps start excluded. Corrected in the next message. Lesson: before asking, compute what each option does to the first screen.
+- **Stop hook vs review:** the hook forced commits of verified-but-unreviewed work twice (`fc052cb`, `858890d`). The orchestrator committed only what had passed every DONE WHEN, said so in the message, and landed the review fixes as follow-ups. It never committed a worker's half-finished edit.
+
+### Phase 3: Geography + stores near you (2026-11-13, done)
+
+Work is on branch `claude/exciting-rubin-7evr9n` (this session's branch; it started from `2a84085`, the tip of `claude/sharp-heisenberg-tbo63x`).
+
+| Task | Status | Commit |
+|---|---|---|
+| 3.1 Geo contract `docs/geo-contract.md` (D-030), Python reference `tests/oracle/geo.py`, hand-worked `tests/fixtures/geo/synthetic.json` + reference-generated `real.json`, geo checks in `run.py` via `geo_runner.js` | ✅ reviewer CHANGES-REQUESTED → fixed (contract amended) | `f5f37f4`, `5829c9d`, `197acd1` |
+| 3.2 Builder: `src/js/geo.js` + review fix round | ✅ hand-worked 129/129, real 71/71, random 330/330 (1,650/1,650 on a second seed); uncached zipSpacing mean ≈ 4 ms; 59011 vs 10118 Domino's 10.4 vs 0.4 mi (26×); reviewer APPROVE + one should-fix (fixed) | `8215c29`, `197acd1` |
+| 3.3 Tester: `tests/unit/geo.test.js`, 224 tests (every fixture case with a purity check, a count guard, the done-when tests, malformed and non-finite input, cache isolation and bounds); 17 of 17 mutations caught; reviewer CHANGES-REQUESTED → fixed, the three review mutants verified caught by the orchestrator | ✅ 464/464 unit | `97ce6fe`, `c8e1e5c` |
+| 3.4 Close: full suite in a clean worktree at `97ce6fe` (es5 OK, 463 unit, oracle 58/58 + 0 of 500 scenarios + geo 129/71/330, 2 e2e) and again after the test fix round (464 unit); no UI change, so the e2e screenshots show the same placeholder page, fine at phone and desktop; reflector approved with two fixes | ✅ | latest |
+
+**Phase 3 notes for a resuming session.**
+- `docs/geo-contract.md` is the spec for `POD.geo`. Every function takes the data tables as `D`. `storesNear`/`nearestStore` return `status: "need"` with the cells to load; Phase 5's page loads them (`tilePath`) and calls again, passing cells that failed in `opts.failed`.
+- Real-data facts: Big Timber (59011) → nearest Domino's 30.9 mi straight line, trip 77.2 mi, from the fixture tiles (the estimator says 10.4 mi one way). Midtown (10118) → 82 brands within 5 mi.
+- ISS-032 (new, needs the user): ~6,200 ZIPs sit 10+ to one coordinate in the ZIP source.
+- ISS-030 moved to Phase 5 (UI). D-028's brand-level `amexGoldDirect` question is still open (engine/data, not geography).
+
+**Review evidence for the Phase 3 reflector** (all fixed unless noted):
+- **The contract review found two harness holes that would have let a wrong JS pass:** NaN/Infinity results serialized to `null` and matched expected nulls, and the JS comparison switched on only by one exact string in `index.html` (it would have printed "skipped" and exited 0). Lesson: a differential runner must encode non-finite numbers and must fail, not skip, when the code exists.
+- **Python's `\d` and `$` aren't JavaScript's.** `\d` matches other scripts' digits and `$` matches before a final newline, so the reference accepted records the JS rejects. Use `[0-9]` with `fullmatch` when a Python reference mirrors a JS regex.
+- **"Distance exactly 0" is a float test.** The own-point rule depended on how `rec.la` was represented (`0.1 * 3`). Identify points by their integer keys.
+- **Parsed integers need a range check.** A 400-digit coordinate became `Infinity`, then a phantom store at `mi: null` that displaced the real nearest store (the `geo.js` reviewer; no fixture had it).
+- **Rounded values were compared with a tolerance** that would have hidden a `round1` bug. Tolerance applies only to unrounded distances.
+- **The purity check only saw arguments.** It now poisons `POD.data`, `POD.S` and `Date` during calls and calls twice with the first result scribbled over.
+- **The orchestrator's own doc edit landed in the wrong place:** a string replace on `## Closed` hit the same words in the "Adding an entry" prose, so ISS-032 was committed inside that sentence (`f5f37f4`, fixed `5829c9d`). Anchor doc inserts on the whole heading line (`\n## Closed\n`).
+- **The contract's first bounding box (`dLat / cos(poleward lat)`) overshot by 0.002°** and made the Big Timber 50-mile search ask for two non-fixture cells. The exact reach `asin(sin δ / cos φ)` fixed it. The cheaper `dLat / cos(lat)` undershoots by 0.0002° at Fairbanks, so a real-data case pins that edge.
+- **A data defect surfaced only while designing a function:** stacked ZIP coordinates (ISS-032). Phase 1's row-count checks couldn't see it.
+- **A type-confusion gap in a test:** the "non-string BRAND_IDS entry is skipped" test couldn't fail for `['s00']`. An array coerces to `'s00'` as a property key, and `brand !== 's00'` was true for the array (test review blocker, `c8e1e5c`). Lesson: when a test feeds a wrong-typed value, assert the output's type too, not just inequality with the right value.
+- **Cache tests passed only because of file order.** The cross-table test never queried one point on two tables. A global spacing cache was caught only incidentally by a later fixture case, and passed when the test ran alone (`c8e1e5c`). Lesson: an isolation test must create the collision itself, and must pass or fail the same way under `--test-name-pattern`.
+- **"Uncached" in a timing test was an assumption.** One of the 50 points was already cached by an earlier test in the same sandbox (`c8e1e5c`). Timing tests get their own sandbox.
+- **The orchestrator's own mutant was broken once.** It referenced an undefined variable, so the 37 "catches" were ReferenceErrors. A mutant has to run cleanly and be wrong only in the intended way.
+
+### Phase 2: Engine (2026-11-12, done)
+
+| Task | Status | Commit |
+|---|---|---|
+| 2.1 Engine contract `docs/engine-contract.md` (D-029): exact formulas, float order, channel availability, credit tiers, lines; resolves ISS-031's model (`directSvc`) | ✅ | `72db287` (+ amendment below) |
+| 2.2 Python oracle `tests/oracle/engine.py` + `run.py` (receipts self-check; 500 seeded scenarios vs JS) + `js_runner.js` (purity check) | ✅ | `72db287` |
+| 2.3 12 hand-worked receipts, 58 cases, `tests/fixtures/receipts/` | ✅ 58/58 vs oracle | `72db287` |
+| 2.4 Builder: `src/js/engine.js` (one loop) + review fix round 1 | ✅ 58/58 receipts; 0 of 500 + 10,000 + 10,000 scenarios differ on three seeds; reviewer APPROVE | `be9e129`, `c4e21c4` |
+| 2.5 Tester: `tests/unit/engine.test.js`, 81 tests (58 receipt cases, §9 traps by name, purity, perMile, restFor on real data and isolation, a load guard); 17 mutations each caught; reviewer APPROVE + fix round | ✅ | `560eb54`, latest |
+| 2.6 Close: full suite in a clean worktree (240 unit, oracle 58/58 + 0 of 5,500 scenarios, 2 e2e); no UI change, so the e2e screenshots are unchanged from Phase 1; reflector approved with one addition | ✅ | `2f7e05f` |
+
+**Phase 2 notes for a resuming session.**
+- The contract is the spec. Change it only by a decision, and change the oracle and receipts **before** the engine.
+- The builder implements from the contract and must not read `tests/oracle/engine.py` (independence).
+**Review evidence for the Phase 2 reflector** (all fixed unless noted):
+- **Writing receipts by hand before any code found a spec flaw.** Under §4.2's literal order, a free-delivery promo lowered the tax on the food. The contract was amended (§5.5) before the engine existed (`72db287`).
+- **The oracle self-check caught a harness bug, not an engine bug.** The receipt merge rule merged `cart` objects instead of replacing them: 11 of 58 cases failed with impossible totals. Map-like fields (`cart`, `creditOptIn`, `markup`) now replace whole (`72db287`).
+- **The fuzzer only covers what it generates.** The first engine matched on 10,000 scenarios, yet the reviewer found that a `directSvc` with no `modes` threw and took down `allResults`, and a deal with no `scope` silently never applied. Neither shape is ever generated (`793577b`, `c4e21c4`). Lesson: review malformed and missing-field inputs separately from the differential test.
+- **An invented number hid in a code default.** `restFor` fell back to `markup {}` (0%) for a missing category, so the apps looked cheaper. The never-invent rule applies to code fallbacks too: return null (`ba25e38`, `c4e21c4`).
+- **The orchestrator's card repeated ISS-008.** A DONE WHEN compared VM-realm arrays with `deepStrictEqual`, so the builder reported BLOCKED on a correct engine. Compare with `JSON.stringify` or `loadData`'s clone (`c4e21c4` message).
+- **Generated tests can vanish silently.** The 58 receipt tests are generated from files: an empty glob would remove them and the suite would still pass. A guard test now pins the floor (`560eb54`).
+- **Stop hooks vs in-progress workers:** twice the hook asked to commit files a worker was still editing. The orchestrator waited for the worker and verified first; mid-edit commits would have pushed unverified code.
+- Fuzzer power, measured: a `>=`→`>` change on `memberMin` was caught in 15/500 scenarios and by none of the receipts (boundary injection does that work). The receipts caught tip-after-discount (4 cases) and free-delivery-lowers-tax (1 case).
+
+### Phase 1: Data rebuild (2026-11-12, done)
+
+| Task | Status | Commit |
+|---|---|---|
+| 1.1 Schema tests first (tester) | ✅ committed with each dataset | — |
+| 1.2 ZIPs: 42,354 / 18,908 | ✅ | `8962e13` |
+| 1.3 Cars: 48 makes / 344 models (D-023) | ✅ | `087d79c` |
+| 1.4 States: EIA gas (D-022) + tax (D-025) | ✅ | `c539fc3` |
+| 1.5 Brands + tiles: 273 brands, 182,567 stores, 847 tiles (D-021) | ✅ | `2ebdc0d` |
+| 1.6 Cards: 22 cards, 21 credits (D-024) | ✅ | `83f24d7` |
+| 1.7 Profiles + `categories.js`: **9 profiled** (buffalo_wild_wings, chipotle, dominos, dunkin, little_caesars, papa_johns, subway, the_cheesecake_factory, wingstop); taco_bell, pizza_hut, five_guys unprofiled (D-028) | ✅ generated and loaded; reviewer APPROVE, should-fixes done | `bab5ce1`, `56cc487`, `b92ebb8`, `1fe89a6` |
+| 1.8 Pages workflow with the tile build | ✅ | `69b429b` |
+| 1.9 Close: full suite, e2e screenshots reviewed (placeholder page fine at phone and desktop), reflector approved with fixes, network reverted | ✅ | `32dae9b` |
+
+`npm test` at Phase 1 close (`32dae9b`, clean worktree): es5 OK (9 files), **159/159 unit**, oracle stub, 2/2 e2e.
+
+**Task 1.7 notes** (kept for the record; the rules now live in the data-research skill).
+- The 12 chains are in D-026; their brand ids are in `src/data/brands.js`.
+- Profile rules are in the data-research skill: menu prices from the chain's own site (median of 2–3 stores in different states, with ZIPs recorded); `deal` must be a published direct-only offer; `markup` cited, or the category default with `est: true`; `directDelivery: false` rather than `directFee: 0`; `amexGoldDirect` for Five Guys, Buffalo Wild Wings and The Cheesecake Factory.
+- `categories.js` must cover the 10 categories in D-021.
+- Chain sites are mostly JavaScript apps, so plain fetches return no prices. The researcher may need Playwright (Chromium is preinstalled) through the proxy.
+- The chains' hosts aren't allowed yet. The environment caps the list at 20 exact hosts and 13 are in use: drop issuer and tax hosts that are no longer needed before adding chain hosts.
+
+**Review evidence for the end-of-phase reflector** (every finding is fixed unless noted):
+- **Test harness:** strict `deepEqual` failed on empty arrays from the VM realm, which blocked the cars worker. Fixed at the root with `structuredClone` in `loadData` (ISS-008, `8962e13`).
+- **States:** DE, DC and MD were on PADD 1C instead of 1B (blocker; gas $0.54/gal too low), and all 12 tests passed anyway. Fixed, and the tester added a per-state EIA-series test from EIA's PADD glossary that fails on exactly those three (`c539fc3`). Lesson: shape and range tests don't catch wrong mappings, so pin mappings to the source.
+- **Cards:** the orchestrator marked Amex Platinum as including Uber One, which the card only reimburses. That's an over-credit (blocker), and the tester's test pinned the wrong value because the card said so. Also missed: the Sapphire Reserve Lyft credit, and unpinned amounts. Fixed with a 21-row amount table (`83f24d7`). Lesson: "provides" vs "reimburses" a membership is a §9.1-class trap.
+- **Brands:** the range reader would read a whole 2.9 GB body if a server ignored `Range`; `IncompleteRead` wasn't retried; remote URLs went into JS comments unvalidated. All fixed (`2ebdc0d`). The edge-cell rule was resolved by amending D-021.
+- **Pages:** `build-site.sh`'s `rm -rf` guard didn't cover ancestors of the repo. **The orchestrator's fix card put destructive negative tests against the real repo in DONE WHEN, and the worker ran them before a correction arrived.** The guard held and nothing was lost (`69b429b`). Lesson: never put a destructive command aimed at a real path in a DONE WHEN; test guards on a throwaway copy.
+- **Cars:** the generator's rules have no unit tests (ISS-011, open).
+- **Profiles (1.7), turn budget:** three researchers given 3–4 chains each used all 80 turns exploring and wrote no files. Resumed with "stop exploring, write the JSON". After that, one chain per worker, write the file after each store, stop by call 60. Lesson: cards for browser research must cap exploration and require incremental writes.
+- **Profiles (1.7), issue IDs:** workers appended issues under IDs already in use, five times (renumbered to ISS-016, 021, 024, 025, 026). Lesson: the skill must say "take max(ISS-n)+1 at write time" and the orchestrator checks `uniq -d` before every commit.
+- **Profiles (1.7), D-027 shape:** the tester found D-027's `CATEGORY_DEFAULTS` shape didn't match the generator. D-027 fixed to `{markup, est}`.
+- **Profiles (1.7), platform evidence:** the Little Caesars worker cited a Jan 2020 "delivery powered by DoorDash" story as DoorDash marketplace evidence. It was DoorDash Drive fulfilling the chain's own app orders. The orchestrator replaced it with the Oct 2020 marketplace announcement (`e1bc046`). Lesson: white-label/Drive/"powered by" deals are direct-channel evidence, never `platforms` evidence.
+- **Profiles (1.7), platform evidence quality:** of the last four workers, Domino's listed dd from an unread search snippet and left out Uber Eats (a widely reported 2023 deal), Subway gathered no platform evidence at all, and Little Caesars cited a Drive deal. The orchestrator read the primary sources and fixed all three (`ec5e627`, `0a4262b`, `e1bc046`). Lesson: workers spend their budget on menus and treat platforms as an afterthought. Cards need a separate, required "platforms" step with a read (not snippet) source per platform, or the orchestrator does platforms itself.

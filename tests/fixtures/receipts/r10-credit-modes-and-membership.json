@@ -1,0 +1,30 @@
+{
+  "id": "r10-credit-modes-and-membership",
+  "title": "Sapphire Reserve: its DashPass membership plus a DoorDash promo credit limited to delivery",
+  "refs": ["D-024", "D-029 §5.3", "D-029 §5.9"],
+  "dataNote": "cards.js chase_sapphire_reserve: membership dd (the state layer sets plats.dd.member), doordash_promo $15 monthly, plats [dd], modes [d].",
+  "patch": {
+    "plats": {"dd": {"member": true}},
+    "credits": [{"key": "chase_sapphire_reserve:doordash_promo", "name": "DoorDash monthly promo", "amount": 15, "plats": ["dd"], "modes": ["d"]}]
+  },
+  "cases": [
+    {
+      "call": "calc", "channel": "dd-d",
+      "expect": {
+        "lines": [["Food", 31.11], ["Delivery fee", 0], ["Service fee", 3.00], ["Tax", 2.66], ["Tip", 4.67], ["Card credits", -15], ["TOTAL", 26.44]],
+        "gross": 41.44, "credit": 15, "net": 26.44, "member": "DashPass"
+      },
+      "work": ["Membership as in r03: gross 41.44. The credit applies to delivery: 41.44 − 15 = 26.44"]
+    },
+    {
+      "call": "calc", "channel": "dd-p",
+      "expect": {"net": 35.19, "credit": 0, "member": null},
+      "work": ["modes [d]: the credit doesn't apply to DoorDash pickup, and membership only matters for delivery. Same as r01's dd-p."]
+    },
+    {
+      "call": "allResults",
+      "expect": {"order": ["dd-d", "direct-p", "dd-p", "ue-p", "ue-d"]},
+      "work": ["dd-d 26.44 now beats direct pickup 30.70; then dd-p 35.19, ue-p 35.19, ue-d 45.10."]
+    }
+  ]
+}

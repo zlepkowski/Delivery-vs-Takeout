@@ -1,0 +1,2280 @@
+{
+ "contract": "docs/links-contract.md",
+ "decision": "D-041",
+ "datasets": {
+  "T": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "https://www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https://www.ubereats.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": {
+      "home": "https://www.grubhub.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https://www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "dominos": {
+      "url": "https://www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  },
+  "T:ue-search": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "https://www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https://www.ubereats.com/",
+      "search": "https://www.ubereats.com/search?q={q}",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": {
+      "home": "https://www.grubhub.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https://www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "dominos": {
+      "url": "https://www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  },
+  "T:broken": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "http://www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "javascript:alert(1)",
+      "search": "https://www.ubereats.com/search",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": "https://www.grubhub.com/"
+    },
+    "maps": {
+     "name": "",
+     "dir": "https://www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "dominos": {
+      "url": "http://www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  },
+  "T:templates": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "{q}",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https://www.ubereats.com/",
+      "search": 7,
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": {
+      "home": "https://www.grubhub.com/",
+      "search": "https://g.example/{q}/{q}",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https://www.google.com/maps/dir/?api=1&destination={lat}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  },
+  "T:no-maps": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "https://www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https://www.ubereats.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": {
+      "home": "https://www.grubhub.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "order": {
+     "dominos": {
+      "url": "https://www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  },
+  "T:no-gh": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "https://www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https://www.ubereats.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https://www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "dominos": {
+      "url": "https://www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  },
+  "T:maps-no-search": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "https://www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https://www.ubereats.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": {
+      "home": "https://www.grubhub.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https://www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": null,
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "dominos": {
+      "url": "https://www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  },
+  "T:apps-not-object": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": [
+     "dd",
+     "ue",
+     "gh"
+    ],
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https://www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "dominos": {
+      "url": "https://www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  },
+  "T:order-array": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "https://www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https://www.ubereats.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": {
+      "home": "https://www.grubhub.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https://www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": [
+     {
+      "url": "https://www.dominos.com/"
+     }
+    ]
+   }
+  },
+  "T:no-links": {},
+  "T:https-no-slashes": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "https:www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https:www.ubereats.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": {
+      "home": "https://www.grubhub.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https:/www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "dominos": {
+      "url": "https:www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "dd-d searches DoorDash by name",
+   "fn": "forChannel",
+   "ch": "dd-d",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for Domino's",
+     "href": "https://www.doordash.com/search/store/Domino's/"
+    }
+   ]
+  },
+  {
+   "id": "dd-p is the same link",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for Domino's",
+     "href": "https://www.doordash.com/search/store/Domino's/"
+    }
+   ]
+  },
+  {
+   "id": "ue-d opens Uber Eats' home page",
+   "fn": "forChannel",
+   "ch": "ue-d",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open Uber Eats",
+     "href": "https://www.ubereats.com/"
+    }
+   ]
+  },
+  {
+   "id": "ue-p opens Uber Eats' home page",
+   "fn": "forChannel",
+   "ch": "ue-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open Uber Eats",
+     "href": "https://www.ubereats.com/"
+    }
+   ]
+  },
+  {
+   "id": "gh-d opens Grubhub's home page",
+   "fn": "forChannel",
+   "ch": "gh-d",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open Grubhub",
+     "href": "https://www.grubhub.com/"
+    }
+   ]
+  },
+  {
+   "id": "gh-p opens Grubhub's home page",
+   "fn": "forChannel",
+   "ch": "gh-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open Grubhub",
+     "href": "https://www.grubhub.com/"
+    }
+   ]
+  },
+  {
+   "id": "direct-d: the chain's site only",
+   "fn": "forChannel",
+   "ch": "direct-d",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    }
+   ]
+  },
+  {
+   "id": "direct-p: the chain's site, then directions to the store",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    },
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=40.75500%2C-73.98900"
+    }
+   ]
+  },
+  {
+   "id": "unprofiled direct-p: directions only",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@40749,-73995",
+     "lat": 40.749,
+     "lon": -73.995
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=40.74900%2C-73.99500"
+    }
+   ]
+  },
+  {
+   "id": "unprofiled direct-d: nothing",
+   "fn": "forChannel",
+   "ch": "direct-d",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@40749,-73995",
+     "lat": 40.749,
+     "lon": -73.995
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "unprofiled dd-p: still searches",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@40749,-73995",
+     "lat": 40.749,
+     "lon": -73.995
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for Taco Bell",
+     "href": "https://www.doordash.com/search/store/Taco%20Bell/"
+    }
+   ]
+  },
+  {
+   "id": "no store: Find by name",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "papa_johns",
+    "rest": {
+     "name": "Papa John's"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Papa John's in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Papa%20John's"
+    }
+   ]
+  },
+  {
+   "id": "no store, profiled: the site, then Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    },
+    {
+     "kind": "map",
+     "label": "Find Domino's in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Domino's"
+    }
+   ]
+  },
+  {
+   "id": "store is a string: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": "dominos@40755,-73989"
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    },
+    {
+     "kind": "map",
+     "label": "Find Domino's in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Domino's"
+    }
+   ]
+  },
+  {
+   "id": "store of another brand: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "taco_bell@40749,-73995",
+     "lat": 40.749,
+     "lon": -73.995
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    },
+    {
+     "kind": "map",
+     "label": "Find Domino's in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Domino's"
+    }
+   ]
+  },
+  {
+   "id": "store id only shares a prefix with the brand: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco",
+    "rest": {
+     "name": "Taco"
+    },
+    "store": {
+     "id": "taco_bell@40749,-73995",
+     "lat": 40.749,
+     "lon": -73.995
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Taco in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Taco"
+    }
+   ]
+  },
+  {
+   "id": "store id without the @: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell",
+     "lat": 40.749,
+     "lon": -73.995
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Taco Bell in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Taco%20Bell"
+    }
+   ]
+  },
+  {
+   "id": "store id not a string: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": 5,
+     "lat": 40.749,
+     "lon": -73.995
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Taco Bell in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Taco%20Bell"
+    }
+   ]
+  },
+  {
+   "id": "store lat above 90: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@1,2",
+     "lat": 90.5,
+     "lon": 2
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Taco Bell in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Taco%20Bell"
+    }
+   ]
+  },
+  {
+   "id": "store lon below -180: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@1,2",
+     "lat": 1,
+     "lon": -180.001
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Taco Bell in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Taco%20Bell"
+    }
+   ]
+  },
+  {
+   "id": "store lat a string: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@1,2",
+     "lat": "40.7",
+     "lon": 2
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Taco Bell in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Taco%20Bell"
+    }
+   ]
+  },
+  {
+   "id": "store lat a boolean: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@1,2",
+     "lat": true,
+     "lon": 2
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Taco Bell in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Taco%20Bell"
+    }
+   ]
+  },
+  {
+   "id": "store lon missing: Find",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@1,2",
+     "lat": 1
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Taco Bell in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Taco%20Bell"
+    }
+   ]
+  },
+  {
+   "id": "the edges 90 and -180 are allowed",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "X"
+    },
+    "store": {
+     "id": "x@1",
+     "lat": 90,
+     "lon": -180
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=90.00000%2C-180.00000"
+    }
+   ]
+  },
+  {
+   "id": "the edges -90 and 180 are allowed",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "X"
+    },
+    "store": {
+     "id": "x@1",
+     "lat": -90,
+     "lon": 180
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=-90.00000%2C180.00000"
+    }
+   ]
+  },
+  {
+   "id": "an exact tie rounds up in size, both signs (0.015625 = 1/64)",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "X"
+    },
+    "store": {
+     "id": "x@1",
+     "lat": 0.015625,
+     "lon": -0.015625
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=0.01563%2C-0.01563"
+    }
+   ]
+  },
+  {
+   "id": "a tiny negative keeps its sign; 0 has none",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "X"
+    },
+    "store": {
+     "id": "x@1",
+     "lat": -1e-06,
+     "lon": 0
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=-0.00000%2C0.00000"
+    }
+   ]
+  },
+  {
+   "id": "seven decimals (an OpenStreetMap independent) round to five",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "osm:n123",
+    "rest": {
+     "name": "Joe's Diner"
+    },
+    "store": {
+     "id": "osm:n123@40.7484421,-73.9856589",
+     "lat": 40.7484421,
+     "lon": -73.9856589
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=40.74844%2C-73.98566"
+    }
+   ]
+  },
+  {
+   "id": "Big Timber's Livingston Domino's",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@45670,-110546",
+     "lat": 45.67,
+     "lon": -110.546
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    },
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=45.67000%2C-110.54600"
+    }
+   ]
+  },
+  {
+   "id": "a whole-number coordinate",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "X"
+    },
+    "store": {
+     "id": "x@1",
+     "lat": 40,
+     "lon": -74
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=40.00000%2C-74.00000"
+    }
+   ]
+  },
+  {
+   "id": "12.3456789 rounds up, -12.3456749 rounds down",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "X"
+    },
+    "store": {
+     "id": "x@1",
+     "lat": 12.3456789,
+     "lon": -12.3456749
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=12.34568%2C-12.34567"
+    }
+   ]
+  },
+  {
+   "id": "the user's own test link: Ben & Jerry's",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "ben_and_jerrys",
+    "rest": {
+     "name": "Ben & Jerry's"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for Ben & Jerry's",
+     "href": "https://www.doordash.com/search/store/Ben%20%26%20Jerry's/"
+    }
+   ]
+  },
+  {
+   "id": "a slash is encoded",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "AC/DC Diner"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for AC/DC Diner",
+     "href": "https://www.doordash.com/search/store/AC%2FDC%20Diner/"
+    }
+   ]
+  },
+  {
+   "id": "a percent sign is encoded",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "100% Juice"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for 100% Juice",
+     "href": "https://www.doordash.com/search/store/100%25%20Juice/"
+    }
+   ]
+  },
+  {
+   "id": "an accent is UTF-8",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "cafe_zupas",
+    "rest": {
+     "name": "Caf\u00e9 Zupas"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for Caf\u00e9 Zupas",
+     "href": "https://www.doordash.com/search/store/Caf%C3%A9%20Zupas/"
+    }
+   ]
+  },
+  {
+   "id": "a degree sign is UTF-8",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "85c_bakery_cafe",
+    "rest": {
+     "name": "85\u00b0C Bakery Cafe"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for 85\u00b0C Bakery Cafe",
+     "href": "https://www.doordash.com/search/store/85%C2%B0C%20Bakery%20Cafe/"
+    }
+   ]
+  },
+  {
+   "id": "an emoji is 4 UTF-8 bytes",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "Taco \ud83c\udf2e"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for Taco \ud83c\udf2e",
+     "href": "https://www.doordash.com/search/store/Taco%20%F0%9F%8C%AE/"
+    }
+   ]
+  },
+  {
+   "id": "the unescaped marks stay",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "!*'()-_.~"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for !*'()-_.~",
+     "href": "https://www.doordash.com/search/store/!*'()-_.~/"
+    }
+   ]
+  },
+  {
+   "id": "URL syntax is encoded",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "a+b=c?d#e&f"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for a+b=c?d#e&f",
+     "href": "https://www.doordash.com/search/store/a%2Bb%3Dc%3Fd%23e%26f/"
+    }
+   ]
+  },
+  {
+   "id": "a name holding a placeholder isn't filled again",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "{q}{lat}"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for {q}{lat}",
+     "href": "https://www.doordash.com/search/store/%7Bq%7D%7Blat%7D/"
+    }
+   ]
+  },
+  {
+   "id": "a name of spaces still searches",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "  "
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for   ",
+     "href": "https://www.doordash.com/search/store/%20%20/"
+    }
+   ]
+  },
+  {
+   "id": "in a query string too (a format that isn't real data)",
+   "fn": "forChannel",
+   "ch": "ue-p",
+   "S": {
+    "brand": "ben_and_jerrys",
+    "rest": {
+     "name": "Ben & Jerry's"
+    },
+    "store": null
+   },
+   "data": "T:ue-search",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search Uber Eats for Ben & Jerry's",
+     "href": "https://www.ubereats.com/search?q=Ben%20%26%20Jerry's"
+    }
+   ]
+  },
+  {
+   "id": "a map search encodes the same way",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "Ben & Jerry's"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Ben & Jerry's in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Ben%20%26%20Jerry's"
+    }
+   ]
+  },
+  {
+   "id": "lone surrogate: DoorDash falls back to its home page",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "Bad\ud800Name"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open DoorDash",
+     "href": "https://www.doordash.com/"
+    }
+   ]
+  },
+  {
+   "id": "lone surrogate: no map search, no store: nothing",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "Bad\ud800Name"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "lone surrogate: directions don't need the name",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "Bad\ud800Name"
+    },
+    "store": {
+     "id": "x@1",
+     "lat": 1,
+     "lon": 2
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=1.00000%2C2.00000"
+    }
+   ]
+  },
+  {
+   "id": "lone surrogate: the site link keeps the raw name",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Dom\udfffino's"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Dom\udfffino's",
+     "href": "https://www.dominos.com/"
+    }
+   ]
+  },
+  {
+   "id": "a surrogate pair written as escapes is one character",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "x",
+    "rest": {
+     "name": "\ud83c\udf2e"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search DoorDash for \ud83c\udf2e",
+     "href": "https://www.doordash.com/search/store/%F0%9F%8C%AE/"
+    }
+   ]
+  },
+  {
+   "id": "a search that isn't https falls back home",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:broken",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open DoorDash",
+     "href": "https://www.doordash.com/"
+    }
+   ]
+  },
+  {
+   "id": "a search with no {q} and a home that isn't https: nothing",
+   "fn": "forChannel",
+   "ch": "ue-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:broken",
+   "expect": []
+  },
+  {
+   "id": "an app entry that isn't an object: nothing",
+   "fn": "forChannel",
+   "ch": "gh-d",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:broken",
+   "expect": []
+  },
+  {
+   "id": "a map with no name and a site that isn't https: nothing",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:broken",
+   "expect": []
+  },
+  {
+   "id": "a search template of just {q} isn't https: home",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:templates",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open DoorDash",
+     "href": "https://www.doordash.com/"
+    }
+   ]
+  },
+  {
+   "id": "a search template that's a number: home",
+   "fn": "forChannel",
+   "ch": "ue-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:templates",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open Uber Eats",
+     "href": "https://www.ubereats.com/"
+    }
+   ]
+  },
+  {
+   "id": "{q} twice is filled twice",
+   "fn": "forChannel",
+   "ch": "gh-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:templates",
+   "expect": [
+    {
+     "kind": "search",
+     "label": "Search Grubhub for Domino's",
+     "href": "https://g.example/Domino's/Domino's"
+    }
+   ]
+  },
+  {
+   "id": "directions with no {lon}: the map search instead",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:templates",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Domino's in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Domino's"
+    }
+   ]
+  },
+  {
+   "id": "no maps entry: the site only",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:no-maps",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    }
+   ]
+  },
+  {
+   "id": "no maps entry, no site: nothing",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "taco_bell",
+    "rest": {
+     "name": "Taco Bell"
+    },
+    "store": {
+     "id": "taco_bell@40749,-73995",
+     "lat": 40.749,
+     "lon": -73.995
+    }
+   },
+   "data": "T:no-maps",
+   "expect": []
+  },
+  {
+   "id": "no store and no map search: the site only",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": null
+   },
+   "data": "T:maps-no-search",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    }
+   ]
+  },
+  {
+   "id": "a store still gets directions without a map search",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:maps-no-search",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Domino's",
+     "href": "https://www.dominos.com/"
+    },
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=40.75500%2C-73.98900"
+    }
+   ]
+  },
+  {
+   "id": "an app missing from apps: nothing",
+   "fn": "forChannel",
+   "ch": "gh-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:no-gh",
+   "expect": []
+  },
+  {
+   "id": "apps an array: nothing",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:apps-not-object",
+   "expect": []
+  },
+  {
+   "id": "order an array: no site, directions still",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:order-array",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=40.75500%2C-73.98900"
+    }
+   ]
+  },
+  {
+   "id": "D without LINKS: nothing",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:no-links",
+   "expect": []
+  },
+  {
+   "id": "a search starting https: without // falls back home",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:https-no-slashes",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open DoorDash",
+     "href": "https://www.doordash.com/"
+    }
+   ]
+  },
+  {
+   "id": "a home page starting https: without //: nothing",
+   "fn": "forChannel",
+   "ch": "ue-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:https-no-slashes",
+   "expect": []
+  },
+  {
+   "id": "a site and directions starting https: without //: only the map search",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:https-no-slashes",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Domino's in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Domino's"
+    }
+   ]
+  },
+  {
+   "id": "__proto__ as a brand with its own entry gets it",
+   "fn": "forChannel",
+   "ch": "direct-d",
+   "S": {
+    "brand": "__proto__",
+    "rest": {
+     "name": "Proto"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "order",
+     "label": "Order from Proto",
+     "href": "https://proto.example/"
+    }
+   ]
+  },
+  {
+   "id": "constructor as a brand has no site",
+   "fn": "forChannel",
+   "ch": "direct-d",
+   "S": {
+    "brand": "constructor",
+    "rest": {
+     "name": "Constructor"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "toString as a brand: the map search only",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "toString",
+    "rest": {
+     "name": "To String"
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find To String in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=To%20String"
+    }
+   ]
+  },
+  {
+   "id": "hasOwnProperty as a brand",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "hasOwnProperty",
+    "rest": {
+     "name": "H"
+    },
+    "store": {
+     "id": "hasOwnProperty@1",
+     "lat": 1,
+     "lon": 1
+    }
+   },
+   "data": "T",
+   "expect": [
+    {
+     "kind": "dir",
+     "label": "Directions in Google Maps",
+     "href": "https://www.google.com/maps/dir/?api=1&destination=1.00000%2C1.00000"
+    }
+   ]
+  },
+  {
+   "id": "guard: channel not a channel",
+   "fn": "forChannel",
+   "ch": "direct",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: channel in capitals",
+   "fn": "forChannel",
+   "ch": "DD-P",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: channel with a third part",
+   "fn": "forChannel",
+   "ch": "dd-p-x",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: channel null",
+   "fn": "forChannel",
+   "ch": null,
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: channel a number",
+   "fn": "forChannel",
+   "ch": 5,
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: S null",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": null,
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: S an array",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": [
+    {
+     "brand": "dominos",
+     "rest": {
+      "name": "Domino's"
+     },
+     "store": {
+      "id": "dominos@40755,-73989",
+      "lat": 40.755,
+      "lon": -73.989
+     }
+    }
+   ],
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: D null",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": null,
+   "expect": []
+  },
+  {
+   "id": "guard: brand null",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": null,
+    "rest": {
+     "name": "Domino's"
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: brand a number",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": 7,
+    "rest": {
+     "name": "Domino's"
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: brand missing",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: rest null",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": null
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: rest missing",
+   "fn": "forChannel",
+   "ch": "ue-p",
+   "S": {
+    "brand": "dominos"
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: rest an array",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": [
+     "Domino's"
+    ]
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: rest.name empty",
+   "fn": "forChannel",
+   "ch": "ue-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": ""
+    },
+    "store": null
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: rest.name a number",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": 5
+    }
+   },
+   "data": "T",
+   "expect": []
+  },
+  {
+   "id": "guard: rest.name missing",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {},
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T",
+   "expect": []
+  }
+ ]
+}

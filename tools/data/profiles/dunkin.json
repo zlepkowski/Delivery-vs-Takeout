@@ -1,0 +1,51 @@
+{
+  "id": "dunkin",
+  "asOf": "2026-11-12",
+  "menu": [
+    {"name": "Original Blend Iced Coffee", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 4.59, "url": "https://www.dunkindonuts.com/menu/categories/iced-coffee-cold-brew-espresso"},
+      {"zip": "60601", "state": "IL", "price": 3.99, "url": "https://www.dunkindonuts.com/menu/categories/iced-coffee-cold-brew-espresso"},
+      {"zip": "85015", "state": "AZ", "price": 3.99, "url": "https://www.dunkindonuts.com/menu/categories/iced-coffee-cold-brew-espresso"}
+    ]},
+    {"name": "Original Blend Hot Coffee", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 3.69, "url": "https://www.dunkindonuts.com/menu/categories/hot-drinks"},
+      {"zip": "60601", "state": "IL", "price": 3.24, "url": "https://www.dunkindonuts.com/menu/categories/hot-drinks"},
+      {"zip": "85015", "state": "AZ", "price": 3.19, "url": "https://www.dunkindonuts.com/menu/categories/hot-drinks"}
+    ]},
+    {"name": "Dozen Donuts", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 18.99, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"},
+      {"zip": "60601", "state": "IL", "price": 17.99, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"},
+      {"zip": "85015", "state": "AZ", "price": 16.69, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"}
+    ]},
+    {"name": "Half Dozen Donuts", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 11.99, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"},
+      {"zip": "60601", "state": "IL", "price": 10.99, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"},
+      {"zip": "85015", "state": "AZ", "price": 9.69, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"}
+    ]},
+    {"name": "Butter Croissant", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 3.09, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"},
+      {"zip": "60601", "state": "IL", "price": 2.59, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"},
+      {"zip": "85015", "state": "AZ", "price": 2.49, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"}
+    ]},
+    {"name": "Hash Browns", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 1.99, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"},
+      {"zip": "60601", "state": "IL", "price": 1.79, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"},
+      {"zip": "85015", "state": "AZ", "price": 1.79, "url": "https://www.dunkindonuts.com/menu/categories/donuts-bagels-bakery"}
+    ]},
+    {"name": "Bacon, Egg and Cheese", "dealItem": false, "prices": [
+      {"zip": "10007", "state": "NY", "price": 6.29, "url": "https://www.dunkindonuts.com/menu/categories/sandwiches-wraps"},
+      {"zip": "60601", "state": "IL", "price": 5.59, "url": "https://www.dunkindonuts.com/menu/categories/sandwiches-wraps"},
+      {"zip": "85015", "state": "AZ", "price": 5.29, "url": "https://www.dunkindonuts.com/menu/categories/sandwiches-wraps"}
+    ]}
+  ],
+  "deal": null,
+  "directDelivery": false,
+  "amexGoldDirect": false,
+  "platforms": {
+    "dd": "dunkindonuts.com/dunkin-delivers (read 2026-11-12): 'Dunkin' has teamed up with Grubhub, Uber Eats and DoorDash'. https://www.dunkindonuts.com/dunkin-delivers",
+    "ue": "dunkindonuts.com/dunkin-delivers (read 2026-11-12): 'Dunkin' has teamed up with Grubhub, Uber Eats and DoorDash'. https://www.dunkindonuts.com/dunkin-delivers",
+    "gh": "dunkindonuts.com/dunkin-delivers (read 2026-11-12): 'Dunkin' has teamed up with Grubhub, Uber Eats and DoorDash'. https://www.dunkindonuts.com/dunkin-delivers"
+  },
+  "markup": {"useCategory": true},
+  "notes": "Menu: pickup prices from the chain's own menu (www.dunkindonuts.com/menu/categories/*) with the store selected through the locator (ORDER HERE, then CONFIRM, no account, no bag or checkout), observed 2026-11-12. Stores: 250 Broadway, New York NY 10007 (ZIP 10007, nearest to City Hall Park); 203 N La Salle St, Chicago IL (ZIP 60601, nearest to 121 N LaSalle); 2345 W. Thomas Rd, Phoenix AZ (ZIP 85015, nearest to 200 W Washington). Store ZIPs from the locator search response. Menu pages are store-scoped by session, so the category URLs show the store only in the page header ('Pickup from ...'). Names: 'Original Blend Hot Coffee' is listed on the menu as 'Original Blend' under Hot Drinks > Coffee. Size: the menu cards show no size and the item dialog was not opened, so the coffee size (and the Hash Browns count) is not recorded; Dunkin' sizes are unverified. Items not captured: Glazed or Classic donut (no price on the category text). Deal: none. The $6 Meal Deal page (https://www.dunkindonuts.com/menu/categories/6-meal-deal) gives no direct-only terms, and the Mobile App page only mentions app 'exclusive offers' without a specific offer, so deal is null (ISS-015). Delivery: no first-party delivery. The dunkin-delivers page says delivery is through Grubhub, Uber Eats and DoorDash and that fees are shown in those apps, so directDelivery is false and no fee is recorded (not $0). Markup: no chain-specific published figure found, so the category default applies (est). Platforms: from the chain's own delivery page (dd, ue, gh). Bot checks: the Kaptcha and PerimeterX scripts loaded on the site, but no challenge page was shown during the session; no bot protection was bypassed."
+}
