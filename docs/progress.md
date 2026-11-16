@@ -65,7 +65,7 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
-### Phase 8: Phase A backend: the Worker behind the seam (2026-11-16, in progress)
+### Phase 8: Phase A backend: the Worker behind the seam (2026-11-16)
 
 Branch `claude/charming-heisenberg-wag8bg` (this session's; fast-forwarded to `claude/phase-7-vin-lookup-refresh-3kq5sh` at `556bc34`, the Phase 7 tip). User decisions at the start: **OpenStreetMap providers** (OSRM, Nominatim, Overpass; no keys), the **host swap** (newsroom.aaa.com, rosap.ntl.bts.gov and www.dunkindonuts.com out; router.project-osrm.org, nominatim.openstreetmap.org and overpass.kumi.systems in; ISS-001), and **independents in Phase 8**.
 
@@ -73,10 +73,30 @@ Branch `claude/charming-heisenberg-wag8bg` (this session's; fast-forwarded to `c
 |---|---|---|
 | 8.1 D-040, `docs/api-contract.md`; state, engine and UI contracts amended in place (the Worker-off path is Phase 7's by construction: `opts.api` absent) | ✅ | `0b8d25b` |
 | 8.2 References first: 6 OSRM/Nominatim answers recorded (Big Timber → the Livingston Domino's 33.9 mi by road), 4 constructed Overpass answers (ISS-040), `tests/fixtures/api/build.py` → `cases.json`, 37 state scenarios, the oracle's `rest_for`, `run.py` api checks (staleness + 2,000 seeded seam calls vs JS) | ✅ | `0b8d25b` |
-| 8.3 api-builder: `worker/`; tests first (`worker-cases.test.js`); review fix rounds: KV timeout, safe-integer ids; ISS-041 (two orchestrator expectations wrong) | ✅ 100/100 cases | `eaa7be9` |
-| 8.4a builder: `src/js/config.js`, `src/js/api.js`, `restFor` independents, `state.js` D-040 | verified (api-cases 137, scenarios 171, oracle 2,000/2,000); in review | — |
-| 8.4b builder: `app.js`, `render.js`, css; `tests/e2e/worker.e2e.js` written first by the orchestrator | in progress | — |
-| 8.5 tester: `send()` with a fake XHR, extra Worker inputs, mutants; close | ⬜ | — |
+| Tests first (orchestrator): `worker-cases.test.js`, `api-cases.test.js`, `tests/e2e/worker.e2e.js` | ✅ | `be8813f`, `2320149` |
+| 8.3 api-builder: `worker/`; review fix rounds: KV calls raced against 1 s, safe-integer ids; ISS-041 (two orchestrator expectations wrong); then the `{ok: null}` cache hit (orchestrator, `7c0ab6d`) | ✅ 104/104 cases | `eaa7be9`, `7c0ab6d` |
+| 8.4a builder: `src/js/config.js`, `src/js/api.js`, `restFor` independents, `state.js` D-040; review APPROVE + fix round (`__proto__` as an own key, the 1000-mile bound) | ✅ api-cases 140, scenarios 173, oracle 2,000/2,000 | `99b4cee` |
+| 8.4b builder: `app.js`, `render.js`, css; review CHANGES-REQUESTED (an empty wrapper in `#near` with the Worker off), fix round, re-review APPROVE; patchChildren keeps leading blocks on a count change | ✅ worker.e2e 12/12 (incl. byte-identical to the Phase 7 page built from git); all e2e 54/54 | `4ac3bb9` |
+| 8.5 tester: `worker.test.js` (67: methods, paths, odd queries, every provider's timeout, a network guard) and `api-send.test.js` (30: `send()` with a fake XHR); both reviewed, fix rounds, mutants caught | ✅ | `f53891b`, `ccd3937` |
+
+**Phase 8 notes for a resuming session.**
+- **Deploying the Worker** (ISS-004, the user's): `worker/README.md`: a Cloudflare account, a KV namespace, `USER_AGENT` as a secret, `ALLOW_ORIGINS`, then `apiBase` in `src/js/config.js`. Committed `apiBase` is `""`: the Worker is off.
+- **The Phase 7 baseline test** (`worker.e2e.js`, `BASE_REV = '556bc34'`) builds the Phase 7 page from git and requires `#app` to be byte-identical with the Worker off. **A later phase that changes the page on purpose must re-baseline it by decision** (e.g. to that phase's own "before" commit). CI fetches the full history for it.
+- **ISS-040:** the Overpass fixtures are constructed; recording one real answer closes it.
+
+**Review evidence for the Phase 8 reflector** (all fixed unless noted):
+- **"Identical" tested against itself.** The first "Worker failing = Worker off" e2e compared two copies of the new code, so an always-written empty `<div></div>` in `#near` passed both sides; the reviewer found it (blocker, 8.4b). Now the e2e builds the real Phase 7 page from git and compares `#app` byte for byte (`2320149`). Lesson: a "nothing changes" guarantee is tested against the old code, not the new code in another mode.
+- **The orchestrator's reference had slips, caught two ways.** Two `/drive` expectations (an edge pair 0.69 mi apart expected "too far"; 1.447° = 99.98 mi expected "over 100") were wrong; the api-builder refused to bend the code and logged ISS-041. A hand guess (`1.0005 * 1000` is 1000.4999…) was caught by an `assert` inside `build.py`. Lesson: compute a boundary's both sides in the reference and assert every hand guess there.
+- **Awaited calls that never settle.** The contract said what a throwing KV does, not a hung one: a hung `get` kept the request open forever (blocker, 8.3). Now each KV call is raced against 1 s. And in the test runner, a never-settling promise doesn't hold Node's event loop, so node:test ended the file with every later case "cancelled" instead of failing; racing against a ref'd timer fixed it (`worker-cases.test.js`).
+- **Cached and user-derived keys and values.** A KV value `{ok: null}` was served as a 200 (8.5a review; contract §5 now says only a plain-object body is a hit). An address typed `__proto__` became the answer table's prototype through plain assignment, so the geocode was re-asked on every render (8.4a review; `remember` uses `Object.defineProperty`).
+- **A test sandbox shaped the code.** Two state test sandboxes didn't load `api.js`, so the builder copied the key helpers into `state.js` (and said so under ASSUMPTIONS). The orchestrator replaced the copies with `POD.api` calls and added `api.js` to the sandboxes. Lesson: change the sandbox, never duplicate a function to fit one.
+- **The browser's own console errors.** Chromium logs "Failed to load resource" for a Worker 404/5xx/abort; page code can't suppress it (the 8.4b builder found it). The e2e allows it exactly and counted, as for tiles and VIN (UI §0).
+- **Over-specified tests.** The orchestrator's e2e regex required "mi" before "Estimate", which pushed the builder into a row layout unlike the chain rows; and the screenshot review then found the tag breaking letter by letter (overflow-wrap on the whole row). No test caught the layout. Lesson: e2e asserts content, not incidental order; overflow-wrap goes on the text element only; screenshots catch what scroll checks don't.
+- **Card slips the workers corrected by following the contract:** `%E0%A4%A` decodes to 3 characters (sent upstream, not a 400), and `encodeURIComponent` leaves `'` as is (not `%27`). Also: the 8.4a card's DONE WHEN ran `npm run test:e2e` while the orchestrator added `worker.e2e.js` after dispatch, so the builder reported BLOCKED on a test for the next task.
+- **A reviewer false positive.** "No D-040 state tests" came from reading only the test-file diff; the 37 scenarios live in `tests/fixtures/state/scenarios.json`. Dismissed with 6/6 mutants caught. Lesson for review: generated cases live in fixture files.
+- **A core render change inside a fix round.** The 8.4b builder changed `patchChildren` (keep the leading blocks on a count change) to meet the "last block in #near" rule; it was right, but it changed UI §2's rule, so the orchestrator amended the contract and sent the round to a focused re-review. Pairing now also requires the element's own tag and attributes to match.
+- **Shared scratchpad collisions.** Parallel testers overwrote each other's `mutate.js`; one mutant pass was discarded. Workers now use private subdirectories.
+- **Network:** `overpass-api.de` reset every TLS handshake from the session's egress and its mirror never answered; the permission check then refused more attempts (ISS-040). Recording stopped there.
 
 ### Phase 7: Phase A static: VIN lookup, model-year mpg, weekly gas + store refresh (2026-11-16, done)
 
