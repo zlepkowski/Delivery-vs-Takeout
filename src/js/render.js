@@ -303,7 +303,19 @@
     return "To compare, we still need: " + names.join(", ") + ".";
   }
 
-  function resultsList(R) {
+  /** The hand-off links of one row (links contract §3); nothing is written when there are none. */
+  function handoffHtml(r, S, D) {
+    var links = POD.links.forChannel(r.id, S, D);
+    if (links.length === 0) { return ""; }
+    var h = '<p class="handoff" data-testid="handoff">';
+    for (var n = 0; n < links.length; n++) {
+      h += '<a class="handoff-link" data-testid="handoff-link" data-kind="' + esc(links[n].kind) +
+        '" href="' + esc(links[n].href) + '" target="_blank" rel="noopener noreferrer">' + esc(links[n].label) + "</a>";
+    }
+    return h + "</p>";
+  }
+
+  function resultsList(R, S, D) {
     var h = '<ol class="results-list" data-testid="results-list">';
     for (var i = 0; i < R.length; i++) {
       var r = R[i];
@@ -316,6 +328,7 @@
         for (var k = 0; k < r.notes.length; k++) { h += '<span class="tag">' + esc(r.notes[k]) + "</span>"; }
         h += "</p>";
       }
+      h += handoffHtml(r, S, D);
       h += '<details class="receipt"><summary>Receipt</summary><ul>';
       for (var j = 0; j < r.lines.length; j++) {
         var label = r.lines[j][0], amt = r.lines[j][1];
@@ -382,7 +395,7 @@
           msg = '<p class="muted">Nothing to compare: every way to order from this restaurant is switched off.</p>';
         } else {
           verdict = '<p class="verdict" data-testid="verdict">Cheapest: ' + esc(R[0].name) + " at " + money(R[0].net) + "</p>";
-          list = resultsList(R);
+          list = resultsList(R, c.S, c.D);
         }
       } else {
         F = null;
@@ -688,6 +701,9 @@
     ];
     var h = "";
     for (var j = 0; j < lines.length; j++) { h += "<p>" + esc(lines[j]) + "</p>"; }
+    h += '<p data-testid="fine-links">' + esc("Links open each app, the restaurant's own site or Google Maps. " +
+      "Your order doesn't carry over, so add your items there. A link carries only the restaurant's name or the " +
+      "store's location, never your address.") + "</p>";
     if (fromWorker) {                                          // D-040: only when the page shows Worker data
       h += '<p data-testid="fine-osm">' + esc("Road distances, street addresses and independent restaurants: " +
         "OpenStreetMap (© OpenStreetMap contributors, ODbL), through this site's server.") + "</p>";
