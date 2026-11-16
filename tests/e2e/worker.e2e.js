@@ -65,7 +65,10 @@ let base;
 // The Phase 8 done-when, "the site is identical with the Worker off", is checked against the real
 // thing: the page as Phase 7 left it (commit 556bc34, the Phase 7 tip), built from git with the same
 // fixture tiles. (CI checks out the full history for this: .github/workflows/test.yml fetch-depth 0.)
-// A later phase that changes the page on purpose re-baselines this by decision.
+// A later phase that changes the page on purpose re-baselines this by decision. D-041 (Phase 9) did:
+// the comparison removes exactly the hand-off blocks and the fine-print links line from the new
+// page first (after checking every result row has its hand-off), and everything else must still be
+// Phase 7's byte for byte (links contract §4).
 const BASE_REV = '556bc34';
 function buildBaseline() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pod-phase7-'));
@@ -182,6 +185,30 @@ async function order(page, zip) {
 }
 const settle = (page, ms = 300) => page.waitForTimeout(ms);
 const appHtml = (page) => page.$eval('#app', (e) => e.innerHTML);
+// #app without the two Phase 9 additions (D-041): a no-op on the Phase 7 page, which has neither.
+const PHASE9 = '[data-testid="handoff"], [data-testid="fine-links"]';
+const appHtmlP7 = (page) => page.$eval('#app', (e, sel) => {
+  const c = e.cloneNode(true);
+  c.querySelectorAll(sel).forEach((x) => x.remove());
+  return c.innerHTML;
+}, PHASE9);
+/** The new page has one hand-off per result row and one links line, so removing them hides nothing missing. */
+async function phase9Shape(page, where) {
+  const s = await page.evaluate(() => ({
+    rows: document.querySelectorAll('[data-testid="result-row"]').length,
+    each: Array.from(document.querySelectorAll('[data-testid="result-row"]')).map((r) =>
+      r.querySelectorAll(':scope > [data-testid="handoff"]').length + ':' + r.querySelectorAll('[data-testid="handoff-link"]').length),
+    blocks: document.querySelectorAll('[data-testid="handoff"]').length,
+    fine: document.querySelectorAll('[data-testid="fine-links"]').length,
+  }));
+  assert.ok(s.rows >= 1, where + ': results shown');
+  assert.equal(s.blocks, s.rows, where + ': one hand-off block per result row, and none elsewhere');
+  assert.ok(s.each.every((x) => /^1:[1-9]$/.test(x)), where + ': each row has its block with at least one link: ' + s.each.join(' '));
+  assert.equal(s.fine, 1, where + ': one links line in the fine print');
+}
+async function noPhase9(page, where) {
+  assert.equal(await page.locator(PHASE9).count(), 0, where + ': the Phase 7 page has no Phase 9 elements');
+}
 
 // ---- off -------------------------------------------------------------------------------------
 
@@ -203,7 +230,7 @@ test('Worker off: no request leaves the page, no opts.api, and none of the Worke
   await o.ctx.close();
 });
 
-test('Phase 8 done-when: with the Worker off, #app is byte-identical to the Phase 7 page (3 flows)', async () => {
+test('Phase 8 done-when, re-baselined by D-041: with the Worker off, #app is the Phase 7 page plus only the hand-offs (3 flows)', async () => {
   const flows = {
     'Big Timber, Domino\'s, a Camry, one pizza': (page) => order(page, '59011'),
     'the first-visit example': async (page) => { await page.click('[data-action="example"]'); await page.waitForSelector('[data-testid="result-row"]'); },
@@ -219,7 +246,9 @@ test('Phase 8 done-when: with the Worker off, #app is byte-identical to the Phas
     await run(a.page);
     await run(b.page);
     await settle(b.page);
-    assert.equal(await appHtml(b.page), await appHtml(a.page), name + ': #app is exactly Phase 7\'s');
+    await phase9Shape(b.page, name);
+    await noPhase9(a.page, name);
+    assert.equal(await appHtmlP7(b.page), await appHtml(a.page), name + ': #app is exactly Phase 7\'s, the hand-offs aside');
     assert.deepEqual(b.requests, [], name + ': no request');
     assert.deepEqual(b.errors, []);
     await a.ctx.close();
@@ -296,6 +325,18 @@ test('Worker on: independents near Big Timber widen 2 → 5 mi, drop the untagge
   assert.equal(exp.S.rest.name, 'Fixture Diner');
   assert.deepEqual(await H.shownResults(o.page), H.wantResults(exp));
   assert.ok(!exp.R.some((r) => r.id === 'direct-d'), 'no direct delivery for an unprofiled place (D-006)');
+  // D-041: the independent hands off like an unprofiled chain: no site, directions to its point
+  // (the picked row's lat, lon: 45.8345, -109.9512), a DoorDash search by its name, the other apps' home pages.
+  assert.ok(exp.S.store.id.startsWith('osm:n1001@'), 'the picked row is the store (its id is the brand + "@" + POD.api.point)');
+  assert.deepEqual([exp.S.store.lat, exp.S.store.lon], [45.8345, -109.9512], 'at the place\'s own point');
+  const links = await o.page.$$eval('[data-testid="result-row"]', (rows) => rows.map((r) => [r.getAttribute('data-channel'),
+    Array.from(r.querySelectorAll('[data-testid="handoff-link"]')).map((a) => [a.getAttribute('data-kind'), a.textContent.trim(), a.getAttribute('href')])]));
+  assert.deepEqual(Object.fromEntries(links), {
+    'direct-p': [['dir', 'Directions in Google Maps', 'https://www.google.com/maps/dir/?api=1&destination=45.83450%2C-109.95120']],
+    'dd-p': [['search', 'Search DoorDash for Fixture Diner', 'https://www.doordash.com/search/store/Fixture%20Diner/']],
+    'ue-p': [['app', 'Open Uber Eats', 'https://www.ubereats.com/']],
+    'gh-p': [['app', 'Open Grubhub', 'https://www.grubhub.com/']],
+  });
   assert.equal(o.warns.filter((w) => w === WARN).length, 1, 'one warning for the failed /drive');
   onlyBrowserErrors(o.errors, BROWSER_ERR[404], 1, 'the /drive with no road route');
   await o.page.screenshot({ path: path.join(H.SHOTS, 'worker-independents-desktop.png'), fullPage: true });
@@ -339,23 +380,28 @@ test('Worker on: a bare ZIP is never sent to /geocode', async () => {
 // ---- on, failing: the page is the Worker-off page ---------------------------------------------
 
 for (const mode of ['500', 'garbage', 'abort']) {
-  test('Worker failing (' + mode + '): the page is exactly the Phase 7 page, with one warning', async () => {
+  test('Worker failing (' + mode + '): the page is exactly the Worker-off page, and the Phase 7 page but for the hand-offs, with one warning', async () => {
     const a = await open(base);
     const b = await open(on, { mode });
-    for (const o of [a, b]) {
+    const c = await open(off);
+    for (const o of [a, b, c]) {
       await order(o.page, '10118');
       await H.commit(o.page, '#address', '350 5th Ave, New York, NY 10118');
       await H.waitText(o.page, '[data-testid="loc-status"]', 'ZIP 10118');
       await settle(o.page, 500);
     }
     assert.ok(b.api.length >= 3, 'the seam did ask (drive, nearby, geocode)');
-    assert.equal(await appHtml(b.page), await appHtml(a.page), '#app is identical');
+    await phase9Shape(b.page, mode);
+    assert.equal(await appHtml(b.page), await appHtml(c.page), '#app, hand-offs included, is the Worker-off page\'s (D-041: the Worker adds nothing)');
+    assert.equal(await appHtmlP7(b.page), await appHtml(a.page), '#app is identical to Phase 7\'s, the hand-offs aside');
     assert.deepEqual(await H.shownResults(b.page), await H.shownResults(a.page));
     assert.equal(b.warns.filter((w) => w === WARN).length, 1, 'exactly one console.warn per page load');
     if (mode === 'garbage') assert.deepEqual(b.errors, [], 'a 200 with a bad body logs nothing');
     else onlyBrowserErrors(b.errors, BROWSER_ERR[mode === '500' ? 500 : 'abort'], b.api.length, mode);   // the page itself never console.errors
+    assert.deepEqual(c.errors, []);
     await a.ctx.close();
     await b.ctx.close();
+    await c.ctx.close();
   });
 }
 
@@ -364,9 +410,10 @@ test('Worker hanging: nothing waits for it, and the 4 s timeout falls back with 
   const b = await open(on, { mode: 'hang' });
   await order(a.page, '10118');
   await order(b.page, '10118');
-  assert.equal(await appHtml(b.page), await appHtml(a.page), 'rendered before any answer');
+  await phase9Shape(b.page, 'hang');
+  assert.equal(await appHtmlP7(b.page), await appHtml(a.page), 'rendered before any answer');
   await b.page.waitForTimeout(4600);
-  assert.equal(await appHtml(b.page), await appHtml(a.page), 'still identical after the /drive timeout');
+  assert.equal(await appHtmlP7(b.page), await appHtml(a.page), 'still identical after the /drive timeout');
   assert.equal(b.warns.filter((w) => w === WARN).length, 1);
   assert.deepEqual(b.errors, []);
   await a.ctx.close();

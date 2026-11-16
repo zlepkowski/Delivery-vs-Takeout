@@ -217,6 +217,12 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** the `/nearby` parser is tested against the documented format, not a real answer. A field Overpass sends differently from its documentation would show up only in production.
 - **Next step:** record one real answer (the exact request is in `tests/fixtures/api/README.md`) from a machine that reaches Overpass, add it as `overpass/recorded_*.json`, and add its hand-worked expected output to `build.py`. Either the user runs the curl line, or a later session with a working route does.
 
+### ISS-042 — Unprofiled chains and independents have no website link (D-041)
+- **Opened:** 2026-11-16 by orchestrator · **Phase:** 9 · **Status:** open
+- **What:** ordering direct links to a chain's own site only for the 9 profiled chains (`LINKS.order`, each checked in a browser). The other 264 chains and every independent get only the map on their direct pickup row (directions to the store, or a map search by name). Sources for the rest exist but aren't in the repo: Wikidata's "official website" (P856) for each brand's `wikidata` id in `brands.js` (CC0; `www.wikidata.org` isn't on the allowlist), All The Places' per-store `website` property (too large for the tiles as they are), and OpenStreetMap's `website` tag for an independent (the Worker's `/nearby` would need to pass it through: an API, state and seam change, and an untrusted URL that must be checked to be `https:`).
+- **Why it matters:** "Order from Taco Bell" would beat a map for the second most common chain (D-026). Nothing is wrong today: the row still hands off.
+- **Next step:** a data pass decides the source and records each URL with a check, as `LINKS.order` does (a key-set change to the D-041 data test).
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->

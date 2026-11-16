@@ -29,6 +29,13 @@
 
   ORACLE_VIN_N=4000 python3 -I tests/oracle/run.py
 
+7. Links (docs/links-contract.md, D-041): tests/fixtures/links/cases.json must equal what its
+   build.py writes now (its hand-worked values are asserted against tests/oracle/links.py there).
+   Once src/js/links.js exists (it must then be in index.html), the cases and ORACLE_LINKS_N seeded
+   random calls (default 2000) run through the JS too, exactly.
+
+  ORACLE_LINKS_N=20000 python3 -I tests/oracle/run.py
+
 On a failure it prints the receipt case or the scenario seed, the call, and the first
 differing field, then exits 1. Standard library only.
 """
@@ -46,6 +53,7 @@ import engine as E  # noqa: E402
 import geo as G  # noqa: E402
 import insights as I  # noqa: E402
 import vin as V  # noqa: E402
+import links as LK  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 RECEIPTS = os.path.join(ROOT, "tests", "fixtures", "receipts")
@@ -58,6 +66,8 @@ VIN_FIX = os.path.join(ROOT, "tests", "fixtures", "vin")
 VIN_N = int(os.environ.get("ORACLE_VIN_N", "400"))
 API_FIX = os.path.join(ROOT, "tests", "fixtures", "api")
 API_N = int(os.environ.get("ORACLE_API_N", "2000"))
+LINKS_FIX = os.path.join(ROOT, "tests", "fixtures", "links")
+LINKS_N = int(os.environ.get("ORACLE_LINKS_N", "2000"))
 
 
 # ---------------------------------------------------------------- helpers
@@ -960,6 +970,192 @@ def api_checks(failures):
         print("oracle: api %s %d/%d seam calls match the JS" % (label, len(group) - bad, len(group)))
 
 
+# ---------------------------------------------------------------- links (D-041)
+
+def links_built(failures):
+    if not os.path.exists(os.path.join(ROOT, "src", "js", "links.js")):
+        return False
+    with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
+        if not re.search(r"""<script\b[^>]*\bsrc=["']src/js/links\.js["']""", fh.read()):
+            failures.append("links: src/js/links.js exists but index.html doesn't load it")
+    return True
+
+
+def run_js_links(datasets, cases):
+    with tempfile.TemporaryDirectory() as tmp:
+        fin = os.path.join(tmp, "in.json")
+        fout = os.path.join(tmp, "out.json")
+        with open(fin, "w", encoding="utf-8") as fh:
+            json.dump({"datasets": datasets, "cases": [{"ch": c["ch"], "S": c["S"], "data": c["data"]} for c in cases]}, fh)
+        subprocess.run(["node", os.path.join("tests", "oracle", "links_runner.js"), fin, fout], cwd=ROOT, check=True)
+        with open(fout, encoding="utf-8") as fh:
+            return json.load(fh)
+
+
+LINK_PARTS = ["Domino's", "Taco", " ", "Bell", "&", "'", "/", "%", "+", "?", "#", "=", ",", ";", ":", "@", "Café", "85°C",
+              "Müller", "日本", "\U0001F32E", "{q}", "{lat}", "{lon}", "\ud800", "\udfff", "!*()~", "\t", "\n", "-_.", "%7B",
+              "Ben & Jerry's", "A&W", "Chick-fil-A", "\"", "<b>", "\\", " ", "​"]
+LINK_BRANDS = ["dominos", "wingstop", "taco_bell", "papa_johns", "osm:n42", "osm:w7", "__proto__", "constructor",
+               "toString", "hasOwnProperty", "", "x", "dominos@"]
+LINK_JUNK_CH = ["direct", "dd", "DD-P", "", "dd-p ", None, 3, "x-p", "direct-x", "ue_d", ["dd-p"]]
+
+
+def links_coord(rnd, lim):
+    k = rnd.random()
+    if k < 0.35:
+        return round(rnd.uniform(-lim, lim), 7)
+    if k < 0.55:
+        return rnd.randint(-lim * 1000, lim * 1000) / 1000
+    if k < 0.65:
+        return rnd.randint(-lim * 64, lim * 64) / 64          # exact ties at 5 decimals when odd
+    if k < 0.72:
+        return rnd.choice([lim, -lim, 0, 1e-06, -1e-06, 5e-06, -5e-06, 0.000005, lim - 0.000005])
+    if k < 0.78:
+        return rnd.randint(-lim, lim)
+    if k < 0.84:
+        return rnd.choice([lim + 0.0000001, -lim - 1, 1000, -1e9])
+    if k < 0.9:
+        return rnd.uniform(-lim, lim)
+    return rnd.choice(["40.7", None, True, False, [1], {"v": 1}])
+
+
+def links_random_data(rnd, base):
+    d = json.loads(json.dumps(base))
+    L = d["LINKS"]
+    pick = lambda p: rnd.random() < p
+    for p in ("dd", "ue", "gh"):
+        if pick(0.15):
+            L["apps"][p]["search"] = rnd.choice([None, "{q}", "http://a.example/{q}", "https://d.example/s?q={q}&r={q}",
+                                                 5, "https://d.example/nosub", "https://www.ubereats.com/search?q={q}"])
+        if pick(0.1):
+            L["apps"][p]["home"] = rnd.choice(["http://x.example/", None, "https://h.example/", "javascript:alert(1)", ""])
+        if pick(0.05):
+            L["apps"][p] = rnd.choice(["https://www.grubhub.com/", None, [], {"home": "https://www.grubhub.com/"}])
+    if pick(0.1):
+        L["maps"]["name"] = rnd.choice(["", None, "Apple Maps", 7])
+    if pick(0.15):
+        L["maps"]["dir"] = rnd.choice([None, "https://m.example/?d={lat}", "https://m.example/?d={lon},{lat}&again={lat}",
+                                       "http://m.example/{lat},{lon}", "{lat}{lon}"])
+    if pick(0.15):
+        L["maps"]["search"] = rnd.choice([None, "https://m.example/?q={q}", "q={q}"])
+    if pick(0.3):
+        for b in rnd.sample(LINK_BRANDS, 3):
+            L["order"][b] = rnd.choice([{"url": "https://site.example/" + str(rnd.randint(1, 9))}, {"url": "http://site.example/"},
+                                        {"url": None}, {}, "https://site.example/", None])
+    if pick(0.05):
+        del L["maps"]
+    if pick(0.03):
+        L["apps"] = ["dd", "ue", "gh"]
+    if pick(0.03):
+        L["order"] = None
+    if pick(0.02):
+        del d["LINKS"]
+    return d
+
+
+def links_random_cases(base, seed):
+    rnd = random.Random(seed)
+    datasets = {"T": base}
+    for k in range(40):
+        datasets["R%d" % k] = links_random_data(rnd, base)
+    names = ["T"] * 20 + ["R%d" % k for k in range(40)]
+    cases = []
+    for i in range(LINKS_N):
+        ch = rnd.choice(LK.CHANNELS + ("direct-p",) * 4 + ("direct-d",)) if rnd.random() < 0.88 else rnd.choice(LINK_JUNK_CH)
+        brand = rnd.choice(LINK_BRANDS) if rnd.random() < 0.95 else rnd.choice([None, 5, True])
+        r = rnd.random()
+        if r < 0.9:
+            name = "".join(rnd.choice(LINK_PARTS) for _ in range(rnd.randint(1, 4)))
+            rest = {"name": name}
+        else:
+            rest = rnd.choice([None, [], {}, {"name": ""}, {"name": 7}, "Domino's"])
+        r = rnd.random()
+        bstr = brand if isinstance(brand, str) else "x"
+        if r < 0.5:
+            store = {"id": bstr + "@" + str(rnd.randint(0, 99)), "lat": links_coord(rnd, 90), "lon": links_coord(rnd, 180)}
+        elif r < 0.62:
+            store = {"id": rnd.choice(["taco_bell@1,2", "dominos@40755,-73989", bstr, bstr + "x@1", "@"]), "lat": 40.7, "lon": -74}
+        elif r < 0.75:
+            store = None
+        else:
+            store = rnd.choice([{"id": bstr + "@1", "lat": 1}, {"id": 5, "lat": 1, "lon": 2}, "store", [], {"id": bstr + "@1"}])
+        S = {"brand": brand, "rest": rest, "store": store}
+        if rnd.random() < 0.03:
+            del S["store"]
+        if rnd.random() < 0.02:
+            S = rnd.choice([None, [], "S"])
+        data = rnd.choice(names) if rnd.random() < 0.97 else None
+        cases.append({"ch": ch, "S": S, "data": data})
+    return datasets, cases
+
+
+def links_checks(failures):
+    import contextlib
+    import io
+    import runpy
+    path = os.path.join(LINKS_FIX, "cases.json")
+    with open(path, encoding="utf-8") as fh:
+        current = fh.read()
+    build = os.path.join(LINKS_FIX, "build.py")
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "cases.json")
+        saved = sys.argv
+        sys.argv = [build, out]
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                runpy.run_path(build, run_name="__main__")
+        except SystemExit as e:
+            failures.append("links: build.py refused to write: %s" % e)
+        finally:
+            sys.argv = saved
+        fresh = open(out, encoding="utf-8").read() if os.path.exists(out) else None
+    if fresh != current:
+        failures.append("links: tests/fixtures/links/cases.json is stale: run python3 -I tests/fixtures/links/build.py tests/fixtures/links/cases.json")
+    doc = json.loads(current)
+    hand = doc["cases"]
+    if len(hand) < 80:
+        failures.append("links: only %d hand-worked cases (expected at least 80)" % len(hand))
+    bad = 0
+    for c in hand:
+        D = None if c["data"] is None else json.loads(json.dumps(doc["datasets"][c["data"]]))
+        if LK.for_channel(c["ch"], c["S"], D) != c["expect"]:
+            bad += 1
+            failures.append("links hand-worked %r, python reference disagrees" % c["id"])
+    print("oracle: links cases.json %s; %d/%d hand-worked cases match the python reference"
+          % ("is current" if fresh == current else "IS STALE", len(hand) - bad, len(hand)))
+    if not links_built(failures):
+        print("oracle: src/js/links.js is not built yet, so the JS links comparison is skipped")
+        return
+    rdata, rand = links_random_cases(doc["datasets"]["T"], SEED)
+    datasets = dict(doc["datasets"])
+    datasets.update({k: v for k, v in rdata.items() if k != "T"})
+    res = run_js_links(datasets, hand + rand)
+    if len(res) != len(hand) + len(rand):
+        failures.append("links: the JS runner returned %d results for %d calls" % (len(res), len(hand) + len(rand)))
+        return
+    seen = {}
+    for c in rand:
+        D = None if c["data"] is None else json.loads(json.dumps(datasets[c["data"]]))
+        for l in LK.for_channel(c["ch"], json.loads(json.dumps(c["S"])), D):
+            seen[l["kind"]] = seen.get(l["kind"], 0) + 1
+    print("oracle: links random links by kind: " + ", ".join("%s %d" % kv for kv in sorted(seen.items())))
+    for must in ("search", "app", "order", "dir", "map"):
+        if LINKS_N >= 1000 and seen.get(must, 0) < LINKS_N // 100:
+            failures.append("links random: kind %s seen only %d times" % (must, seen.get(must, 0)))
+    for name, group, rs in (("hand-worked", hand, res[:len(hand)]), ("random", rand, res[len(hand):])):
+        bad = 0
+        for c, r in zip(group, rs):
+            D = None if c["data"] is None else json.loads(json.dumps(datasets[c["data"]]))
+            exp = c["expect"] if name == "hand-worked" else LK.for_channel(c["ch"], json.loads(json.dumps(c["S"])), D)
+            got = r["v"] if r["ok"] else "JS error: " + r["err"]
+            if not r["ok"] or json.dumps(exp, sort_keys=True) != json.dumps(got, sort_keys=True):
+                bad += 1
+                if bad <= 5:
+                    failures.append("links %s ch=%s S=%s data=%s: expected %s, JS gave %s" % (
+                        name, json.dumps(c["ch"]), json.dumps(c["S"])[:160], c["data"], json.dumps(exp)[:200], json.dumps(got)[:200]))
+        print("oracle: links %s %d/%d calls match the JS" % (name, len(group) - bad, len(group)))
+
+
 def main():
     failures = []
 
@@ -1018,6 +1214,7 @@ def main():
     insights_checks(failures)
     vin_checks(failures)
     api_checks(failures)
+    links_checks(failures)
 
     for f in failures[:10]:
         print("FAIL " + f)
