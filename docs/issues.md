@@ -37,11 +37,6 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Next step:** build and test against recorded fixtures; deploy once the user provides the accounts.
 - **Update 2026-11-16 (D-040):** the providers are OpenStreetMap's (OSRM, Nominatim, Overpass), which take no key. Deploying needs only a Cloudflare account, a KV namespace, and a `USER_AGENT` naming the site and a contact (`worker/README.md`). Then `apiBase` in `src/js/config.js`.
 
-### ISS-005 — Pages serves only from `main`
-- **Opened:** 2026-11-11 by orchestrator · **Phase:** 10 · **Status:** open
-- **What:** Pages will deploy from `main`. Work happens on `claude/sharp-heisenberg-tbo63x`. **Update 2026-11-12:** the new repo (D-018) has no Pages workflow at all; the old `pages.yml` belonged to `zlepkowski/test`.
-- **Next step:** Phase 1 adds `.github/workflows/pages.yml` with the store-tile build step (D-011). The user turns Pages on in the repo settings (Settings → Pages → Source: GitHub Actions). The user also sets the default branch to `main` (Settings → General → Default branch). GitHub made `claude/sharp-heisenberg-tbo63x` the default because it was pushed first. Open a PR to `main` when the user asks. **Update 2026-11-12:** `.github/workflows/pages.yml` now exists (`69b429b`). It deploys only after the user turns Pages on and something is merged to `main`.
-
 ### ISS-007 — All The Places has gaps for some big chains
 - **Opened:** 2026-11-12 by orchestrator · **Phase:** 1 · **Status:** open
 - **What:** In run `2026-10-31-13-32-34`, `stats/_insights.json` shows **no US stores for McDonald's** (Q38076: no `US` entry in `atp_splits`). Some chains are partial: Pizza Hut 2,200 and Little Caesars 2,316 against roughly 6,500 and 4,200 real US stores. Qdoba shows 5,786 against well under 1,000 real, which is probably duplicates. **Wonder isn't in ATP at all.**
@@ -230,6 +225,12 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Next step:** none while 2026-10-31 is in the window. Watch the weekly log's "skipped" lines. If damaged spider files keep appearing, consider a per-brand fallback to an older run (the ISS-007 / ISS-039 idea) by decision.
 
 ## Closed
+
+### ISS-005 — Pages serves only from `main`
+- **Opened:** 2026-11-11 by orchestrator · **Phase:** 10 · **Status:** closed 2026-11-16 (Phase 10)
+- **What:** Pages will deploy from `main`. Work happens on `claude/sharp-heisenberg-tbo63x`. **Update 2026-11-12:** the new repo (D-018) has no Pages workflow at all; the old `pages.yml` belonged to `zlepkowski/test`.
+- **Next step:** Phase 1 adds `.github/workflows/pages.yml` with the store-tile build step (D-011). The user turns Pages on in the repo settings (Settings → Pages → Source: GitHub Actions). The user also sets the default branch to `main` (Settings → General → Default branch). GitHub made `claude/sharp-heisenberg-tbo63x` the default because it was pushed first. Open a PR to `main` when the user asks. **Update 2026-11-12:** `.github/workflows/pages.yml` now exists (`69b429b`). It deploys only after the user turns Pages on and something is merged to `main`.
+- **Resolution (2026-11-16):** the owner switched the default branch to `main`, turned Pages on (Source: GitHub Actions) and added `main` to the `github-pages` environment's deployment branches (Pages had been turned on while the default was still the old branch, so the environment allowed only that branch and refused Pages run #1's deploy). PR #1 shipped v5 to `main` (`c2bb677`); Pages run #2 (`a1f2206`) built and deployed `https://zlepkowski.github.io/Delivery-vs-Takeout/` (`deploy-pages`: "Reported success!").
 
 <!-- Move entries here with the closing commit or decision. -->
 
