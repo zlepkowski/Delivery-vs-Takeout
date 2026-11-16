@@ -44,6 +44,16 @@ const NEARBY = { '45.834,-109.95/5': SMALL };
 const HEADERS = { 'Access-Control-Allow-Origin': 'null', 'Vary': 'Origin', 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 const DRIVE_KEY_BT = '45.834,-109.950;45.670,-110.546';                                  // POD.api.driveKey, fmt3 strings
 const WARN = "Pickup or Delivery: the map server didn't answer, so built-in estimates are used.";
+// Chromium's own console error for a request that fails or answers non-2xx (UI contract §0): page code
+// can't suppress it, so a test that causes one allows exactly that message, exactly that many times.
+const BROWSER_ERR = {
+  404: 'Failed to load resource: the server responded with a status of 404 (Not Found)',
+  500: 'Failed to load resource: the server responded with a status of 500 (Internal Server Error)',
+  abort: 'Failed to load resource: net::ERR_FAILED',
+};
+function onlyBrowserErrors(errors, text, n, where) {
+  assert.deepEqual(errors, Array(n).fill(text), where + ': only the browser\'s own resource error, ' + n + ' time(s)');
+}
 
 let browser;
 let off;
@@ -211,8 +221,11 @@ test('Worker on: independents near Big Timber widen 2 → 5 mi, drop the untagge
   assert.deepEqual(rows.map(([b]) => b), ['osm:n1021', 'osm:n1001', 'osm:n1007', 'osm:n1010', 'osm:n1015', 'osm:n1014',
     'osm:n1002', 'osm:w2001', 'osm:n1016', 'osm:n1005'], 'nearest first (the Worker\'s order, from the same point); 13 - Subway = 12, show 10');
   assert.deepEqual(rows.map(([, i]) => i), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
-  assert.match(rows[0][2], /^Fixture y{109}\u{1F355}.*0\.0 mi.*Estimate/u, 'a 119-unit name with an emoji is shown whole');
-  assert.match(rows[1][2], /^Fixture Diner.*0\.1 mi.*Estimate/);
+  // Each row shows the name, mi1(mi) + " mi" and the tag (UI contract §5.2), in the chain rows' layout.
+  const has = (t, parts) => parts.every((x) => t.indexOf(x) >= 0);
+  assert.ok(rows[0][2].startsWith('Fixture ' + 'y'.repeat(109) + '\u{1F355}'), 'a 119-unit name with an emoji is shown whole');
+  assert.ok(has(rows[0][2], ['0.0 mi', 'Estimate']), rows[0][2]);
+  assert.ok(rows[1][2].startsWith('Fixture Diner') && has(rows[1][2], ['0.1 mi', 'Estimate']), rows[1][2]);
   assert.equal(await H.text(o.page, '[data-testid="indie-note"]'),
     "From OpenStreetMap. We don't know which apps list these places: turn off any app that doesn't.");
 
@@ -238,7 +251,7 @@ test('Worker on: independents near Big Timber widen 2 → 5 mi, drop the untagge
   assert.deepEqual(await H.shownResults(o.page), H.wantResults(exp));
   assert.ok(!exp.R.some((r) => r.id === 'direct-d'), 'no direct delivery for an unprofiled place (D-006)');
   assert.equal(o.warns.filter((w) => w === WARN).length, 1, 'one warning for the failed /drive');
-  assert.deepEqual(o.errors, []);
+  onlyBrowserErrors(o.errors, BROWSER_ERR[404], 1, 'the /drive with no road route');
   await o.page.screenshot({ path: path.join(H.SHOTS, 'worker-independents-desktop.png'), fullPage: true });
 
   // A reload brings the independent back from S.place before /nearby answers.
@@ -293,7 +306,8 @@ for (const mode of ['500', 'garbage', 'abort']) {
     assert.equal(await appHtml(b.page), await appHtml(a.page), '#app is identical');
     assert.deepEqual(await H.shownResults(b.page), await H.shownResults(a.page));
     assert.equal(b.warns.filter((w) => w === WARN).length, 1, 'exactly one console.warn per page load');
-    assert.deepEqual(b.errors, [], 'never console.error');
+    if (mode === 'garbage') assert.deepEqual(b.errors, [], 'a 200 with a bad body logs nothing');
+    else onlyBrowserErrors(b.errors, BROWSER_ERR[mode === '500' ? 500 : 'abort'], b.api.length, mode);   // the page itself never console.errors
     await a.ctx.close();
     await b.ctx.close();
   });
