@@ -215,7 +215,6 @@
         nearRows = stores;
         if (S.store) {
           for (i = 0; i < n; i++) { if (stores[i].id === S.store.id) { pStore = i; break; } }
-          if (pStore >= SHOWN_NEAR) { pStore = -1; }     // a pressed row must be shown to fold the list
         }
         // D-043 folding: no query, not expanded, and a shown row pressed (ui-contract §5.2).
         folded = q === "" && !view.moreStores && (pStore >= 0 || pInd >= 0);

@@ -518,6 +518,7 @@ test('results: the missing list follows the contract order; rows carry best, mem
 
 test('wallet: tier tags, and a credit with nowhere to apply is refused', async () => {
   const { ctx, page, errors } = await H.openPage(browser, site.url);
+  await H.openDrawer(page);                  // the wallet lives in Personalize (D-043)
   await tick(page, '[data-action="toggle-card"][data-card="amex_delta_gold"]');
   await tick(page, '[data-action="toggle-card"][data-card="amex_platinum"]');
   const locked = page.locator('[data-testid="credit"][data-key="amex_delta_gold.rideshare"]');
