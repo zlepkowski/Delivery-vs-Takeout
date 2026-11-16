@@ -139,12 +139,21 @@ test('first visit (phone): ≤ 8 visible controls, ≤ 1.5 screens, no horizonta
   assert.equal(await page.getAttribute('#app', 'aria-live'), null, '#app is no longer a live region');
   assert.equal(await page.getAttribute('#results', 'aria-live'), 'polite');
   assert.equal(await page.getAttribute('#insights', 'hidden'), '', 'no insights yet: the section is hidden');
+  // §5.10: the fine print folds behind its toggle, and opens on a tap.
+  assert.equal(await page.getAttribute('#fine-toggle', 'aria-expanded'), 'false');
+  assert.equal(await page.getAttribute('#fine-toggle', 'data-action'), 'fine');
+  assert.equal(await page.locator('[data-testid="fine-body"]').isVisible(), false, 'the fine print starts folded');
+  assert.ok((await H.text(page, '[data-testid="fine-body"]')).includes('Numbers marked est. are estimates.'), 'its text is on the page');
 
   // D-042: the typical car means a first visit doesn't ask for a car.
   const missing = await H.text(page, '[data-testid="missing"]');
   assert.equal(missing, 'To compare, we still need: a restaurant, your ZIP or address.');
   assert.equal(await H.text(page, '[data-testid="more-summary"]'), moreSummary(H.expected(await H.saved(page) || '{}').S));
   await shot(page, 'quick-first-phone');
+  await page.click('#fine-toggle');
+  assert.equal(await page.getAttribute('#fine-toggle', 'aria-expanded'), 'true');
+  assert.ok(await page.locator('[data-testid="fine-body"]').isVisible(), 'a tap opens the fine print');
+  assert.ok(await H.noHorizontalScroll(page) <= 0, 'no horizontal scroll with the fine print open');
   assert.deepEqual(errors, []);
   await ctx.close();
 });

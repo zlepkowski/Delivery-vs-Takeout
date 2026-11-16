@@ -35,7 +35,7 @@ afterChange(POD.state.derive(POD.S, POD.data, new Date(), POD.opts))   // load d
 
 A saved independent is put back in `D.PLACES` even with the Worker off, so a returning user's pick still prices.
 
-`view` is the page's own state, never saved. It starts as `{moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false, vin: "", vinMsg: "", drawer: false, open: {}, q: ""}` (D-043: `drawer` is whether Personalize is open; `open[ch] === true` when route `ch`'s row is expanded; `q` is the search box's text).
+`view` is the page's own state, never saved. It starts as `{moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false, vin: "", vinMsg: "", drawer: false, open: {}, q: "", fine: false}` (D-043: `fine` is whether the fine print is open; `drawer` is whether Personalize is open; `open[ch] === true` when route `ch`'s row is expanded; `q` is the search box's text).
 
 `afterChange(status)` (§3) then loads any tiles the trip or the "Near you" list needs, saves and renders. `POD.boot` is also callable again (the e2e doesn't need it).
 
@@ -57,7 +57,7 @@ Phone (≤ 760 px): one column in DOM order. Desktop (> 760 px): two columns, `l
 | `car` | Your car | §5.7 (in `#more`) |
 | `wallet` | Memberships and cards | §5.8 (in `#more`) |
 | `settings` | Fees, tips and costs | §5.9 (in `#more`) |
-| `fine` | Where the numbers come from | §5.10 |
+| `fine` | (none: its toggle is its head, §5.10) | §5.10 |
 
 A heading is an `h2`, the section's first child; `#trip`, `#car`, `#wallet` and `#settings` keep `h2` too. `section#results` has `aria-live="polite"`, and `#app` no longer does (`index.html`).
 
@@ -99,6 +99,7 @@ A heading is an `h2`, the section's first child; `#trip`, `#car`, `#wallet` and 
 | `more-stores` | | shows every row of the "Near you" list (page-only flag, not saved) |
 | `vin` | | the VIN lookup (§6b) |
 | `drawer` | | `view.drawer = !view.drawer`; render (D-043). `S` is unchanged, so nothing is saved. |
+| `fine` | | `view.fine = !view.fine`; render (D-043, §5.10). Nothing is saved. |
 | `receipt` | `data-channel` | `view.open[ch] = view.open[ch] !== true`; render (D-043). |
 | `chip` | `data-amount` (`15`, `25`, `40`) | `setPath(S, "manualSubtotal", parseFloat(amount))`, then `afterChange(derive)` (D-043) |
 
@@ -225,6 +226,8 @@ Each a labeled `input type="number"` with `data-bind` and `id` = the path with `
 *Amended by D-042:* each number input in this section, in the car section (§5.7: `input#mpg`) and in §5.5 step 4, whose `data-bind` path is in the state contract §4.8 key map gets the badge `span.est[data-testid="est-{id}"]` `"est."` (`id` = the input's `id`) **inside its `label`**, after the label text, while `POD.state.sourceOf(S, D, path) === "est"`. Inside the label, so the `.fields` grid keeps its number of children and the input is never replaced when the badge comes or goes. The label text before the badge is unchanged. Typing a value that differs from the estimate removes the badge here and from the rows that used it (§5.5 `estOf`).
 
 ### 5.10 `fine`
+
+*Amended by D-043 (CI measured the first visit at 1319 px, over the 1266 px budget: Linux fonts wrap the fine print more):* the fine print folds. The section's first child is `button.fine-toggle#fine-toggle` with `data-action="fine"` and `aria-expanded` (`"true"` when `view.fine`), holding `span` `"Where the numbers come from"` and an empty `span.chevron[aria-hidden="true"]`; its HTML depends only on `view.fine`. The second and last child is `div.fine-body[data-testid="fine-body"]`, with the `hidden` attribute unless `view.fine`, holding every line below, unchanged (so their hooks and texts are as before, only folded). Closed on every page load.
 
 Plain text: the store data `"Restaurant locations: All The Places (CC-0), run {BRANDS_RUN}."`, `"App listings come from the chains' and apps' own announcements, some several years old: check the app."` (ISS-030), `"Card credits: each issuer's card page, as of {the latest asOf in D.CARDS}."`, `"Gas: U.S. EIA weekly retail prices (week of {GAS_WEEK}). Meal tax: state rates. Fuel economy: EPA, by model year."` (when `D.GAS_WEEK` is a string matching `/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/`; otherwise the same without the parenthesis: `"Gas: U.S. EIA weekly retail prices. Meal tax: state rates. Fuel economy: EPA, by model year."`, D-039), `"A VIN lookup goes from your browser to NHTSA's free decoder (vPIC). The VIN isn't saved."` (D-038), and, *amended by D-042*, `[data-testid="fine-est"]` `"Numbers marked est. are estimates. Most app fees aren't published, so each comes from the app's own page, from real checkouts (the middle of at least two, in different places) or from a published survey. App menu prices use a typical markup for the restaurant's kind of food, an estimate too. The typical car is the U.S. on-road average from EIA. Make any of them yours in Personalize."` (in place of D-032's "Every app fee left blank…"), then `[data-testid="fine-links"]`: `"Links open each app, the restaurant's own site or Google Maps. Your order doesn't carry over, so add your items there. A link carries only the restaurant's name or the store's location, never your address."` (D-041). When the page shows anything from the Worker (`S.milesSrc === "drive"`, `S.pos.src === "addr"`, or a non-empty independents list), one more line `[data-testid="fine-osm"]`: `"Road distances, street addresses and independent restaurants: OpenStreetMap (© OpenStreetMap contributors, ODbL), through this site's server."` (D-040).
 
