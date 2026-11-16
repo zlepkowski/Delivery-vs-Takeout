@@ -315,13 +315,16 @@ def main():
         "    premium: %s, // EMM_EPMP_PTE_NUS_DPG - EMM_EPMR_PTE_NUS_DPG\n"
         "    diesel: %s // EMD_EPD2D_PTE_NUS_DPG - EMM_EPMR_PTE_NUS_DPG\n"
         "  };\n"
+        "  // EIA week of every gas price in this file (D-039); shown in the fine print.\n"
+        "  root.POD.data.GAS_WEEK = \"%s\";\n"
         "})(typeof window !== \"undefined\" ? window : this);\n"
     )
     rows_sorted = sorted(zip(codes, lines), key=lambda x: x[0])
     body = body % (week, "\n".join(l for _, l in rows_sorted), week,
                    js_num(str(grade_add["midgrade"]) if grade_add["midgrade"] is not None else None),
                    js_num(str(grade_add["premium"]) if grade_add["premium"] is not None else None),
-                   js_num(str(grade_add["diesel"]) if grade_add["diesel"] is not None else None))
+                   js_num(str(grade_add["diesel"]) if grade_add["diesel"] is not None else None),
+                   week)
 
     with open(args.out, "w", encoding="utf-8", newline="\n") as f:
         f.write(header + body)
