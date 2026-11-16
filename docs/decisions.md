@@ -406,3 +406,23 @@ BUILD.md §11's `/vehicle?vin` without a server (D-004). [`docs/vin-contract.md`
 - not a rule: "a card that adds exports names the API-enumerating test tables" (7.4, 022089e). An orchestrator card lesson, once; the fix belongs in the card's CONTEXT line, not a worker skill
 - not a rule: ISS-037 (setPath bypasses setCar), latent and logged; waits for a state-contract amendment
 - not a rule: frontend "Where things live" lacks `src/js/vin.js` (POD.vin); outside Learned rules, orchestrator to decide
+
+### Phase 8 (2026-11-16): reflector proposal, approved by the orchestrator with two fixes (backend: the seam uses `XMLHttpRequest`, not `fetch`; frontend: the block-count rule's evidence was a review hazard, not an observed lost click)
+- backend: ~ Layout, endpoint table, Providers, Cache, Secrets, CORS, seam and Testing rewritten to `docs/api-contract.md` (D-040): `/drive`, `/geocode`, `/nearby` on OSRM, Nominatim and Overpass, no keys, Workers KV; `/nearest`, `/fuel`, `/vehicle` and `mapbox.js` removed
+- backend: + bound every upstream and KV call in time (eaa7be9 blocker, f53891b)
+- backend: + a cached value is a hit only with the shape the code stored (7c0ab6d)
+- backend: + parse provider and user values by an explicit grammar; lengths in UTF-16 units (eaa7be9 review, be8813f)
+- backend: + an OSM id must be a safe integer (eaa7be9 review)
+- frontend: ~ file table: `config.js`, and what `api.js` holds and where it loads (D-040)
+- frontend: ~ restaurant model: the Worker's road distance (`milesSrc "drive"`), independents in `D.PLACES` (D-040)
+- frontend: ~ block-replace rule: a block that arrives last is appended; a count change touches only the tail (81a86d8, review of 8.4b)
+- frontend: + a new block with nothing to show adds no markup (4ac3bb9 blocker, 2320149)
+- test-runner: ~ browser resource errors: any failed request (404, 5xx, abort), exact and counted (e2bca28)
+- test-runner: + parallel workers use their own scratch subdirectories (Phase 8 mutant collision)
+- test-runner: + compute both sides of a boundary in the reference; assert hand guesses there (ISS-041, be8813f)
+- test-runner: + an "unchanged" test compares against the old commit's build (2320149)
+- test-runner: + race a promise that may never settle against a timer that holds the event loop (eaa7be9)
+- code-review: + blocker: an unbounded await on a provider or KV, or a cached value used without a shape check (eaa7be9, 7c0ab6d)
+- code-review: + blocker: an "unchanged" claim tested against new code (2320149)
+- data-research: no change (no researcher task in Phase 8)
+- not a rule (one occurrence each): `__proto__` as an own key (99b4cee); a test sandbox that led a builder to copy helpers (99b4cee); the reviewer's "no D-040 state tests" false positive; an e2e regex that forced a row layout; the 8.4a DONE WHEN that ran a next-task e2e

@@ -1,26 +1,26 @@
 # Progress
 
-**Current phase:** 8 (Phase A backend: Worker behind the seam) is **in progress** (log below). The user's goal: Phase 8 checked off and `npm test` exits 0
+**Current phase:** 8 (Phase A backend: the Worker behind the seam) is **done**. Next is **Phase 9 (Phase E: deep links)**, to start in a **fresh session**, with the user's `/goal`
 **Last updated:** 2026-11-16
-**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/phase-7-vin-lookup-refresh-3kq5sh` (the Phase 7 session branch, fast-forwarded from `claude/awesome-goodall-4qdauw` at `02db8d6`, the Phase 6 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
+**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/charming-heisenberg-wag8bg` (the Phase 8 session branch, fast-forwarded from `claude/phase-7-vin-lookup-refresh-3kq5sh` at `556bc34`, the Phase 7 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
 ## Resume here
 
 1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **Phase 8 (Phase A backend, BUILD.md §11 Phase A, D-004):** a Cloudflare Worker under `worker/` behind the browser seam `src/js/api.js`, used only when it's configured. Done when: fixture tests pass, and the site is identical with the Worker off. Same pattern: an API contract by a decision first (which endpoints: `/nearest` driving distance instead of straight line × 1.25, `/geocode`, maybe `/fuel`; `/vehicle` is already done in the browser by D-038), recorded fixtures, then the api-builder (backend skill).
-4. **What Phase 8 inherits from Phase 7:**
-   - Seven contracts: engine (D-029, D-033, D-036), state (D-031, D-033, D-036, D-037), geo (D-030), insights (D-034, D-036), UI (D-035, D-036, D-037, D-038, D-039), VIN (D-038). The geo contract §11 already names Phase 8's seam: driving distance from a routing API through `api.js`.
-   - The car is `(make, model, year)`; `CAR_YEARS` gives EPA figures for model years 2000 on (D-037). The VIN goes from the browser to NHTSA and isn't saved (D-038).
-   - The Pages build (D-039, amended) rebuilds `states.js` (EIA gas, `GAS_WEEK`) and the store tiles every Monday, runs 5 gates in `tools/check-site.js`, and falls back over up to 3 ATP runs. `pages.yml` has a `dry_run` dispatch input.
-   - Tests: `--test-name-pattern` with a negative lookahead doesn't filter on this Node; use `--test-skip-pattern`.
+3. **Phase 9 (Phase E: deep links, BUILD.md §11 Phase E, D-016: deep links don't pre-fill carts):** every result row hands off to the app or the restaurant's own site. Done when: link-builder tests pass and every result row hands off. Same pattern: a contract by decision first (which URL per channel and app; what an unprofiled chain or an independent links to; nothing invented: a link with no confirmed format is left out), references and e2e first, then the builder.
+4. **What Phase 9 inherits from Phase 8 (D-040):**
+   - Eight contracts: engine, state, geo, insights, UI, VIN, and now **API** (`docs/api-contract.md`). The UI contract's §2 render rule changed: on a block-count change the leading blocks are kept and only the tail is appended or removed, and a block is patched one level down only when its own tag and attributes match.
+   - **The Phase 7 baseline e2e** (`tests/e2e/worker.e2e.js`, `BASE_REV = '556bc34'`) requires `#app` with the Worker off to be byte-identical to the Phase 7 page. **Phase 9 changes the page on purpose (links in result rows), so it must re-baseline that test by decision first**: e.g. keep the guarantee as "the Worker adds nothing to the page" by comparing Worker-off against Worker-on-failing on the same new code plus the Phase 8 tip (`4ac3bb9` or later) for everything outside the result rows. CI fetches the full history for it.
+   - Independents are unprofiled brands with ids `osm:n…`/`osm:w…`/`osm:r…` in `D.PLACES` and `S.place`; a deep link for one has only its name and point (OpenStreetMap), no website unless OSM has one.
+   - The Worker is **off** in the committed site (`src/js/config.js` `apiBase: ""`). Deploying it is the user's (ISS-004, `worker/README.md`).
 5. **Open questions carried forward:**
-   - **ISS-004 (needs the user for deploys only):** a Cloudflare account and a Mapbox token or Google key. Build and test against recorded fixtures without them.
+   - **ISS-004 (the user, for the Worker deploy only):** a Cloudflare account; no keys are needed now.
+   - **ISS-040:** the Overpass fixtures are constructed; one real recording closes it (the exact request is in `tests/fixtures/api/README.md`).
    - **ISS-036, ISS-032 (need the user):** per-item app prices; stacked ZIP coordinates.
-   - ISS-034 (app fees typed by the user), ISS-035 (no direct-only deals), ISS-030, ISS-031, D-028.
-   - **New:** ISS-037 (`setPath` can bypass `setCar`; latent), ISS-039 (ATP's 2026-11-07 run has a cut-off Taco Bell file; the weekly build falls back to 2026-10-31 until ATP republishes).
-6. **Network:** the environment **Delivery-vs-Takeout** is at the 20-host cap. On 2026-11-16 `about.grubhub.com` (it refused every connection) was swapped for `vpic.nhtsa.dot.gov` (ISS-001). Recording Phase 8 fixtures may need a routing or geocoding host (e.g. `router.project-osrm.org`, `api.mapbox.com`): ask the user which host to swap before the work starts.
-7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). The weekly schedule runs only from the default branch, and the site deploys only from `main`. Merge to `main` only by a PR the user asks for.
+   - ISS-034, ISS-035, ISS-030, ISS-031, ISS-037, ISS-039, D-028.
+6. **Network:** the environment **Delivery-vs-Takeout** is at the 20-host cap, now with `router.project-osrm.org`, `nominatim.openstreetmap.org` and `overpass.kumi.systems` (ISS-001). Phase 9 needs no network unless a link format must be checked on an app's site: ask the user which host to swap first.
+7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
 
@@ -41,7 +41,7 @@
 | — | **v4 parity milestone** | | | |
 | 6 | Phase B: per-item markup | Opus (oracle) → builder | ✅ done | Oracle updated first (`0b2d290`, before any code); BOGO cases pass (receipt r15, 17 cases; 4 insight fixtures; 4 e2e); profiles migrated to object items (`1359cf6`, shape only) |
 | 7 | Phase A static: VIN lookup, weekly gas + store refresh | Opus (contracts, references, e2e) → researcher + builder | ✅ done | Big Timber → Domino's ≈ the real ~33 mi (38.6 mi one way from the Livingston store, +17%; the old estimator said 10.4); the scheduled refresh passes a dry run (live sources, fresh caches, every gate) |
-| 8 | Phase A backend: Worker behind the seam | api-builder | ⬜ | Fixture tests pass; the site is identical with the Worker off |
+| 8 | Phase A backend: Worker behind the seam | Opus (contract, references, e2e) → api-builder + builder | ✅ done | Fixture tests pass (103 hand-worked Worker cases + 67 Worker unit tests, 140 seam cases + 30 `send()` tests, 2,000 seeded seam calls vs the Python reference); the site is identical with the Worker off (`#app` byte-identical to the Phase 7 page built from git, in 3 flows, and with the Worker failing 4 ways) |
 | 9 | Phase E: deep links | builder | ⬜ | Link-builder tests pass; every result row hands off |
 | 10 | Ship | tester + Opus | ⬜ | CI green; BUILD.md updated to v5; live on Pages after the merge to `main` |
 
@@ -65,7 +65,7 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
-### Phase 8: Phase A backend: the Worker behind the seam (2026-11-16)
+### Phase 8: Phase A backend: the Worker behind the seam (2026-11-16, done)
 
 Branch `claude/charming-heisenberg-wag8bg` (this session's; fast-forwarded to `claude/phase-7-vin-lookup-refresh-3kq5sh` at `556bc34`, the Phase 7 tip). User decisions at the start: **OpenStreetMap providers** (OSRM, Nominatim, Overpass; no keys), the **host swap** (newsroom.aaa.com, rosap.ntl.bts.gov and www.dunkindonuts.com out; router.project-osrm.org, nominatim.openstreetmap.org and overpass.kumi.systems in; ISS-001), and **independents in Phase 8**.
 
@@ -78,6 +78,7 @@ Branch `claude/charming-heisenberg-wag8bg` (this session's; fast-forwarded to `c
 | 8.4a builder: `src/js/config.js`, `src/js/api.js`, `restFor` independents, `state.js` D-040; review APPROVE + fix round (`__proto__` as an own key, the 1000-mile bound) | ✅ api-cases 140, scenarios 173, oracle 2,000/2,000 | `99b4cee` |
 | 8.4b builder: `app.js`, `render.js`, css; review CHANGES-REQUESTED (an empty wrapper in `#near` with the Worker off), fix round, re-review APPROVE; patchChildren keeps leading blocks on a count change | ✅ worker.e2e 12/12 (incl. byte-identical to the Phase 7 page built from git); all e2e 54/54 | `4ac3bb9` |
 | 8.5 tester: `worker.test.js` (67: methods, paths, odd queries, every provider's timeout, a network guard) and `api-send.test.js` (30: `send()` with a fake XHR); both reviewed, fix rounds, mutants caught | ✅ | `f53891b`, `ccd3937` |
+| 8.6 Close: full suite from a fresh clone at `4ac3bb9` with its own `npm ci` (76 s: es5 18 files, 1,243 unit, every oracle line incl. api 133/133 + 2,000/2,000, 54 e2e); screenshots reviewed at 390 and 1280 px (the tag-breaking bug found and fixed); reflector approved with two fixes | ✅ | this commit |
 
 **Phase 8 notes for a resuming session.**
 - **Deploying the Worker** (ISS-004, the user's): `worker/README.md`: a Cloudflare account, a KV namespace, `USER_AGENT` as a secret, `ALLOW_ORIGINS`, then `apiBase` in `src/js/config.js`. Committed `apiBase` is `""`: the Worker is off.

@@ -56,6 +56,8 @@ CHECKED: the checklist items that apply to this diff and passed, e.g. 1, 4, 5, 8
 ## Learned rules
 
 <!-- The reflector adds rules here. Each one cites its evidence. -->
+- **Blocker, unbounded or unchecked external data: an `await` on a provider or KV with no time bound, or a cached value used without a shape check.** A hung KV `get` held a Worker request open forever, and a cached `{"ok": null}` was served as a 200 (eaa7be9, 7c0ab6d).
+- **Blocker, an "unchanged" claim tested against new code.** Check that the comparison builds the old commit. The first worker-off check compared two copies of the new page and passed an empty wrapper (4ac3bb9; 2320149).
 - **Blocker, mapping tables: check each changed row against the source, not against the tests.** DE, DC and MD on the wrong PADD passed every test (c539fc3).
 - **Blocker, platform citations: a `platforms` claim cited to Drive, a "powered by" story, a white-label deal or an unopened snippet is a phantom platform.** Open the URL and check it's a marketplace listing. Little Caesars cited a Drive deal (e1bc046); Domino's cited a snippet (ec5e627).
 - **Profile diffs: spot-check every item name (size, piece count, spelling) against the cited page, and open one URL per platform.** The 1.7 medians re-fetched correctly; the errors were in names and citations (ec5e627, 7af787d, 0a4262b).

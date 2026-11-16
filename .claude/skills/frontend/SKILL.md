@@ -20,7 +20,8 @@ The spec is `docs/BUILD.md`. Where this skill and the spec differ, this skill wi
 | `src/js/vin.js` | `POD.vin` | `clean`, `check`, `url`, `decode`, `key`, `match`: the VIN box's pure half (`docs/vin-contract.md`, D-038). Loads after `state.js`; `match` calls `POD.state.carMakes`/`carModels`. The request itself is in `app.js` (UI contract §6b) |
 | `src/js/insights.js` | `POD.insights` | `build(F, R, now)` → `[{id, label, cls, text, data}]`: plain text and numbers, no HTML. Escape `text` once, in render (insights-contract.md, D-034) |
 | `src/js/links.js` | `POD.links` | deep-link builders (Phase 9) |
-| `src/js/api.js` | `POD.api` | optional backend seam (Phase 8) |
+| `src/js/config.js` | `POD.config` | `apiBase`: `""` committed, so the Worker is off. Loads right after `pod.js` (api-contract §6) |
+| `src/js/api.js` | `POD.api` | optional backend seam (Phase 8, D-040): pure helpers, `asks`, `placesFor`, `remember`, `send`. Loads after `geo.js`, before `state.js` |
 | `src/js/app.js` | `POD.boot` | event delegation + boot. Loaded last |
 
 ## File pattern (every file in src/js and src/data)
@@ -58,7 +59,7 @@ The gate does **not** catch newer **APIs**. Don't use `Array.prototype.includes/
 
 - `POD.ui.render(ctx)` **writes only the blocks whose HTML changed**, and is idempotent. Never replace the whole page: a full replace removed the button under the pointer when a text box committed on mousedown, so the click was lost (5f60686, 2f657df; ui-contract amendment). Restore focus by element `id` (D-035).
 - **Escape** every string from data or user input before it goes into `innerHTML` (`POD.util.esc`, added in Phase 5).
-- A block re-render (`isBlock`) that replaces a container holding a control the user clicks right after typing loses that click. Patch the sub-block: `.app-settings` and `.fields` are blocks too (3502730, b45868b).
+- Never replace a container that holds a control the user may click right after typing. A block that arrives last is appended. A count change patches the leading blocks and appends or removes only the tail. In Phase 8 an appended independents block changed `#near`'s block count, which used to replace the whole section, chain rows and brand select included, under a pending click (review of 8.4b; 81a86d8). Earlier: `.app-settings` and `.fields` are blocks too (3502730, b45868b; 5f60686).
 - Format money only with `POD.util.money`. Negative receipt lines render green, and `0` renders as "waived".
 - A box commits on `change`. An empty or unparsable number box is `null`, so the page asks for it; a typed `0` is a real value (D-035; the manualSubtotal 0 BLOCKED report, 2f657df).
 - A sticky panel needs `max-height` and `overflow-y: auto`. The sticky results card clipped the fee inputs until screenshots were reviewed (5f60686).
@@ -88,7 +89,8 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 
 ## Restaurant model (v5: decisions D-005 and D-006)
 
-- Restaurants come **from the user's location**, not a fixed list. State holds `S.brand` (a brand id) and `S.store` (`{id, lat, lon}`). The trip distance comes from the picked store: straight line × 2 × 1.25, rounded to 0.1 mi (`tripMiles`, geo-contract §6). `estimateMiles()` is only the fallback.
+- Restaurants come **from the user's location**, not a fixed list. State holds `S.brand` (a brand id) and `S.store` (`{id, lat, lon}`). The trip distance comes from the picked store: straight line × 2 × 1.25, rounded to 0.1 mi (`tripMiles`, geo-contract §6). `estimateMiles()` is only the fallback. When the Worker answers, its road distance replaces the estimate (`milesSrc "drive"`, miles × 2, D-040, api-contract §7). Minutes still come from `speed`.
+- Independents (D-040) are unprofiled brands whose record is in `D.PLACES`, not `D.BRANDS`. They have no menu or direct channel, like any unprofiled brand.
 - **Every `POD.geo` function takes the data tables as `D`** (`POD.data` in the app), reads nothing global, and returns `null` on bad input (D-030).
 - **Tile loading is the page's job (Phase 5).** `storesNear`/`nearestStore` return `status: "need"` with the cells to load. `app.js` loads each with `tilePath(cell)`, puts a failed load in `opts.failed[cell] = true`, and calls again. A tile from another `BRANDS_RUN` is never reloaded: the result stays `partial`. Tile URLs carry `?v=<BRANDS_RUN>` so a cached tile can't pair with a newer `brands.js`; that query string is checked to load over `file://` (D-035, geo-contract §9).
 - **Profiled brands** (`POD.data.PROFILES[brandId]`) have a menu, deal, per-platform markup, `directFee`, the `amexGoldDirect` flag and an optional `directSvc`.
@@ -112,6 +114,7 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 ## Learned rules
 
 <!-- The reflector adds rules here. Each one cites its evidence. -->
+- **A new block with nothing to show adds no markup.** When the feature is off or has no rows, the DOM must equal the previous phase's: an always-written empty wrapper in `#near` broke "byte-identical with the Worker off" (blocker, 4ac3bb9; 2320149).
 - **Never put a neutral number in a code fallback.** A missing table value makes the brand unpriceable (`null`). `restFor` gave `markup {}` (0%) for a missing category, so the apps looked cheaper (ba25e38, c4e21c4).
 - **A malformed optional input has no effect; it never throws.** A `directSvc` with no `modes` took down `allResults`, and a deal with no `scope` silently never applied. Guard each optional field (793577b, c4e21c4).
 - **Return copies, never references, and key every memo cache by the table it came from.** `restFor` shared `directSvc.modes` with `D` until it deep-copied (c4e21c4). A global spacing cache answered from another table, caught only by a file-order test (97ce6fe, c8e1e5c).
