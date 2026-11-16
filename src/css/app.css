@@ -132,6 +132,11 @@ label.check {
 
 .row > input { flex: 1 1 180px; }
 
+/* The VIN box: its label on a row of its own, then the input and Look up on one row (wraps on a phone). */
+.vin { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.vin > label { flex: 0 0 100%; }
+.vin > input { flex: 1 1 180px; min-width: 0; }
+
 .tag {
   display: inline-block;
   font-size: 0.75rem;

@@ -221,8 +221,11 @@ test('D-038 NHTSA unreachable, a server error, bad JSON or an undecodable VIN: a
     assert.equal(await H.text(page, '[data-testid="vin-status"]'), msg, how);
     assert.equal(await value(page, '#make'), 'Toyota', how);
     assert.equal(await H.text(page, '[data-testid="car-summary"]'), '46 mpg · regular', how);
-    // An aborted request makes the browser log its own net:: error, which the page can't suppress.
-    const own = errors.filter((e) => !(how === 'abort' && /net::ERR_CONNECTION_REFUSED|Failed to load resource/.test(e)));
+    // A refused connection and an HTTP 500 each make the browser log its own resource error, which the
+    // page can't suppress (UI contract §0). Only that message, only in that sub-case, is allowed.
+    const browserOwn = { abort: /net::ERR_CONNECTION_REFUSED|Failed to load resource/,
+      500: /^Failed to load resource: the server responded with a status of 500 \(Internal Server Error\)$/ };
+    const own = errors.filter((e) => !(browserOwn[how] && browserOwn[how].test(e)));
     assert.deepEqual(own, [], how);
     await ctx.close();
   }

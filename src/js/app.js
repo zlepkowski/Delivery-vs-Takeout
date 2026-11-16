@@ -9,7 +9,7 @@
   var POD = root.POD;
 
   // Page-only flags (not saved): see ui-contract §3 and §6.
-  var view = { moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false };
+  var view = { moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false, vin: "", vinMsg: "" };
   var requested = {};   // tile cells asked for in this page load
   var pending = 0;      // tile scripts in flight
   var storage = null;
@@ -160,8 +160,12 @@
     switch (action) {
       case "address": POD.state.setAddress(S, D, el.value, opts); break;
       case "brand": POD.state.setBrand(S, D, el.value === "" ? null : el.value, opts); break;
-      case "make": POD.state.setCar(S, D, el.value, ""); break;
-      case "model": POD.state.setCar(S, D, S.make, el.value); break;
+      case "make": POD.state.setCar(S, D, el.value, "", null); view.vinMsg = ""; break;
+      case "model": POD.state.setCar(S, D, S.make, el.value, S.year); view.vinMsg = ""; break;
+      case "year":
+        POD.state.setCar(S, D, S.make, S.model, el.value === "" ? null : parseInt(el.value, 10));
+        view.vinMsg = "";
+        break;
       case "toggle-card": POD.state.toggleCard(S, D, el.getAttribute("data-card"), el.checked, now); break;
       case "opt-in": POD.state.setOptIn(S, D, el.getAttribute("data-key"), el.checked, now); break;
       case "used": POD.state.markUsed(S, D, el.getAttribute("data-key"), el.checked, now); break;
@@ -211,6 +215,82 @@
     POD.state.setQty(S, 0, 1);
   }
 
+  // ---- the VIN lookup (D-038, ui-contract §6b) --------------------------------------------------
+
+  var VIN_CHECK_MSG = {
+    length: "A VIN has 17 letters and digits.",
+    chars: "A VIN uses only digits and the letters A–Z except I, O and Q.",
+    digit: "That VIN's check digit (its 9th character) doesn't match: check for a typo."
+  };
+  var VIN_FAIL = "Couldn't reach NHTSA's VIN decoder. Pick your car below.";
+  var VIN_TIMEOUT_MS = 10000;
+  var vinSeq = 0;   // the latest lookup's number; an older answer is ignored
+
+  function drawOnly() { POD.ui.render(ctx()); }
+
+  function vinFail() {
+    view.vinMsg = VIN_FAIL;
+    drawOnly();
+  }
+
+  /** Applies vPIC's answer to the car: POD.state.setCar, then the message (§6b). */
+  function vinApply(body) {
+    var dec = POD.vin.decode(body);
+    if (dec === null) {
+      view.vinMsg = "NHTSA couldn't decode that VIN. Pick your car below.";
+      drawOnly();
+      return;
+    }
+    var m = POD.vin.match(dec, POD.data);
+    if (m === null) { vinFail(); return; }
+    POD.state.setCar(POD.S, POD.data, m.make, m.model, m.year);
+    var car = dec.year + " " + dec.make + " " + dec.model;
+    if (m.make === "Other") {
+      view.vinMsg = "NHTSA says " + car + ". That make isn't in the EPA list: enter its fuel and mpg below.";
+    } else if (m.model === "") {
+      view.vinMsg = "NHTSA says " + car + ". Pick the model below: EPA's list names it differently.";
+    } else if (POD.state.carLookup(POD.data, m.make, m.model, m.year) === null) {
+      view.vinMsg = "NHTSA says " + car + ". EPA's list has no " + dec.year + " figure for it: enter its mpg below.";
+    } else {
+      view.vinMsg = "NHTSA says " + car + ".";
+    }
+    afterChange(derive());
+  }
+
+  function vinLookup() {
+    var el = document.getElementById("vin");
+    var v = POD.vin.clean(el ? String(el.value) : "");
+    var seq = ++vinSeq;
+    view.vin = v;
+    var c = POD.vin.check(v);
+    if (c !== "ok") {
+      view.vinMsg = VIN_CHECK_MSG[c];
+      drawOnly();
+      return;
+    }
+    view.vinMsg = "Looking up " + v + " with NHTSA…";
+    drawOnly();
+    if (!window.XMLHttpRequest) { vinFail(); return; }
+    var xhr;
+    try {
+      xhr = new XMLHttpRequest();
+      xhr.open("GET", POD.vin.url(v), true);
+      xhr.timeout = VIN_TIMEOUT_MS;
+      xhr.onload = function () {
+        if (seq !== vinSeq) { return; }
+        if (xhr.status !== 200) { vinFail(); return; }
+        var body;
+        try { body = JSON.parse(xhr.responseText); } catch (e) { vinFail(); return; }
+        vinApply(body);
+      };
+      xhr.onerror = function () { if (seq === vinSeq) { vinFail(); } };
+      xhr.ontimeout = function () { if (seq === vinSeq) { vinFail(); } };
+      xhr.send();
+    } catch (e2) {
+      vinFail();
+    }
+  }
+
   // ---- clicks (§3) ------------------------------------------------------------------------------
 
   function onClick(e) {
@@ -220,6 +300,7 @@
     if (!el) { return; }
     var action = el.getAttribute("data-action");
     if (action === "locate") { view.mcError = false; locate(); return; }
+    if (action === "vin") { vinLookup(); return; }
 
     var S = POD.S, D = POD.data, opts = POD.opts;
     var now = new Date();

@@ -2,7 +2,7 @@
  * render.js: the page's sections, POD.ui (docs/ui-contract.md §2 and §5).
  *
  * render(ctx) turns S, D and the page-only view flags into HTML strings and patches #app. ctx = { S, D,
- * opts, view, now }; view = { moreStores, geoError, loading, canLocate, mcError } is owned by app.js.
+ * opts, view, now }; view = { moreStores, geoError, loading, canLocate, mcError, vin, vinMsg } is owned by app.js.
  * The builders read only their arguments. The one module variable is the last "Near you" rows, so
  * data-store="{i}" maps back to a store for POD.state.pickStore.
  *
@@ -370,51 +370,82 @@
 
   // ---- car ---------------------------------------------------------------------------------------
 
-  function parseCarRow(row) {
-    var bar = row.indexOf("|");
-    var models = [];
-    var parts = row.slice(bar + 1).split(",");
-    for (var i = 0; i < parts.length; i++) {
-      var colon = parts[i].lastIndexOf(":");
-      models.push(parts[i].slice(0, colon));
-    }
-    return { make: row.slice(0, bar), models: models };
-  }
-
   function carSummary(S) {
     if (S.fuel === "ev" && isNum(S.miPerKwh)) { return S.miPerKwh + " mi/kWh · electric"; }
     if (isNum(S.mpg)) { return S.mpg + " mpg · " + S.fuel; }
     return "No car yet.";
   }
 
+  /**
+   * The VIN box (ui-contract §5.7, §6b): its value is the last lookup's cleaned VIN, and it has no binding.
+   * The block is patched inside (isBlock) and holds its three controls directly, so the click that changes
+   * view.vin replaces only the input, never the Look up button that was pressed.
+   */
+  function vinBlock(view) {
+    return '<div class="vin"><label for="vin">VIN (optional)</label>' +
+      '<input id="vin" type="text" autocomplete="off" spellcheck="false" maxlength="24" value="' +
+      esc(view.vin || "") + '"><button type="button" data-action="vin">Look up</button></div>';
+  }
+
+  /** The model-year select (ui-contract §5.7, item 7): Newest, every covered year newest first, then S.year if uncovered. */
+  function yearOptions(runs, year) {
+    var cur = isNum(year) ? year : null, newest = null, years = [], i, y, r;
+    for (i = 0; i < runs.length; i++) {
+      if (newest === null || runs[i].to > newest) { newest = runs[i].to; }
+    }
+    for (i = 0; i < runs.length; i++) {
+      r = runs[i];
+      for (y = r.to; y >= r.from; y--) { if (years.indexOf(y) < 0) { years.push(y); } }
+    }
+    years.sort(function (a, b) { return b - a; });
+    var out = '<option value=""' + (cur === null ? " selected" : "") + ">Newest (" + newest + ")</option>";
+    for (i = 0; i < years.length; i++) {
+      out += '<option value="' + years[i] + '"' + (cur === years[i] ? " selected" : "") + ">" + years[i] + "</option>";
+    }
+    if (cur !== null && Math.floor(cur) === cur && years.indexOf(cur) < 0) {
+      out += '<option value="' + cur + '" selected>' + cur + " (no EPA figure)</option>";
+    }
+    return out;
+  }
+
+  /** The car section (ui-contract §5.7): always 8 top-level blocks; an absent optional block is <div></div>. */
   function secCar(c) {
-    var S = c.S, D = c.D;
-    var rows = D.CAR_DATA.map(parseCarRow);
-    var makeRow = null, makeOpts = '<option value="">Choose a make…</option>';
-    for (var i = 0; i < rows.length; i++) {
-      makeOpts += '<option value="' + esc(rows[i].make) + '"' + (S.make === rows[i].make ? " selected" : "") + ">" +
-        esc(rows[i].make) + "</option>";
-      if (rows[i].make === S.make) { makeRow = rows[i]; }
+    var S = c.S, D = c.D, view = c.view;
+    var makes = POD.state.carMakes(D), listed = false, i;
+    var makeOpts = '<option value="">Choose a make…</option>';
+    for (i = 0; i < makes.length; i++) {
+      if (makes[i] === S.make) { listed = true; }
+      makeOpts += '<option value="' + esc(makes[i]) + '"' + (S.make === makes[i] ? " selected" : "") + ">" +
+        esc(makes[i]) + "</option>";
     }
     makeOpts += '<option value="Other"' + (S.make === "Other" ? " selected" : "") + ">Other</option>";
 
-    var h = '<p class="muted" data-testid="car-summary">' + esc(carSummary(S)) + "</p>";
+    var h = vinBlock(view);
+    h += none(view.vinMsg ? '<p data-testid="vin-status">' + esc(view.vinMsg) + "</p>" : "");
+    h += '<p class="muted" data-testid="car-summary">' + esc(carSummary(S)) + "</p>";
+    var fig = POD.state.carLookup(D, S.make, S.model, S.year);
+    h += none(fig !== null && isNum(fig.year) && Math.floor(fig.year) === fig.year ?
+      '<p class="muted" data-testid="car-epa">EPA figure for the ' + fig.year + " model.</p>" : "");
     h += '<div><label for="make">Make</label><select id="make" data-action="make">' + makeOpts + "</select></div>";
-    var found = false, modelBlock = "";
-    if (makeRow) {
-      var modelOpts = '<option value="">Choose a model…</option>';
-      for (var m = 0; m < makeRow.models.length; m++) {
-        var model = makeRow.models[m];
-        if (model === S.model) { found = true; }
-        modelOpts += '<option value="' + esc(model) + '"' + (S.model === model ? " selected" : "") + ">" +
-          esc(model) + "</option>";
+
+    var modelBlock = "";
+    if (listed) {
+      var models = POD.state.carModels(D, S.make), modelOpts = '<option value="">Choose a model…</option>';
+      for (var m = 0; m < models.length; m++) {
+        modelOpts += '<option value="' + esc(models[m]) + '"' + (S.model === models[m] ? " selected" : "") + ">" +
+          esc(models[m]) + "</option>";
       }
       modelBlock = '<div><label for="model">Model</label><select id="model" data-action="model">' + modelOpts +
         "</select></div>";
     }
-    h += none(modelBlock);
-    // Manual car inputs only for "Other", or a make and model that aren't in CAR_DATA (ui-contract §5.7).
-    var manual = S.make === "Other" || (makeRow !== null && S.model !== "" && !found);
+    h += modelBlock === "" ? "<div></div>" : modelBlock;
+
+    var runs = POD.state.carYears(D, S.make, S.model);
+    h += runs.length > 0 ? '<div><label for="year">Model year</label><select id="year" data-action="year">' +
+      yearOptions(runs, S.year) + "</select></div>" : "<div></div>";
+
+    // Manual car inputs only for "Other", or a listed make with a model and no figure for the year (ui-contract §5.7).
+    var manual = S.make === "Other" || (listed && S.model !== "" && fig === null);
     var manualBlock = "";
     if (manual) {
       var fuelOpts = "";
@@ -602,11 +633,15 @@
         if (typeof cr === "string" && cr > asOf) { asOf = cr; }
       }
     }
+    // The EIA week is shown only when it's a date (ui-contract §5.10, D-039).
+    var week = typeof D.GAS_WEEK === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(D.GAS_WEEK) ?
+      " (week of " + D.GAS_WEEK + ")" : "";
     var lines = [
       "Restaurant locations: All The Places (CC-0), run " + D.BRANDS_RUN + ".",
       "App listings come from the chains' and apps' own announcements, some several years old: check the app.",
       "Card credits: each issuer's card page, as of " + asOf + ".",
-      "Gas: U.S. EIA weekly retail prices. Meal tax: state rates. Fuel economy: EPA.",
+      "Gas: U.S. EIA weekly retail prices" + week + ". Meal tax: state rates. Fuel economy: EPA, by model year.",
+      "A VIN lookup goes from your browser to NHTSA's free decoder (vPIC). The VIN isn't saved.",
       "Every app fee left blank is one the app doesn't publish (D-032): enter what your checkout shows."
     ];
     var h = "";
@@ -619,7 +654,7 @@
   /** A block is patched inside, so a control the user is clicking keeps its element (D-035, §2). */
   function isBlock(el) {
     var cls = el.getAttribute("class") || "";
-    return el.tagName === "SECTION" || el.id === "side" || cls === "app-settings" || cls === "fields";
+    return el.tagName === "SECTION" || el.id === "side" || cls === "app-settings" || cls === "fields" || cls === "vin";
   }
 
   /**
