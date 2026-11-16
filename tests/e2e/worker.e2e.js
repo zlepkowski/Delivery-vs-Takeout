@@ -171,7 +171,7 @@ async function phase9Shape(page, where) {
   const s = await page.evaluate(() => ({
     rows: document.querySelectorAll('[data-testid="result-row"]').length,
     each: Array.from(document.querySelectorAll('[data-testid="result-row"]')).map((r) =>
-      r.querySelectorAll(':scope > [data-testid="handoff"]').length + ':' + r.querySelectorAll('[data-testid="handoff-link"]').length),
+      r.querySelectorAll('[data-testid="handoff"]').length + ':' + r.querySelectorAll('[data-testid="handoff-link"]').length),
     blocks: document.querySelectorAll('[data-testid="handoff"]').length,
     fine: document.querySelectorAll('[data-testid="fine-links"]').length,
   }));
@@ -417,10 +417,13 @@ test('Worker on: the independents arriving while a chain row is pressed don\'t l
 
 test('Worker on, phone width: the independents list fits (no horizontal scroll)', async () => {
   const o = await open(on, { viewport: { width: 390, height: 844 } });
-  await order(o.page, '59011');
+  await chooseZip(o.page, '59011');
+  // Before a pick the independents list is unfolded (UI contract §5.2); a chain pick folds it away.
   await o.page.waitForSelector('[data-testid="indie-list"]');
+  assert.ok(await H.noHorizontalScroll(o.page) <= 0, 'no horizontal scroll at 390 px, with the independents list');
+  await order(o.page, '59011');
   await H.waitText(o.page, '[data-testid="trip"]', '67.8 mi round trip');
-  assert.ok(await H.noHorizontalScroll(o.page) <= 0, 'no horizontal scroll at 390 px');
+  assert.ok(await H.noHorizontalScroll(o.page) <= 0, 'no horizontal scroll at 390 px, with the drawer open and an answer');
   await o.page.screenshot({ path: path.join(H.SHOTS, 'worker-phone.png'), fullPage: true });
   assert.deepEqual(o.errors, []);
   await o.ctx.close();
