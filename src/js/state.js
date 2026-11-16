@@ -22,9 +22,11 @@
     "storePicked", "manualSubtotal", "dealOn", "miles", "speed", "milesAuto", "tipDel", "tipPick",
     "wear", "hourly", "regFee", "smallMin", "smallFee"];           // §8
   var SAVED_COPIED = ["store", "place", "cart", "milesBy", "cards", "creditOptIn", "usedIn", "manualCredits"]; // §8
-  var NULLABLE_SAVED = ["mpg", "miPerKwh", "miles"];               // §8: may also be null
-  var NUMBER_SAVED = ["kwh", "manualSubtotal", "tipDel", "tipPick", "wear", "hourly",
+  var NULLABLE_SAVED = ["miPerKwh", "miles"];                      // §8: may also be null (D-042: not mpg)
+  var NUMBER_SAVED = ["mpg", "kwh", "manualSubtotal", "tipDel", "tipPick", "wear", "hourly",
     "regFee", "smallMin", "smallFee"];                             // §8
+  var TRIP_KEYS = ["mpg", "wear", "kwh", "speed"];                 // §4.8: "trip." + path
+  var TIP_KEYS = ["tipDel", "tipPick"];                            // §4.8: "tips." + path
   var BOOL_SAVED = ["dealOn", "milesAuto", "storePicked"];         // §8
   var STRING_SAVED = ["address", "make", "model"];                 // §8
   var CANON_INT = /^(0|[1-9][0-9]*)$/;                             // §8: cart keys
@@ -138,7 +140,7 @@
     var P = defaultsPart(D, "plats");
     var S = {
       address: "", pos: null, zip: null, zipRec: null, state: null, tax: null, gas: null,
-      make: "", model: "", year: null, fuel: "regular", mpg: null, miPerKwh: null, kwh: num(T.kwh),
+      make: "", model: "", year: null, fuel: "regular", mpg: num(T.mpg), miPerKwh: null, kwh: num(T.kwh),
       brand: null, rest: null, store: null, storePicked: false, place: null,
       cart: {}, manualSubtotal: 0, dealOn: true,
       miles: null, minutes: null, speed: num(T.speed), milesAuto: true, milesSrc: null, milesBy: {},
@@ -340,6 +342,59 @@
       return { fuel: best.fuel, mpg: best.mpg, miPerKwh: best.miPerKwh, year: best.to };
     }
     return carDataFigures(D, make, model);
+  }
+
+  // ---- §4.8 estimates (D-042) -----------------------------------------------------
+
+  /** The D.DEFAULTS key of a state path (§4.8), or null when the path has no default. */
+  function defaultKey(path) {
+    if (typeof path !== "string") { return null; }
+    var segs = path.split(".");
+    if (segs.length === 3 && segs[0] === "plats" && APPS.indexOf(segs[1]) >= 0 && APP_NUMS.indexOf(segs[2]) >= 0) {
+      return path;
+    }
+    if (segs.length !== 1) { return null; }
+    if (SHARED_FEES.indexOf(path) >= 0) { return "fees." + path; }
+    if (TRIP_KEYS.indexOf(path) >= 0) { return "trip." + path; }
+    if (TIP_KEYS.indexOf(path) >= 0) { return "tips." + path; }
+    return null;
+  }
+
+  /** The value at a dotted key of D.DEFAULTS, walking own keys; undefined when a step is missing. */
+  function defaultAt(D, key) {
+    var segs = key.split(".");
+    var cur = isObj(D) && hasOwn(D, "DEFAULTS") ? D.DEFAULTS : undefined;
+    for (var i = 0; i < segs.length; i++) {
+      if (!isObj(cur) || !hasOwn(cur, segs[i])) { return undefined; }
+      cur = cur[segs[i]];
+    }
+    return cur;
+  }
+
+  /** D.DEFAULT_SOURCES[key] when it's an object (own key), else {}. */
+  function sourceEntry(D, key) {
+    var table = isObj(D) && hasOwn(D, "DEFAULT_SOURCES") ? D.DEFAULT_SOURCES : undefined;
+    return isObj(table) && hasOwn(table, key) && isObj(table[key]) ? table[key] : {};
+  }
+
+  /** {value, est, source} for a path's default, or null when it has none (a new object each call). */
+  function defaultOf(D, path) {
+    var key = defaultKey(path);
+    if (key === null) { return null; }
+    var v = defaultAt(D, key);
+    if (!isNum(v)) { return null; }
+    var e = sourceEntry(D, key);
+    return { value: v, est: e.est === true, source: isStr(e.source) ? e.source : null };
+  }
+
+  /** Where a path's current value comes from: "est", "published", "you", or null when it isn't a finite number. */
+  function sourceOf(S, D, path) {
+    var v = getPath(S, path);
+    if (!isNum(v)) { return null; }
+    if (path === "mpg" && carLookup(D, S.make, S.model, S.year) !== null) { return "published"; }
+    var d = defaultOf(D, path);
+    if (d !== null && v === d.value) { return d.est ? "est" : "published"; }
+    return "you";
   }
 
   // ---- §4.1 applyCar ---------------------------------------------------------------
@@ -805,9 +860,11 @@
     S.make = newMake;
     S.model = newModel;
     S.year = newYear;
-    // A car the user just picked that has no figure: the old car's mpg and kWh belong to it, not to this one.
+    // A car the user just picked that has no figure: the old car's fuel, mpg and kWh belong to it, not to this one.
+    // D-042: the fallback is the typical car (fuel regular, its mpg when finite, no kWh), so a first pick prices.
     if (changed && carLookup(D, newMake, newModel, newYear) === null) {
-      S.mpg = null;
+      S.fuel = "regular";
+      S.mpg = num(defaultsPart(D, "trip").mpg);
       S.miPerKwh = null;
     }
     applyCar(S, D);
@@ -1202,6 +1259,8 @@
     missing: missing,
     appMissing: appMissing,
     forEngine: forEngine,
+    defaultOf: defaultOf,
+    sourceOf: sourceOf,
     load: load,
     save: save
   };

@@ -413,6 +413,8 @@ const CALLS = {
   missing: [PH.S],
   appMissing: [PH.S, 'dd'],
   forEngine: [PH.S],
+  defaultOf: [PH.D, 'mpg'],
+  sourceOf: [PH.S, PH.D, 'mpg'],
   load: [PH.MEM, PH.D, NOW, undefined],
   save: [PH.S, PH.MEM]
 };

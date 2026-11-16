@@ -154,9 +154,10 @@ sc("setCar: switching to an unlisted car clears the old car's mpg (D-031 amendme
    [FR, st("setAddress", "10004"), st("setCar", "Acme", "Sedan"), st("setCar", "Other", "")],
    {"make": "Other", "fuel": "regular", "mpg": None, "miPerKwh": None, "$missing": ["rest", "mpg", "miles", "minutes"]},
    "Sedan was 30 mpg; Other isn't listed, so mpg is cleared and the page asks for it.")
-sc("setCar: an EV to an unlisted car keeps fuel ev and clears miPerKwh", ["§6"],
+sc("setCar: an EV to an unlisted car falls back to the typical car (D-042)", ["§6", "D-042"],
    [FR, st("setAddress", "10004"), st("setCar", "Acme", "Volt"), st("setCar", "Other", "")],
-   {"fuel": "ev", "miPerKwh": None, "mpg": None}, "Volt was 3.5 mi/kWh; it's cleared, the fuel stays ev.")
+   {"fuel": "regular", "miPerKwh": None, "mpg": None},
+   "Volt was 3.5 mi/kWh; it's cleared. D-042: the fallback is the typical car, fuel regular (it was: fuel stays ev). S1 has no DEFAULTS.trip.mpg, so its mpg is null.")
 sc("setCar: the same unlisted pair again keeps the user's own mpg", ["§6"],
    [FR, st("setCar", "Other", ""), st("setPath", "mpg", 33, returns=True), st("setCar", "Other", "")],
    {"mpg": 33, "fuel": "regular"}, "The pair didn't change, so the typed 33 stays.")
@@ -189,9 +190,10 @@ sc("setCar: a year after the newest run", ["§4.0", "D-037"], [FR, NY, st("setCa
    {"year": 2027, "mpg": None}, "The newest run ends 2026.", patch=CY)
 sc("setCar: an electric year", ["§4.0", "§4.1", "D-037"], [FR, NY, st("setCar", "Acme", "Volt", 2021)],
    {"year": 2021, "fuel": "ev", "miPerKwh": 3.0, "mpg": None}, "30e@2020-2022 -> 30 / 10 = 3.0 mi/kWh.", patch=CY)
-sc("setCar: an electric gap year keeps ev and clears miPerKwh", ["§6", "D-037"],
+sc("setCar: an electric gap year falls back to the typical car (D-042)", ["§6", "D-037", "D-042"],
    [FR, NY, st("setCar", "Acme", "Volt", 2021), st("setCar", "Acme", "Volt", 2023)],
-   {"year": 2023, "fuel": "ev", "miPerKwh": None, "mpg": None}, "2023 is between the runs; 3.0 is cleared, fuel stays ev.", patch=CY)
+   {"year": 2023, "fuel": "regular", "miPerKwh": None, "mpg": None},
+   "2023 is between the runs; 3.0 is cleared. D-042: fuel falls back to regular (it was: stays ev); S1 has no typical mpg, so null.", patch=CY)
 sc("setCar: the same unlisted year again keeps the user's own mpg", ["§6", "D-037"],
    [FR, NY, st("setCar", "Acme", "Sedan", 2010), st("setPath", "mpg", 28, returns=True), st("setCar", "Acme", "Sedan", 2010)],
    {"year": 2010, "mpg": 28}, "The triple didn't change, so the typed 28 stays.", patch=CY)
@@ -522,6 +524,140 @@ sc("ready: the user's own switch stays off even with a delivery fee missing (D-0
     "$allResults.ids": ["direct-p", "dd-p", "direct-d", "dd-d"]},
    "forEngine only touches apps whose on is true: a switched-off app stays off and gets no noDelivery.")
 
+# ---------------------------------------------------------------- D-042: the typical car and labeled estimates
+# TYP patches S1 with a typical-car mpg (24.5, a fixture value) and a DEFAULT_SOURCES table whose entries
+# exercise every branch of defaultOf: est true / false / not-true ("yes"), source string / not-string / absent,
+# and an entry that isn't an object. S1 itself has no DEFAULT_SOURCES and no trip.mpg (the cases above).
+TYP_MPG = 24.5
+TYP_DEFAULTS = json.loads(json.dumps(S1["DEFAULTS"]))
+TYP_DEFAULTS["trip"]["mpg"] = TYP_MPG
+TYP_SOURCES = {
+    "trip.mpg": {"decision": "D-042", "est": True, "read": "2026-11-16", "source": "https://www.eia.gov/fixture-mer"},
+    "plats.dd.delFee": {"est": True, "source": "checkouts: fixture"},
+    "plats.dd.svc": {"est": False, "source": "https://help.doordash.example/fees"},
+    "plats.ue.delFee": {"est": "yes", "source": 7},
+    "fees.smallFee": "not an object",
+    "tips.tipDel": {"est": True, "source": "https://survey.example/tips"},
+    "trip.speed": {"est": True, "source": "https://nhts.example"},
+}
+TYP = {"DEFAULTS": TYP_DEFAULTS, "DEFAULT_SOURCES": TYP_SOURCES}
+
+sc("fresh: mpg starts at the typical car (D-042)", ["§2", "D-042"], [FR],
+   {"mpg": TYP_MPG, "fuel": "regular", "miPerKwh": None, "make": "", "$missing": ["rest", "tax", "gas", "miles", "minutes"]},
+   "T.mpg = 24.5 is finite, so fresh copies it; mpg is no longer missing.", patch=TYP)
+sc("fresh: a typical mpg that isn't a finite number is null", ["§2", "D-042"], [FR],
+   {"mpg": None, "$missing": ["rest", "tax", "mpg", "gas", "miles", "minutes"]},
+   "T.mpg is the string \"24.5\": not a finite number -> null, and missing asks for it.",
+   patch={"DEFAULTS": dict(TYP_DEFAULTS, trip=dict(TYP_DEFAULTS["trip"], mpg="24.5"))})
+
+energy_t = r2(m_pz / TYP_MPG * 4.1); drive_t = r2(energy_t + wearc)
+dp_t = r2(deal + r2(deal * 8.875 / 100) + drive_t)
+dd_p_t = r2(dd_food + r2(dd_food * 8.875 / 100) + drive_t)
+sc("the typical car prices a first visit with no car picked (D-042)", ["§2", "§7", "D-042"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz"), st("setQty", 0, 2)],
+   {"make": "", "mpg": TYP_MPG, "$missing": [], "$calc.direct-p.net": dp_t, "$calc.dd-p.net": dd_p_t, "$calc.dd-d.net": dd_d},
+   ("As 'ready' above, but no setCar: the typical 24.5 mpg. Gas round2(%.1f / 24.5 x 4.10) = %.2f, wear %.2f, drive %.2f. "
+    "direct-p: 30 + 2.66 + drive = %.2f. dd-p: 48 + 4.26 + drive = %.2f. dd-d has no drive: %.2f, as before.")
+   % (m_pz, energy_t, wearc, drive_t, dp_t, dd_p_t, dd_d), patch=TYP)
+sc("setCar: an unlisted car falls back to the typical car (D-042)", ["§6", "D-042"],
+   [FR, st("setAddress", "10004"), st("setCar", "Acme", "Sedan"), st("setCar", "Other", "")],
+   {"make": "Other", "fuel": "regular", "mpg": TYP_MPG, "miPerKwh": None, "gas": 4.1, "$missing": ["rest", "miles", "minutes"]},
+   "Sedan was 30; Other isn't listed and the car changed, so mpg = T.mpg 24.5, not null: nothing is missing for the car.", patch=TYP)
+sc("setCar: an EV to an unlisted car falls back to the typical car's fuel and mpg (D-042)", ["§6", "D-042"],
+   [FR, st("setAddress", "10004"), st("setCar", "Acme", "Volt"), st("setCar", "Other", "")],
+   {"fuel": "regular", "mpg": TYP_MPG, "miPerKwh": None, "gas": 4.1},
+   "Volt: ev, 3.5 mi/kWh, mpg null (applyCar sets the other one null). Other: regular, 24.5, miPerKwh null; NY regular gas 4.1.", patch=TYP)
+sc("setCar: clearing the car falls back to the typical car (D-042)", ["§6", "D-042"],
+   [FR, st("setCar", "Acme", "Sport"), st("setCar", "", "")],
+   {"make": "", "model": "", "fuel": "regular", "mpg": TYP_MPG, "miPerKwh": None},
+   "Sport: premium, 25. An empty make is never found, and the car changed: the typical car.", patch=TYP)
+sc("setCar: a picked car replaces the typical car", ["§4.1", "§6", "D-042"],
+   [FR, st("setCar", "Acme", "Sport")], {"fuel": "premium", "mpg": 25},
+   "Sport:25* is listed: applyCar sets 25 and premium over the typical 24.5.", patch=TYP)
+sc("setCar: the same unlisted pair again keeps the user's own mpg, typical car or not", ["§6", "D-042"],
+   [FR, st("setCar", "Other", ""), st("setPath", "mpg", 33, returns=True), st("setCar", "Other", "")],
+   {"mpg": 33, "fuel": "regular"}, "The first Other falls back to 24.5; the user types 33; the pair didn't change, so 33 stays.", patch=TYP)
+sc("load: a saved mpg null is ignored; the typical car stays (D-042)", ["§8", "D-042"], [st("load")],
+   {"make": "Other", "mpg": TYP_MPG, "miPerKwh": None, "fuel": "regular", "miles": None},
+   "v5 saved mpg null for a car with no figure. D-042: ignored like a bad value, so fresh's 24.5 stays. miPerKwh and miles may still be null.",
+   patch=TYP, storage={"kind": "memory", "value": json.dumps({"make": "Other", "mpg": None, "miPerKwh": None, "miles": None})})
+sc("load: a saved mpg of the user's own is kept over the typical car", ["§8", "D-042"], [st("load")],
+   {"make": "Other", "mpg": 31, "fuel": "regular"}, "31 is a finite number >= 0: loaded; applyCar leaves an unlisted car's mpg alone.",
+   patch=TYP, storage={"kind": "memory", "value": json.dumps({"make": "Other", "mpg": 31})})
+
+def dflt(v, est, src): return {"value": v, "est": est, "source": src}
+sc("defaultOf: each branch of the key map and of DEFAULT_SOURCES", ["§4.8", "D-042"], [FR,
+    st("defaultOf", "mpg", returns=dflt(TYP_MPG, True, "https://www.eia.gov/fixture-mer")),
+    st("defaultOf", "plats.dd.delFee", returns=dflt(2.99, True, "checkouts: fixture")),
+    st("defaultOf", "plats.dd.svc", returns=dflt(15, False, "https://help.doordash.example/fees")),
+    st("defaultOf", "plats.ue.delFee", returns=dflt(1.99, False, None)),
+    st("defaultOf", "plats.gh.delFee", returns=None),
+    st("defaultOf", "smallFee", returns=dflt(2.5, False, None)),
+    st("defaultOf", "regFee", returns=dflt(0, False, None)),
+    st("defaultOf", "tipDel", returns=dflt(15, True, "https://survey.example/tips")),
+    st("defaultOf", "tipPick", returns=dflt(0, False, None)),
+    st("defaultOf", "speed", returns=dflt(SPEED, True, "https://nhts.example")),
+    st("defaultOf", "kwh", returns=dflt(0.17, False, None)),
+    st("defaultOf", "plats.dd.pickDisc", returns=dflt(0, False, None)),
+    st("defaultOf", "hourly", returns=None),
+    st("defaultOf", "manualSubtotal", returns=None),
+    st("defaultOf", "fees.smallFee", returns=None),
+    st("defaultOf", "trip.mpg", returns=None),
+    st("defaultOf", "plats.dd.markup", returns=None),
+    st("defaultOf", "plats.direct.delFee", returns=None),
+    st("defaultOf", "plats.dd", returns=None),
+    st("defaultOf", "__proto__", returns=None),
+    st("defaultOf", 7, returns=None),
+    st("defaultOf", None, returns=None)], {},
+   ("Key map: mpg -> trip.mpg; plats.p.f -> itself for p in dd/ue/gh and the six fee fields; smallFee/regFee -> fees.*; tipDel/tipPick -> tips.*; "
+    "speed/kwh -> trip.*. est is e.est === true ('yes' -> false); source is e.source when a string (7 -> null); fees.smallFee's entry "
+    "isn't an object -> {} -> est false, source null; no entry -> {}. gh.delFee is null in DEFAULTS -> null. hourly and manualSubtotal have "
+    "no default; fees.smallFee and trip.mpg are DEFAULTS keys, not state paths; markup isn't one of the six fields; direct isn't an app."),
+   patch=TYP)
+sc("defaultOf: no DEFAULT_SOURCES table, and no DEFAULTS table", ["§4.8", "D-042"], [FR,
+    st("defaultOf", "plats.dd.delFee", returns=dflt(2.99, False, None)),
+    st("defaultOf", "mpg", returns=None)], {},
+   "S1 has DEFAULTS but no DEFAULT_SOURCES -> e = {} for every key; S1 has no trip.mpg -> null.")
+sc("defaultOf: DEFAULTS null", ["§4.8", "D-042"], [FR, st("defaultOf", "plats.dd.delFee", returns=None), st("defaultOf", "mpg", returns=None)], {},
+   "Nothing to walk.", patch={"DEFAULTS": None})
+
+sc("sourceOf: the starting values", ["§4.8", "D-042"], [FR,
+    st("sourceOf", "mpg", returns="est"),
+    st("sourceOf", "plats.dd.delFee", returns="est"),
+    st("sourceOf", "plats.dd.svc", returns="published"),
+    st("sourceOf", "plats.ue.delFee", returns="published"),
+    st("sourceOf", "plats.gh.delFee", returns=None),
+    st("sourceOf", "smallFee", returns="published"),
+    st("sourceOf", "tipDel", returns="est"),
+    st("sourceOf", "speed", returns="est"),
+    st("sourceOf", "kwh", returns="published"),
+    st("sourceOf", "hourly", returns="you"),
+    st("sourceOf", "miles", returns=None),
+    st("sourceOf", "trip.mpg", returns=None),
+    st("sourceOf", "plats.zz.delFee", returns=None),
+    st("sourceOf", 5, returns=None)], {},
+   ("fresh: mpg 24.5 = its default, est -> est (no car: carLookup(D, '', '', null) is null). dd.delFee 2.99 est; dd.svc 15 not est -> "
+    "published; ue.delFee est 'yes' -> published; gh.delFee is null -> null. smallFee 2.5 (entry not an object) -> published. tipDel est. "
+    "speed 30 est. kwh no entry -> published. hourly 0 is finite with no default -> you. miles null -> null. trip.mpg, plats.zz.delFee "
+    "and 5 aren't state paths with a value -> null."), patch=TYP)
+sc("sourceOf: the user's own values, and a typed value equal to the estimate", ["§4.8", "D-042"], [FR,
+    st("setPath", "plats.dd.delFee", 3.49, returns=True), st("sourceOf", "plats.dd.delFee", returns="you"),
+    st("setPath", "plats.dd.delFee", 2.99, returns=True), st("sourceOf", "plats.dd.delFee", returns="est"),
+    st("setPath", "tipDel", 20, returns=True), st("sourceOf", "tipDel", returns="you"),
+    st("setPath", "plats.dd.svc", None, returns=True), st("sourceOf", "plats.dd.svc", returns=None),
+    st("setPath", "mpg", 33, returns=True), st("sourceOf", "mpg", returns="you"),
+    st("setPath", "mpg", TYP_MPG, returns=True), st("sourceOf", "mpg", returns="est")], {},
+   ("3.49 differs from 2.99 -> you; typing 2.99 back is the same number -> est. tipDel 20 -> you. A cleared svc is null -> null. "
+    "No car picked: typed 33 -> you; typed 24.5 = the typical car -> est."), patch=TYP)
+sc("sourceOf: a picked car's mpg is published, even when it equals the typical car's", ["§4.8", "D-042"], [FR,
+    st("setCar", "Acme", "Sport"), st("sourceOf", "mpg", returns="published"),
+    st("setCar", "Acme", "Volt"), st("sourceOf", "mpg", returns=None),
+    st("setCar", "Other", ""), st("sourceOf", "mpg", returns="est")], {},
+   ("Sport: carLookup finds 25 -> published (EPA's, for the user's car). Volt: ev, mpg null -> null. Other: the typical car's 24.5 and "
+    "carLookup null -> est."), patch=dict(TYP, DEFAULTS=dict(TYP_DEFAULTS, trip=dict(TYP_DEFAULTS["trip"], mpg=25))))
+SC[-1]["work"] = ("Here T.mpg is 25, equal to Sport's figure. Sport: carLookup finds it -> published, not est (step 2 comes before "
+                  "step 3). Volt: ev, mpg null -> null. Other: falls back to 25, carLookup null, equals the default -> est.")
+
 # ---------------------------------------------------------------- setPath / getPath
 sc("setPath writes only existing paths", ["§3"],
    [FR, st("setPath", "plats.dd.delFee", 3.49, returns=True), st("setPath", "plats.dd.nope", 1, returns=False),
@@ -594,7 +730,7 @@ sc("load: each saved field is checked on its own", ["§8"], [st("load")], {
    ("Bad types fall back to fresh: tipDel string, tipPick < 0, speed 0, fuel jet, brand 42, dd.svc < 0, memberOwn 'yes', store lat string, ue promo type bxgy (the type alone falls back; value 5 is a valid number and stays; item 1.5 isn't an integer -> null). gh's bogo type and item 1 are valid (D-036); its missing numbers stay fresh. "
     "member and markup are derived, never loaded. cards keeps the strings, then syncCredits prunes c_zz and the duplicate. cart keeps only canonical keys with integer qty >= 0. "
     "The saved pos is a ZIP position (not GPS), so it's ignored, and derive re-derives pos from the address. manualCredits keeps the first valid manual.1. "
-    "mpg and miles may be null. Unknown fields and apps are dropped. load never writes to storage."),
+    "A saved mpg null is ignored (D-042), so mpg keeps fresh's, which is null in S1 (no DEFAULTS.trip.mpg); miles may be null. Unknown fields and apps are dropped. load never writes to storage."),
    storage={"kind": "memory", "value": json.dumps(bad)})
 SC[-1]["expect"]["pos"] = {"lat": 40, "lon": -74, "src": "zip"}   # derived from address 10001 = 40.000, -74.000
 
@@ -753,7 +889,8 @@ SIGS = {
     "pickStore": ["S", "D", "*", "opts"], "setQty": ["S", "*"], "pinMiles": ["S", "*"], "unpinMiles": ["S", "D", "opts"],
     "toggleCard": ["S", "D", "*", "now"], "setOptIn": ["S", "D", "*", "now"], "markUsed": ["S", "D", "*", "now"],
     "addManualCredit": ["S", "D", "*", "now"], "removeManualCredit": ["S", "D", "*", "now"],
-    "load": ["storage", "D", "now", "opts"], "save": ["S", "storage"]}
+    "load": ["storage", "D", "now", "opts"], "save": ["S", "storage"],
+    "defaultOf": ["D", "*"], "sourceOf": ["S", "D", "*"]}
 for _s in SC:
     for _t in _s["steps"]:
         assert _t["call"] in SIGS, _t["call"]
