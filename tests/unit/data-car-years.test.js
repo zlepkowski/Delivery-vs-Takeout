@@ -199,5 +199,7 @@ test('D-037 every CAR_DATA model is in CAR_YEARS, its newest run matches CAR_DAT
       checked++;
     }
   }
-  assert.ok(checked > 1000, `only ${checked} CAR_DATA models checked`);
+  // Every CAR_DATA model was checked: D-023's build has 344 (data-cars.test.js). The floor guards
+  // against a parser that silently skips rows (orchestrator: the first floor, 1000, counted CAR_YEARS' models).
+  assert.ok(checked >= 340, `only ${checked} CAR_DATA models checked`);
 });
