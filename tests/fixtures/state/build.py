@@ -637,10 +637,13 @@ sc("drive: a GPS position is keyed at 3 decimals", ["§4.5", "D-040"],
    "fmt3(40.0004): Math.round(40000.4) = 40000 -> '40.000', so the key is %s. The nearest pz store from 40.0004 is still 40.030." % K_PZ)
 for label, ans in [("a failed lookup (false)", False), ("negative miles", {"miles": -1, "minutes": 1}),
                    ("miles as a string", {"miles": "3.27", "minutes": 6.5}), ("no miles", {"minutes": 6.5}),
-                   ("miles NaN-like null", {"miles": None, "minutes": 6.5})]:
+                   ("miles NaN-like null", {"miles": None, "minutes": 6.5}), ("miles above 1000", {"miles": 1000.5, "minutes": 1})]:
     sc("drive: %s keeps the straight-line trip" % label, ["§4.5", "D-040"],
        [FR, st("setAddress", "10001"), st("setBrand", "pz", opts=API(drive={K_PZ: ans}), returns=ok())],
        {"miles": m_pz, "minutes": mins(m_pz), "milesSrc": "store"}, "Not an object with a finite miles >= 0: the drive rule doesn't apply.")
+sc("drive: exactly 1000 miles is still used", ["§4.5", "D-040"],
+   [FR, st("setAddress", "10001"), st("setBrand", "pz", opts=API(drive={K_PZ: {"miles": 1000, "minutes": 1}}), returns=ok())],
+   {"miles": 2000, "minutes": 4000, "milesSrc": "drive"}, "round1(2 x 1000) = 2000; 2000/30 x 60 = 4000.")
 sc("drive: an answer for another store isn't used", ["§4.5", "D-040"],
    [FR, st("setAddress", "10001"), st("setBrand", "pz", opts=API(drive={"40.000,-74.000;40.050,-74.000": {"miles": 1, "minutes": 2}}), returns=ok())],
    {"miles": m_pz, "milesSrc": "store"}, "The answer is keyed for the 40.050 store; the nearest is 40.030.")

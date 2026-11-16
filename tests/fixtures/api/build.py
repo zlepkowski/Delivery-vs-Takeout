@@ -663,6 +663,8 @@ ASK_CASES = [
     ("no position: only the geocode", {"address": "Big Timber, MT", "pos": None, "milesSrc": None, "store": None}, api()),
     ("a bare ZIP isn't geocoded", dict(S_NY, address="10118"), api()),
     ("a position out of range asks nothing for it", dict(S_NY, address="", pos={"lat": 95, "lon": 0, "src": "zip"}), api()),
+    ("__proto__ already answered isn't asked again", {"address": "__proto__", "pos": None, "milesSrc": None, "store": None}, api(geo={"__proto__": False})),
+    ("__proto__ not yet answered is asked", {"address": "__proto__", "pos": None, "milesSrc": None, "store": None}, api()),
     ("a GPS position at full precision is asked at 3 decimals", dict(S_NY, address="", pos={"lat": 45.83412, "lon": -109.94987, "src": "gps"}, milesSrc=None), api()),
 ]
 for label, S, opts in ASK_CASES:
@@ -725,7 +727,9 @@ A_N = {"kind": "nearby", "key": "40.749,-73.986/2", "lat": "40.749", "lon": "-73
 A_G = {"kind": "geocode", "key": ESQ.lower(), "q": ESQ}
 NBV = {"places": [{"id": "osm:n1", "name": "One", "category": "pizza", "lat": 40.75, "lon": -73.98},
                   {"id": "osm:n2", "name": "Two", "category": "other", "lat": 40.76, "lon": -73.97}]}
+A_P = {"kind": "geocode", "key": "__proto__", "q": "__proto__"}
 for label, D, opts, ask, val in [("a drive answer", {}, api(), A_D, {"miles": 0.86, "minutes": 3.1}), ("a failed drive", {}, api(), A_D, None),
+                                 ("an address typed as __proto__ becomes an own key", {}, api(), A_P, None),
                                  ("a geocode answer", {}, api(), A_G, {"lat": 1, "lon": 2, "zip": None, "state": None}),
                                  ("nearby fills D.PLACES", {}, api(), A_N, NBV),
                                  ("nearby keeps a place already known", {"PLACES": {"osm:n1": {"name": "Saved", "category": "casual", "lat": 1, "lon": 2}}}, api(), A_N, NBV),

@@ -7030,6 +7030,106 @@
    "work": "Not an object with a finite miles >= 0: the drive rule doesn't apply."
   },
   {
+   "id": "drive: miles above 1000 keeps the straight-line trip",
+   "refs": [
+    "§4.5",
+    "D-040"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ],
+     "opts": {
+      "failed": {},
+      "api": {
+       "drive": {
+        "40.000,-74.000;40.030,-74.000": {
+         "miles": 1000.5,
+         "minutes": 1
+        }
+       },
+       "geo": {},
+       "nearby": {}
+      }
+     },
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "miles": 5.2,
+    "minutes": 10,
+    "milesSrc": "store"
+   },
+   "work": "Not an object with a finite miles >= 0: the drive rule doesn't apply."
+  },
+  {
+   "id": "drive: exactly 1000 miles is still used",
+   "refs": [
+    "§4.5",
+    "D-040"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ],
+     "opts": {
+      "failed": {},
+      "api": {
+       "drive": {
+        "40.000,-74.000;40.030,-74.000": {
+         "miles": 1000,
+         "minutes": 1
+        }
+       },
+       "geo": {},
+       "nearby": {}
+      }
+     },
+     "returns": {
+      "status": "ok",
+      "need": [],
+      "partial": false
+     }
+    }
+   ],
+   "expect": {
+    "miles": 2000,
+    "minutes": 4000,
+    "milesSrc": "drive"
+   },
+   "work": "round1(2 x 1000) = 2000; 2000/30 x 60 = 4000."
+  },
+  {
    "id": "drive: an answer for another store isn't used",
    "refs": [
     "§4.5",

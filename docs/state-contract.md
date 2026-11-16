@@ -151,7 +151,7 @@ Then `applyState(S, D)`. (An unknown ZIP keeps `zip` so the page can say "ZIP 99
    - `r.store` null: go to step 5 with `partial = r.partial`.
 5. **The estimator:** `store = null`; `e = geo.estimateMiles({la: pos.lat, lo: pos.lon}, S.brand, D)`; `miles = e ? e.round : null`; `milesSrc = e ? "estimate" : null`; `applyMinutes`; return `{status: "ok", need: [], partial}`.
 
-**The drive rule (D-040):** when `opts` is an object, `opts.api` is an object, `opts.api.drive` is an object, `k = POD.api.driveKey(S.pos, S.store)` isn't `null`, and `a = opts.api.drive[k]` (own key) is an object with a finite `miles` ≥ 0: `miles = Math.round(2 * a.miles * 10) / 10` and `milesSrc = "drive"`. Otherwise the straight-line trip stays. `minutes` still comes from `speed` (§4.6).
+**The drive rule (D-040):** when `opts` is an object, `opts.api` is an object, `opts.api.drive` is an object, `k = POD.api.driveKey(S.pos, S.store)` isn't `null`, and `a = opts.api.drive[k]` (own key) is an object with a finite `miles` in [0, 1000] (the bound `POD.api.checkDrive` uses; *clarified after review of 8.4a*): `miles = Math.round(2 * a.miles * 10) / 10` and `milesSrc = "drive"`. Otherwise the straight-line trip stays. `minutes` still comes from `speed` (§4.6).
 
 ### 4.6 `applyMinutes(S)`
 

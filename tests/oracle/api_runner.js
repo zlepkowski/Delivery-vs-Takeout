@@ -36,7 +36,7 @@ function decode(v) {
     const keys = Object.keys(v);
     if (keys.length === 1 && keys[0] === '$') return v.$ === 'D' ? DATA : TAGS[v.$];
     const o = {};
-    for (const k of keys) o[k] = decode(v[k]);
+    for (const k of keys) Object.defineProperty(o, k, { value: decode(v[k]), enumerable: true, writable: true, configurable: true });   // "__proto__" stays a key
     return o;
   }
   return v;

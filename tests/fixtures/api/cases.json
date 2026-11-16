@@ -8580,6 +8580,64 @@
    "fn": "asks",
    "args": [
     {
+     "address": "__proto__",
+     "pos": null,
+     "milesSrc": null,
+     "store": null
+    },
+    {
+     "$": "D"
+    },
+    {
+     "failed": {},
+     "api": {
+      "drive": {},
+      "geo": {
+       "__proto__": false
+      },
+      "nearby": {}
+     }
+    }
+   ],
+   "returns": [],
+   "work": "",
+   "label": "__proto__ already answered isn't asked again"
+  },
+  {
+   "fn": "asks",
+   "args": [
+    {
+     "address": "__proto__",
+     "pos": null,
+     "milesSrc": null,
+     "store": null
+    },
+    {
+     "$": "D"
+    },
+    {
+     "failed": {},
+     "api": {
+      "drive": {},
+      "geo": {},
+      "nearby": {}
+     }
+    }
+   ],
+   "returns": [
+    {
+     "kind": "geocode",
+     "key": "__proto__",
+     "q": "__proto__"
+    }
+   ],
+   "work": "",
+   "label": "__proto__ not yet answered is asked"
+  },
+  {
+   "fn": "asks",
+   "args": [
+    {
      "address": "",
      "pos": {
       "lat": 45.83412,
@@ -9293,6 +9351,42 @@
        "40.749,-73.986;40.755,-73.989": false
       },
       "geo": {},
+      "nearby": {}
+     }
+    }
+   }
+  },
+  {
+   "fn": "remember",
+   "args": [
+    {},
+    {
+     "failed": {},
+     "api": {
+      "drive": {},
+      "geo": {},
+      "nearby": {}
+     }
+    },
+    {
+     "kind": "geocode",
+     "key": "__proto__",
+     "q": "__proto__"
+    },
+    null
+   ],
+   "returns": null,
+   "work": "",
+   "label": "an address typed as __proto__ becomes an own key",
+   "after": {
+    "D": {},
+    "opts": {
+     "failed": {},
+     "api": {
+      "drive": {},
+      "geo": {
+       "__proto__": false
+      },
       "nearby": {}
      }
     }
