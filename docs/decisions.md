@@ -436,3 +436,17 @@ BUILD.md §11's `/vehicle?vin` without a server (D-004). [`docs/vin-contract.md`
 - code-review: + blocker: an "unchanged" claim tested against new code (2320149)
 - data-research: no change (no researcher task in Phase 8)
 - not a rule (one occurrence each): `__proto__` as an own key (99b4cee); a test sandbox that led a builder to copy helpers (99b4cee); the reviewer's "no D-040 state tests" false positive; an e2e regex that forced a row layout; the 8.4a DONE WHEN that ran a next-task e2e
+
+### Phase 9 (2026-11-16): reflector proposal, approved by the orchestrator with three fixes (code-review: a malformed bullet fixed, and the rule keeps the review's own ratings, blocker for the lookalike only and should-fix for the floor and the guard reach; data-research: the status-code rule no longer marks a JavaScript shell "unverified" (Wingstop's home page renders empty here and is recorded as such), it says to open the link in a browser and record what it showed, and cites task 9.2, not a review; data-research's rule 6 and file table gain `src/data/links.js`, orchestrator only)
+- data-research: + a deep-link format is recorded only after someone opens it and sees it work (page, date, what it showed); unverified links are left out (Uber Eats and Grubhub search formats, 4123339, D-041)
+- data-research: + a link's status code is not its verdict: open it in a browser, record what it showed, prefer the home page to a deep path, never change the user agent (task 9.2, 4123339, ISS-024, ISS-013)
+- test-runner: ~ the rounding and JSON rule (197acd1, 4123339): pin an exact tie in both languages; check fixtures as read back (lone surrogates, 9.3 review)
+- test-runner: + a mutant counts as caught only if the unmutated copy passes in the same harness and fails for its intended reason (Phase 3 review; 9.5 scratch copy)
+- test-runner: + measure a generator's per-branch counts through the reference before relying on it (9.3 review; 793577b)
+- test-runner: + a string check needs a lookalike input it must reject; match whole labels (71b3e2c, 03ca191)
+- test-runner: + raise a count floor in the same change that adds cases; a guard test's data must reach its branch (71b3e2c; 9f1d2e2)
+- code-review: + blocker: test integrity in a diff that adds cases (floor, lookalike, guard reach) (71b3e2c)
+- frontend: no change (builder DONE in 1 loop; reviewer APPROVE, no findings)
+- backend: no change (no backend work in Phase 9)
+- not a rule: the orchestrator's user link check and the environment's missing node_modules (orchestrator-only); a slow redirect landing in the next `goto` of a shared page, fixed by a fresh context per URL (one occurrence, tool-level); two e2e slips caught before running (a button that exists only with no brand; a guessed store id) and `waitForEvent` started before its click (one occurrence each); re-baselining `worker.e2e.js` by D-041 (a decision, not a failure)
+- data-research: ~ rule 6 and the file table: `src/data/links.js` is orchestrator only, like `cards.js` (added by the orchestrator at approval)

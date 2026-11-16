@@ -1,25 +1,26 @@
 # Progress
 
-**Current phase:** 8 (Phase A backend: the Worker behind the seam) is **done**. Next is **Phase 9 (Phase E: deep links)**, to start in a **fresh session**, with the user's `/goal`
+**Current phase:** 9 (Phase E: deep links) is **done**. Next is **Phase 10 (Ship)**, to start in a **fresh session**, with the user's `/goal`
 **Last updated:** 2026-11-16
-**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/charming-heisenberg-wag8bg` (the Phase 8 session branch, fast-forwarded from `claude/phase-7-vin-lookup-refresh-3kq5sh` at `556bc34`, the Phase 7 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
+**Repo:** `zlepkowski/Delivery-vs-Takeout` · **Branch:** `claude/blissful-goldberg-jwe17y` (the Phase 9 session branch, fast-forwarded from the Phase 2 tip to `claude/charming-heisenberg-wag8bg` at `c332e15`, the Phase 8 tip; base: `main`). A new session may be given another branch name: it starts from this branch's tip.
 
 ## Resume here
 
-1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`.
+1. Read `CLAUDE.md` (repo root), then this file, then `decisions.md` and `issues.md`. **Run `npm ci` first** if `node_modules` is missing (a fresh container has none, and `npm test` then fails on `acorn`).
 2. Ask the user to type the goal for the current phase (template below). Only the user can set `/goal`.
-3. **Phase 9 (Phase E: deep links, BUILD.md §11 Phase E, D-016: deep links don't pre-fill carts):** every result row hands off to the app or the restaurant's own site. Done when: link-builder tests pass and every result row hands off. Same pattern: a contract by decision first (which URL per channel and app; what an unprofiled chain or an independent links to; nothing invented: a link with no confirmed format is left out), references and e2e first, then the builder.
-4. **What Phase 9 inherits from Phase 8 (D-040):**
-   - Eight contracts: engine, state, geo, insights, UI, VIN, and now **API** (`docs/api-contract.md`). The UI contract's §2 render rule changed: on a block-count change the leading blocks are kept and only the tail is appended or removed, and a block is patched one level down only when its own tag and attributes match.
-   - **The Phase 7 baseline e2e** (`tests/e2e/worker.e2e.js`, `BASE_REV = '556bc34'`) requires `#app` with the Worker off to be byte-identical to the Phase 7 page. **Phase 9 changes the page on purpose (links in result rows), so it must re-baseline that test by decision first**: e.g. keep the guarantee as "the Worker adds nothing to the page" by comparing Worker-off against Worker-on-failing on the same new code plus the Phase 8 tip (`4ac3bb9` or later) for everything outside the result rows. CI fetches the full history for it.
-   - Independents are unprofiled brands with ids `osm:n…`/`osm:w…`/`osm:r…` in `D.PLACES` and `S.place`; a deep link for one has only its name and point (OpenStreetMap), no website unless OSM has one.
-   - The Worker is **off** in the committed site (`src/js/config.js` `apiBase: ""`). Deploying it is the user's (ISS-004, `worker/README.md`).
+3. **Phase 10 (Ship):** done when CI is green, BUILD.md is updated to v5, and the site is live on Pages after the merge to `main`. BUILD.md is the v4 spec kept as reference; v5 folds in D-001 to D-041 and the nine contracts (where they differ, the contracts and decisions already win). In particular §11 Phase E becomes D-016/D-041 (no platform pre-builds a cart; links open the app, the chain's site or a map). **The merge to `main` and turning Pages on are the user's**: open a PR only when the user asks (ISS-005: default branch `main`, Settings → Pages → Source: GitHub Actions).
+4. **What Phase 10 inherits from Phase 9 (D-041):**
+   - Nine contracts: engine, state, geo, insights, UI, VIN, API, and now **links** (`docs/links-contract.md`). `POD.links.forChannel(ch, S, D)` is pure; `src/data/links.js` is written by hand by the orchestrator (the `cards.js` pattern), every URL with how and when it was seen working.
+   - On 2026-11-16's data: DoorDash rows search by name (the user confirmed the format); Uber Eats and Grubhub rows open the app's home page (their searches didn't search for the user); ordering direct links to the 9 profiled chains' home pages; direct pickup also gets Google Maps directions to the store, or a map search by name with no store. A new search format or a newly profiled chain is a data change with a check (a data test pins `LINKS.order`'s keys to `PROFILES`').
+   - **The Phase 7 baseline e2e** (`worker.e2e.js`, `BASE_REV = '556bc34'`) now removes exactly the hand-off blocks and the fine-print links line before comparing (links contract §4). A later phase that changes `#app` on purpose re-baselines it by decision again.
+   - Not loaded from the session: Dunkin's and Little Caesars' home pages (hosts not allowed; both say so in their `source`), and Google's Maps URLs documentation (not on the allowlist).
 5. **Open questions carried forward:**
-   - **ISS-004 (the user, for the Worker deploy only):** a Cloudflare account; no keys are needed now.
-   - **ISS-040:** the Overpass fixtures are constructed; one real recording closes it (the exact request is in `tests/fixtures/api/README.md`).
+   - **ISS-042 (new):** websites for unprofiled chains and independents (Wikidata P856, ATP's per-store `website`, OSM's `website` tag).
+   - **ISS-004 (the user, for the Worker deploy only):** a Cloudflare account; no keys are needed.
+   - **ISS-040:** the Overpass fixtures are constructed; one real recording closes it.
    - **ISS-036, ISS-032 (need the user):** per-item app prices; stacked ZIP coordinates.
    - ISS-034, ISS-035, ISS-030, ISS-031, ISS-037, ISS-039, D-028.
-6. **Network:** the environment **Delivery-vs-Takeout** is at the 20-host cap, now with `router.project-osrm.org`, `nominatim.openstreetmap.org` and `overpass.kumi.systems` (ISS-001). Phase 9 needs no network unless a link format must be checked on an app's site: ask the user which host to swap first.
+6. **Network:** unchanged in Phase 9; the environment **Delivery-vs-Takeout** is at the 20-host cap (ISS-001). Phase 10 needs none unless the user wants a link or a source re-checked.
 7. **User actions pending:** ISS-005 (GitHub default branch `main`, Pages Source GitHub Actions). Merge to `main` only by a PR the user asks for.
 
 ### Goal template
@@ -42,7 +43,7 @@
 | 6 | Phase B: per-item markup | Opus (oracle) → builder | ✅ done | Oracle updated first (`0b2d290`, before any code); BOGO cases pass (receipt r15, 17 cases; 4 insight fixtures; 4 e2e); profiles migrated to object items (`1359cf6`, shape only) |
 | 7 | Phase A static: VIN lookup, weekly gas + store refresh | Opus (contracts, references, e2e) → researcher + builder | ✅ done | Big Timber → Domino's ≈ the real ~33 mi (38.6 mi one way from the Livingston store, +17%; the old estimator said 10.4); the scheduled refresh passes a dry run (live sources, fresh caches, every gate) |
 | 8 | Phase A backend: Worker behind the seam | Opus (contract, references, e2e) → api-builder + builder | ✅ done | Fixture tests pass (103 hand-worked Worker cases + 67 Worker unit tests, 140 seam cases + 30 `send()` tests, 2,000 seeded seam calls vs the Python reference); the site is identical with the Worker off (`#app` byte-identical to the Phase 7 page built from git, in 3 flows, and with the Worker failing 4 ways) |
-| 9 | Phase E: deep links | builder | ⬜ | Link-builder tests pass; every result row hands off |
+| 9 | Phase E: deep links | Opus (contract, data, references, e2e) → builder + tester | ✅ done | Link-builder tests pass (88 hand-worked cases and 2,000 seeded calls vs the Python reference; 121 unit tests; 15 mutants caught); every result row hands off (every brand × channel in the unit tests; 6 e2e flows and an independent on the page, 0 console errors) |
 | 10 | Ship | tester + Opus | ⬜ | CI green; BUILD.md updated to v5; live on Pages after the merge to `main` |
 
 ## Log
@@ -65,7 +66,7 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
-### Phase 9: Phase E, deep links (2026-11-16, in progress)
+### Phase 9: Phase E, deep links (2026-11-16, done)
 
 Branch `claude/blissful-goldberg-jwe17y` (this session's; fast-forwarded from the Phase 2 tip to `claude/charming-heisenberg-wag8bg` at `c332e15`, the Phase 8 tip). User decisions at the start: the user opened three sample app searches for "Ben & Jerry's": **DoorDash's search worked; Uber Eats (a human check) and Grubhub (an address prompt) went to their home pages**; and **Google Maps** for directions.
 
@@ -76,7 +77,7 @@ Branch `claude/blissful-goldberg-jwe17y` (this session's; fast-forwarded from th
 | 9.3 References first: `tests/oracle/links.py`, 85 hand-worked cases (`tests/fixtures/links/build.py`, asserted against the reference), `links_runner.js`, `run.py` links checks (cases + 2,000 seeded calls); `tests/e2e/links.e2e.js`; `worker.e2e.js` re-baselined by D-041 | ✅ e2e red by design until 9.4 | `4123339` |
 | 9.4 Builder: `src/js/links.js`, `render.js` hand-offs and the fine-print line, css | ✅ 1 loop; re-verified: es5 20 files, unit 1,243, links 85/85 + 2,000/2,000, e2e 60/60; reviewer APPROVE, no findings; screenshots reviewed at 390 and 1280 px | `e792441` |
 | 9.5 Tester: `links.test.js` and `data-links.test.js`; 14/14 mutants caught by `links.test.js` alone (3 re-run by the orchestrator). The orchestrator's own `https:`-for-`https://` mutant survived everything: 3 hand-worked cases (88 now) and new fuzzer shapes fixed it; contract §1 clarified (Little Caesars' link domain, tester finding). Review CHANGES-REQUESTED (substring domain check, count floor, a vacuous `__proto__` test) → fix round 1, each fix verified by its mutant | ✅ 121 tests in the two files; unit 1,364 | `03ca191`, latest |
-| 9.6 Close | in progress | |
+| 9.6 Close: full suite from a fresh clone at `71b3e2c` with its own `npm ci` (es5 20 files; unit 1,364/1,364; oracle every line: receipts 91/91, 0 of 500 scenarios, geo 129/71/330, insights 47/47 and 0 of 500, VIN 117/117 + 4,000/4,000, api 133/133 + 2,000/2,000, links 88/88 + 2,000/2,000; e2e 60/60); CI green on GitHub from `e792441` on; screenshots reviewed (the example and Applebee's at 390 px, the results and fine print at 1280 px: links wrap inside their buttons, no horizontal scroll); reflector approved with three fixes (decisions.md, Skill updates) | ✅ | latest |
 
 **Review evidence for the Phase 9 reflector** (all fixed unless noted):
 - **A "well-known" URL format is a hunch until someone opens it.** The session couldn't render any app's search (their data comes from API hosts outside the allowlist, behind bot checks), so the user opened three sample links. Two of the three search formats that look standard didn't search (Uber Eats: a human check; Grubhub: an address prompt; both then their home page). Without that 30-second check, two of three app rows would have shipped a link that drops the user on a home page while saying "Search". Lesson: a URL is data; record who saw it work, and when (D-041).
