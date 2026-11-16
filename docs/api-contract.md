@@ -41,6 +41,7 @@ The exact definition of the optional backend (D-004, D-040): a Cloudflare Worker
 - **CORS.** Let `o` = the request's `Origin` header. If `o` is `"null"` (a page opened from `file://`) or one of `ALLOW_ORIGINS`: add `Access-Control-Allow-Origin: o`. Otherwise add none (the browser then refuses to read it; the Worker still answers, since the data is public). Always add `Vary: Origin`. No `Access-Control-Allow-Headers`: the seam sends simple GETs with no custom headers, so there's no preflight.
 - **Parameters** come from `URLSearchParams`. Each named parameter must appear **exactly once**; extra unknown parameters are ignored. Order of checks for an endpoint: method/path, then `USER_AGENT` (503), then parameters (400), then the cache (§5), then the provider.
 - **Coordinates.** A coordinate parameter matches `^-?[0-9]{1,3}(\.[0-9]{1,6})?$`; the latitude is in [−90, 90], the longitude in [−180, 180]. Its **canonical string** is `String(Number(s))` (`"45.830"` → `"45.83"`, `"-0"` → `"0"`). Canonical strings are used in upstream URLs and cache keys.
+- **Lengths** ("3–200 characters", "1–120 characters") count UTF-16 code units, i.e. JS `.length`, in the Worker and the seam alike: an emoji counts 2. *(Clarified 2026-11-16 after review of 8.3.)*
 - **Rounding.** `round2(x) = Math.round(x * 100) / 100`, `round1(x) = Math.round(x * 10) / 10` (JS `Math.round`: halves go up). `distMi` is geography contract §2 exactly (`R_MI` 3958.8).
 
 ## 2. `GET /drive?from=LAT,LON&to=LAT,LON`
@@ -63,7 +64,7 @@ A street address (or town) to a point.
 - **Upstream** (`nominatim.geocode`): `GET {NOMINATIM_URL}/search?` + `new URLSearchParams([["q", q], ["format", "jsonv2"], ["addressdetails", "1"], ["limit", "1"], ["countrycodes", "us"]])`, header `User-Agent`, timeout 3.5 s.
 - **Normalizing:** status 200 and the body parses as a JSON array:
   - empty → **404** `not_found`.
-  - first element `r`: `lat = Number(r.lat)`, `lon = Number(r.lon)` (Nominatim sends strings) must be finite and in range, and `r.address` an object, else 502 `upstream`. Then **200** `{"lat", "lon", "city", "state", "zip", "label", "source": "nominatim"}` with
+  - first element `r`: `lat` and `lon` are each either a finite number or a string matching `^-?[0-9]+(\.[0-9]+)?$` (Nominatim sends strings like `"40.7484421"`), converted with `Number`, and in range; and `r.address` is an object; else 502 `upstream`. (So `""`, `null`, `"0x28"`, `" 40.7"` and `"Infinity"` are refused: `Number` alone would turn `""` and `null` into 0.) *(Clarified 2026-11-16 after review of 8.3.)* Then **200** `{"lat", "lon", "city", "state", "zip", "label", "source": "nominatim"}` with
     - `city`: the first of `address.city`, `address.town`, `address.village`, `address.hamlet` that is a non-empty string, else `null`;
     - `state`: the two letters of `address["ISO3166-2-lvl4"]` when it matches `^US-([A-Z]{2})$`, else `null`;
     - `zip`: the first 5 characters of `address.postcode` when it's a string matching `^[0-9]{5}`, else `null`;

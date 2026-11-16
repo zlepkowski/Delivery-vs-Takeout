@@ -1110,14 +1110,14 @@
    "work": ""
   },
   {
-   "name": "drive: the edges -90 and 180 are allowed (and too far apart)",
+   "name": "drive: the edges -90, 180, 90 and -180 parse (and are too far apart)",
    "refs": [
     "§1",
     "§2"
    ],
    "request": {
     "method": "GET",
-    "url": "https://worker.test/drive?from=-90,180&to=-89.99,180",
+    "url": "https://worker.test/drive?from=-90,180&to=90,-180",
     "origin": "null"
    },
    "env": {
@@ -1142,7 +1142,7 @@
     "upstreamCalls": [],
     "kvPuts": []
    },
-   "work": "Both points parse; they are 0.691 mi apart in a straight line, so too_far."
+   "work": "Both points are in range (not bad_param); they are 12436.9 mi apart in a straight line, so too_far."
   },
   {
    "name": "drive: more than 100 miles apart",
@@ -1185,7 +1185,7 @@
    ],
    "request": {
     "method": "GET",
-    "url": "https://worker.test/drive?from=0,0&to=1.447,0",
+    "url": "https://worker.test/drive?from=0,0&to=1.448,0",
     "origin": "null"
    },
    "env": {
@@ -1210,7 +1210,62 @@
     "upstreamCalls": [],
     "kvPuts": []
    },
-   "work": "1.447 deg of latitude = 99.9792 mi > 100 (100 mi is 1.447302 deg)."
+   "work": "1.448 deg of latitude = 100.0482 mi > 100 (100 mi is 1.447302 deg)."
+  },
+  {
+   "name": "drive: just under 100 miles goes to the provider",
+   "refs": [
+    "§2"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/drive?from=0,0&to=1.447,0",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://router.project-osrm.org/route/v1/driving/0,0;0,1.447?overview=false&alternatives=false&steps=false": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "{\"code\": \"Ok\", \"routes\": [{\"distance\": 161000, \"duration\": 6000}]}"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "miles": 100.04,
+     "minutes": 100.0,
+     "source": "osrm"
+    },
+    "upstreamCalls": [
+     "https://router.project-osrm.org/route/v1/driving/0,0;0,1.447?overview=false&alternatives=false&steps=false"
+    ],
+    "kvPuts": [
+     {
+      "key": "v1:drive:0,0;1.447,0",
+      "value": {
+       "ok": {
+        "miles": 100.04,
+        "minutes": 100.0,
+        "source": "osrm"
+       }
+      },
+      "ttl": 604800
+     }
+    ]
+   },
+   "work": "1.447 deg = 99.9792 mi <= 100, so OSRM is asked (an inline answer): 161000 m -> 100.0408 -> 100.04 mi; 6000 s -> 100 min."
   },
   {
    "name": "drive: a cache hit answers without the provider",
@@ -2286,6 +2341,132 @@
    "work": "Normalized to '350 5th Ave, New York, NY 10118', the recorded request."
   },
   {
+   "name": "geocode: numeric lat and lon",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lat\": 40.5, \"lon\": -73.5, \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "lat": 40.5,
+     "lon": -73.5,
+     "city": "New York",
+     "state": "NY",
+     "zip": "10118",
+     "label": "Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States",
+     "source": "nominatim"
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": [
+     {
+      "key": "v1:geocode:e53b5acd2d89cf3ddf051f77512ede0102261fcaca113c64fbc92c841b07f0eb",
+      "value": {
+       "ok": {
+        "lat": 40.5,
+        "lon": -73.5,
+        "city": "New York",
+        "state": "NY",
+        "zip": "10118",
+        "label": "Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States",
+        "source": "nominatim"
+       }
+      },
+      "ttl": 2592000
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
+   "name": "geocode: an integer-string lat",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lat\": \"40\", \"lon\": \"-73.9856589\", \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "lat": 40.0,
+     "lon": -73.9856589,
+     "city": "New York",
+     "state": "NY",
+     "zip": "10118",
+     "label": "Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States",
+     "source": "nominatim"
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": [
+     {
+      "key": "v1:geocode:e53b5acd2d89cf3ddf051f77512ede0102261fcaca113c64fbc92c841b07f0eb",
+      "value": {
+       "ok": {
+        "lat": 40.0,
+        "lon": -73.9856589,
+        "city": "New York",
+        "state": "NY",
+        "zip": "10118",
+        "label": "Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States",
+        "source": "nominatim"
+       }
+      },
+      "ttl": 2592000
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
    "name": "geocode: a ZIP+4 postcode",
    "refs": [
     "§3"
@@ -2919,6 +3100,307 @@
    "work": "502 upstream; nothing cached."
   },
   {
+   "name": "geocode: upstream failure, an empty lat",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lat\": \"\", \"lon\": \"-73.9856589\", \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 502,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "error": {
+      "code": "upstream"
+     }
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": []
+   },
+   "work": "502 upstream; nothing cached."
+  },
+  {
+   "name": "geocode: upstream failure, no lat",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lon\": \"-73.9856589\", \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 502,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "error": {
+      "code": "upstream"
+     }
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": []
+   },
+   "work": "502 upstream; nothing cached."
+  },
+  {
+   "name": "geocode: upstream failure, a hex lat",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lat\": \"0x28\", \"lon\": \"-73.9856589\", \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 502,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "error": {
+      "code": "upstream"
+     }
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": []
+   },
+   "work": "502 upstream; nothing cached."
+  },
+  {
+   "name": "geocode: upstream failure, a lat with spaces",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lat\": \" 40.7\", \"lon\": \"-73.9856589\", \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 502,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "error": {
+      "code": "upstream"
+     }
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": []
+   },
+   "work": "502 upstream; nothing cached."
+  },
+  {
+   "name": "geocode: upstream failure, a lat with an underscore",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lat\": \"40_7\", \"lon\": \"-73.9856589\", \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 502,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "error": {
+      "code": "upstream"
+     }
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": []
+   },
+   "work": "502 upstream; nothing cached."
+  },
+  {
+   "name": "geocode: upstream failure, lat Infinity",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lat\": \"Infinity\", \"lon\": \"-73.9856589\", \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 502,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "error": {
+      "code": "upstream"
+     }
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": []
+   },
+   "work": "502 upstream; nothing cached."
+  },
+  {
+   "name": "geocode: upstream failure, a boolean lon",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=350+5th+Ave%2C+New+York%2C+NY+10118",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {
+    "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us": {
+     "status": 200,
+     "contentType": "application/json",
+     "bodyKind": "text",
+     "text": "[{\"place_id\": 360001846, \"licence\": \"Data \\u00a9 OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\", \"osm_type\": \"way\", \"osm_id\": 34633854, \"lat\": \"40.7484421\", \"lon\": true, \"category\": \"office\", \"type\": \"yes\", \"place_rank\": 30, \"importance\": 0.5803438355141769, \"addresstype\": \"office\", \"name\": \"Empire State Building\", \"display_name\": \"Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5, Manhattan, New York County, New York, 10118, United States\", \"address\": {\"office\": \"Empire State Building\", \"house_number\": \"350\", \"road\": \"5th Avenue\", \"neighbourhood\": \"Koreatown\", \"suburb\": \"Manhattan\", \"county\": \"New York County\", \"city\": \"New York\", \"state\": \"New York\", \"ISO3166-2-lvl4\": \"US-NY\", \"postcode\": \"10118\", \"country\": \"United States\", \"country_code\": \"us\"}, \"boundingbox\": [\"40.7479255\", \"40.7489585\", \"-73.9865012\", \"-73.9848166\"]}]"
+    }
+   },
+   "expect": {
+    "status": 502,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "error": {
+      "code": "upstream"
+     }
+    },
+    "upstreamCalls": [
+     "https://nominatim.openstreetmap.org/search?q=350+5th+Ave%2C+New+York%2C+NY+10118&format=jsonv2&addressdetails=1&limit=1&countrycodes=us"
+    ],
+    "kvPuts": []
+   },
+   "work": "502 upstream; nothing cached."
+  },
+  {
    "name": "geocode: upstream failure, an object, not an array",
    "refs": [
     "§3"
@@ -3231,6 +3713,40 @@
    "request": {
     "method": "GET",
     "url": "https://worker.test/geocode?q=abc%07def",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": "empty",
+   "upstream": {},
+   "expect": {
+    "status": 400,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "error": {
+      "code": "bad_param"
+     }
+    },
+    "upstreamCalls": [],
+    "kvPuts": []
+   },
+   "work": ""
+  },
+  {
+   "name": "geocode: bad input, 199 letters and an emoji (201 UTF-16 units)",
+   "refs": [
+    "§3"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/geocode?q=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%F0%9F%8D%95",
     "origin": "null"
    },
    "env": {
@@ -3668,6 +4184,26 @@
          "amenity": "restaurant",
          "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         }
+       },
+       {
+        "type": "node",
+        "id": 1020,
+        "lat": 45.8344,
+        "lon": -109.9498,
+        "tags": {
+         "amenity": "restaurant",
+         "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx🍕"
+        }
+       },
+       {
+        "type": "node",
+        "id": 1021,
+        "lat": 45.8343,
+        "lon": -109.9498,
+        "tags": {
+         "amenity": "restaurant",
+         "name": "Fixture yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy🍕"
+        }
        }
       ]
      },
@@ -3684,6 +4220,14 @@
     },
     "body": {
      "places": [
+      {
+       "id": "osm:n1021",
+       "name": "Fixture yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy🍕",
+       "category": "casual",
+       "lat": 45.8343,
+       "lon": -109.9498,
+       "miles": 0.02
+      },
       {
        "id": "osm:n1001",
        "name": "Fixture Diner",
@@ -3794,6 +4338,14 @@
        "ok": {
         "places": [
          {
+          "id": "osm:n1021",
+          "name": "Fixture yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy🍕",
+          "category": "casual",
+          "lat": 45.8343,
+          "lon": -109.9498,
+          "miles": 0.02
+         },
+         {
           "id": "osm:n1001",
           "name": "Fixture Diner",
           "category": "casual",
@@ -3898,7 +4450,7 @@
      }
     ]
    },
-   "work": "Skipped: 1003 and 1013 (brand tags), 1004 (no name), 1008 (8.01 mi > 5), 1009 (bar), the second 1002 (repeat), 2002 (no center), 0 (id < 1), 1012 (tags not an object), 1017 (type area), 1018 (lat 91), 1019 (121-character name). Kept 1010 (empty brand). Categories by D-021: american -> casual (restaurant), 'burger;american' -> burger, 'Pizza ;italian' -> pizza, thai -> asian, tacos -> mexican, ' Noodle' -> asian, french -> casual, wings -> chicken, sandwich -> sandwich, no cuisine -> by amenity."
+   "work": "Skipped: 1003 and 1013 (brand tags), 1004 (no name), 1008 (8.01 mi > 5), 1009 (bar), the second 1002 (repeat), 2002 (no center), 0 (id < 1), 1012 (tags not an object), 1017 (type area), 1018 (lat 91), 1019 (121-character name), 1020 (119 + an emoji = 121 UTF-16 units). Kept 1021 (119 units). Kept 1010 (empty brand). Categories by D-021: american -> casual (restaurant), 'burger;american' -> burger, 'Pizza ;italian' -> pizza, thai -> asian, tacos -> mexican, ' Noodle' -> asian, french -> casual, wings -> chicken, sandwich -> sandwich, no cuisine -> by amenity."
   },
   {
    "name": "nearby: a dense block keeps the nearest 40 (constructed)",
@@ -6695,6 +7247,14 @@
     {
      "places": [
       {
+       "id": "osm:n1021",
+       "name": "Fixture yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy🍕",
+       "category": "casual",
+       "lat": 45.8343,
+       "lon": -109.9498,
+       "miles": 0.02
+      },
+      {
        "id": "osm:n1001",
        "name": "Fixture Diner",
        "category": "casual",
@@ -6797,6 +7357,13 @@
    ],
    "returns": {
     "places": [
+     {
+      "id": "osm:n1021",
+      "name": "Fixture yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy🍕",
+      "category": "casual",
+      "lat": 45.8343,
+      "lon": -109.9498
+     },
      {
       "id": "osm:n1001",
       "name": "Fixture Diner",

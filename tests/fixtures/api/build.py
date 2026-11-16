@@ -162,9 +162,12 @@ def geocode_normal(resp):
     r = b[0]
     if not isinstance(r, dict):
         return "upstream", None
-    try:
-        lat, lon = float(r.get("lat")), float(r.get("lon"))
-    except (TypeError, ValueError):
+    def num(v):    # contract §3: a finite number, or a string matching ^-?[0-9]+(\.[0-9]+)?$
+        if is_num(v):
+            return v
+        return float(v) if isinstance(v, str) and re.fullmatch(r"-?[0-9]+(\.[0-9]+)?", v) else None
+    lat, lon = num(r.get("lat")), num(r.get("lon"))
+    if lat is None or lon is None:
         return "upstream", None
     if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180):
         return "upstream", None
@@ -349,13 +352,17 @@ for label, q in [("no from", "/drive?to=" + LV), ("no to", "/drive?from=" + BT),
                  ("latitude 90.5", "/drive?from=90.5,-109.95&to=" + LV), ("longitude -180.000001", "/drive?from=45.834,-180.000001&to=" + LV),
                  ("four integer digits", "/drive?from=45.834,-1099.5&to=" + LV), ("empty", "/drive?from=&to=" + LV)]:
     wcase("drive: bad input, %s" % label, ["§1", "§2"], q, None, err_expect("bad_param"))
-wcase("drive: the edges -90 and 180 are allowed (and too far apart)", ["§1", "§2"], "/drive?from=-90,180&to=-89.99,180", None, err_expect("too_far"),
-      work="Both points parse; they are %.3f mi apart in a straight line, so too_far." % dist_mi(-90, 180, -89.99, 180))
+wcase("drive: the edges -90, 180, 90 and -180 parse (and are too far apart)", ["§1", "§2"], "/drive?from=-90,180&to=90,-180", None, err_expect("too_far"),
+      work="Both points are in range (not bad_param); they are %.1f mi apart in a straight line, so too_far." % dist_mi(-90, 180, 90, -180))
 wcase("drive: more than 100 miles apart", ["§2"], "/drive?from=%s&to=%s" % (BT, NY), None, err_expect("too_far"),
       work="%.1f mi straight." % dist_mi(45.834, -109.95, 40.749, -73.986))
 d100 = 100 / (R_MI * math.pi / 180)
-wcase("drive: just over 100 miles", ["§2"], "/drive?from=0,0&to=1.447,0", None, err_expect("too_far"),
-      work="1.447 deg of latitude = %.4f mi > 100 (100 mi is %.6f deg)." % (dist_mi(0, 0, 1.447, 0), d100))
+assert dist_mi(0, 0, 1.448, 0) > 100 > dist_mi(0, 0, 1.447, 0)
+wcase("drive: just over 100 miles", ["§2"], "/drive?from=0,0&to=1.448,0", None, err_expect("too_far"),
+      work="1.448 deg of latitude = %.4f mi > 100 (100 mi is %.6f deg)." % (dist_mi(0, 0, 1.448, 0), d100))
+drive_case("drive: just under 100 miles goes to the provider", ["§2"], "0,0", "1.447,0",
+           inline(200, json.dumps({"code": "Ok", "routes": [{"distance": 161000, "duration": 6000}]})),
+           "1.447 deg = %.4f mi <= 100, so OSRM is asked (an inline answer): 161000 m -> %.4f -> 100.04 mi; 6000 s -> 100 min." % (dist_mi(0, 0, 1.447, 0), 161000 / 1609.344))
 key_bt = "v1:drive:45.834,-109.95;45.67,-110.546"
 body_bt = {"miles": 33.9, "minutes": 36.3, "source": "osrm"}
 wcase("drive: a cache hit answers without the provider", ["§5"], "/drive?from=%s&to=%s" % (BT, LV), None,
@@ -421,18 +428,23 @@ def es_with(**kw):
         else:
             r[k] = v
     return inline(200, json.dumps([r]))
-for label, resp in [("a ZIP+4 postcode", es_with(a_postcode="10118-0110")), ("a 4-digit postcode", es_with(a_postcode="1011")),
+for label, resp in [("numeric lat and lon", es_with(lat=40.5, lon=-73.5)), ("an integer-string lat", es_with(lat="40")),
+                    ("a ZIP+4 postcode", es_with(a_postcode="10118-0110")), ("a 4-digit postcode", es_with(a_postcode="1011")),
                     ("a lowercase ISO code", es_with(a_ISO3166_2_lvl4="US-ny")), ("a Puerto Rico ISO code", es_with(a_ISO3166_2_lvl4="PR-SJ")),
                     ("no city but a village", es_with(a_city=None, a_village="Fixture Village")),
                     ("an empty city, then a hamlet", es_with(a_city="", a_hamlet="Fixture Hamlet")),
                     ("no display_name", es_with(display_name=None)), ("a numeric postcode", es_with(a_postcode=10118))]:
     geo_case("geocode: %s" % label, ["§3"], ES_Q, resp)
 for label, resp in [("lat that isn't a number", es_with(lat="abc")), ("lat 91", es_with(lat="91.0")), ("no address", es_with(address=None)),
+                    ("an empty lat", es_with(lat="")), ("no lat", es_with(lat=None)), ("a hex lat", es_with(lat="0x28")),
+                    ("a lat with spaces", es_with(lat=" 40.7")), ("a lat with an underscore", es_with(lat="40_7")),
+                    ("lat Infinity", es_with(lat="Infinity")), ("a boolean lon", es_with(lon=True)),
                     ("an object, not an array", inline(200, json.dumps({"lat": "1"}))), ("status 429", inline(429, "Too Many Requests", "text/plain")),
                     ("an HTML body", inline(200, "<html></html>", "text/html")), ("a rejected fetch", {"reject": True})]:
     geo_case("geocode: upstream failure, %s" % label, ["§3"], ES_Q, resp, "502 upstream; nothing cached.")
 for label, q in [("missing", "/geocode"), ("two characters", "/geocode?q=ab"), ("only spaces", "/geocode?q=%20%20%20%20"),
                  ("201 characters", "/geocode?q=" + "a" * 201), ("a control character", "/geocode?q=abc%07def"),
+                 ("199 letters and an emoji (201 UTF-16 units)", "/geocode?" + qs([("q", "a" * 199 + "\U0001F355")])),
                  ("given twice", "/geocode?q=abc&q=def")]:
     wcase("geocode: bad input, %s" % label, ["§3"], q, None, err_expect("bad_param"))
 wcase("geocode: exactly 200 characters is fine (cache hit)", ["§3", "§5"], "/geocode?q=" + "a" * 200, None,
@@ -446,14 +458,14 @@ wcase("geocode: the cache key ignores case", ["§5"], "/geocode?" + qs([("q", ES
 # ---- /nearby (§4)
 c, small = nearby_case("nearby: a small town (constructed)", ["§4", "§5"], "45.834", "-109.95", 5, rec("overpass/constructed_small_town.json"),
                        "Skipped: 1003 and 1013 (brand tags), 1004 (no name), 1008 (%.2f mi > 5), 1009 (bar), the second 1002 (repeat), "
-                       "2002 (no center), 0 (id < 1), 1012 (tags not an object), 1017 (type area), 1018 (lat 91), 1019 (121-character name). "
+                       "2002 (no center), 0 (id < 1), 1012 (tags not an object), 1017 (type area), 1018 (lat 91), 1019 (121-character name), 1020 (119 + an emoji = 121 UTF-16 units). Kept 1021 (119 units). "
                        "Kept 1010 (empty brand). Categories by D-021: american -> casual (restaurant), 'burger;american' -> burger, "
                        "'Pizza ;italian' -> pizza, thai -> asian, tacos -> mexican, ' Noodle' -> asian, french -> casual, "
                        "wings -> chicken, sandwich -> sandwich, no cuisine -> by amenity." % dist_mi(45.834, -109.95, 45.95, -109.95))
 got = {p["id"]: p["category"] for p in small["places"]}
 assert got == {"osm:n1001": "casual", "osm:n1002": "burger", "osm:w2001": "coffee", "osm:n1005": "dessert", "osm:n1006": "pizza",
                "osm:r3001": "asian", "osm:n1007": "mexican", "osm:n1010": "chicken", "osm:n1011": "sandwich", "osm:n1014": "asian",
-               "osm:n1015": "other", "osm:n1016": "casual"}, got
+               "osm:n1015": "other", "osm:n1016": "casual", "osm:n1021": "casual"}, got
 assert [p["name"] for p in small["places"] if p["id"] == "osm:n1007"] == ["Fixture Taqueria"]
 c, dense = nearby_case("nearby: a dense block keeps the nearest 40 (constructed)", ["§4"], "40.749", "-73.986", 2, rec("overpass/constructed_dense.json"),
                        "47 places within 0.7 mi. n9 and n10 share a point: by id in codepoint order 'osm:n10' < 'osm:n9'. Then n101 ... n138; n139-n145 dropped.")
