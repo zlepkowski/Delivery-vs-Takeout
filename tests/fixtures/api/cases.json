@@ -1352,6 +1352,412 @@
    "work": ""
   },
   {
+   "name": "drive: a stored {ok: null} isn't a hit; the provider is asked",
+   "refs": [
+    "§5"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/drive?from=45.834,-109.95&to=45.67,-110.546",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": {
+    "preset": {
+     "v1:drive:45.834,-109.95;45.67,-110.546": {
+      "ok": null
+     }
+    }
+   },
+   "upstream": {
+    "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false": {
+     "status": 200,
+     "contentType": "application/json; charset=UTF-8",
+     "bodyKind": "json",
+     "body": {
+      "code": "Ok",
+      "routes": [
+       {
+        "legs": [
+         {
+          "steps": [],
+          "weight": 2176.1,
+          "summary": "",
+          "duration": 2176.1,
+          "distance": 54552.2
+         }
+        ],
+        "weight_name": "routability",
+        "weight": 2176.1,
+        "duration": 2176.1,
+        "distance": 54552.2
+       }
+      ],
+      "waypoints": [
+       {
+        "hint": "aUkkgH7Q7YUXAAAAJgAAAAAAAAAAAAAApB-lQQKiB0IAAAAAAAAAABcAAAAmAAAAAAAAAAAAAADEfwAAkEty-UNfuwLQS3L5EF-7AgAADwMAAAAA",
+        "location": [
+         -109.950064,
+         45.834051
+        ],
+        "name": "East 4th Avenue",
+        "distance": 7.540932727
+       },
+       {
+        "hint": "IEEigCNBIoB6AAAATQAAAAAAAAAAAAAAkvWqQtiEU0IAAAAAAAAAAHoAAABNAAAAAAAAAAAAAADEfwAA1TNp-YTeuAKwM2n5cN64AgAALxQAAAAA",
+        "location": [
+         -110.545963,
+         45.67002
+        ],
+        "name": "North O Street",
+        "distance": 3.640364991
+       }
+      ]
+     },
+     "fixture": "osrm/bigtimber_livingston.json"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "miles": 33.9,
+     "minutes": 36.3,
+     "source": "osrm"
+    },
+    "upstreamCalls": [
+     "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false"
+    ],
+    "kvPuts": [
+     {
+      "key": "v1:drive:45.834,-109.95;45.67,-110.546",
+      "value": {
+       "ok": {
+        "miles": 33.9,
+        "minutes": 36.3,
+        "source": "osrm"
+       }
+      },
+      "ttl": 604800
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
+   "name": "drive: a stored {ok: \"x\"} isn't a hit; the provider is asked",
+   "refs": [
+    "§5"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/drive?from=45.834,-109.95&to=45.67,-110.546",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": {
+    "preset": {
+     "v1:drive:45.834,-109.95;45.67,-110.546": {
+      "ok": "x"
+     }
+    }
+   },
+   "upstream": {
+    "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false": {
+     "status": 200,
+     "contentType": "application/json; charset=UTF-8",
+     "bodyKind": "json",
+     "body": {
+      "code": "Ok",
+      "routes": [
+       {
+        "legs": [
+         {
+          "steps": [],
+          "weight": 2176.1,
+          "summary": "",
+          "duration": 2176.1,
+          "distance": 54552.2
+         }
+        ],
+        "weight_name": "routability",
+        "weight": 2176.1,
+        "duration": 2176.1,
+        "distance": 54552.2
+       }
+      ],
+      "waypoints": [
+       {
+        "hint": "aUkkgH7Q7YUXAAAAJgAAAAAAAAAAAAAApB-lQQKiB0IAAAAAAAAAABcAAAAmAAAAAAAAAAAAAADEfwAAkEty-UNfuwLQS3L5EF-7AgAADwMAAAAA",
+        "location": [
+         -109.950064,
+         45.834051
+        ],
+        "name": "East 4th Avenue",
+        "distance": 7.540932727
+       },
+       {
+        "hint": "IEEigCNBIoB6AAAATQAAAAAAAAAAAAAAkvWqQtiEU0IAAAAAAAAAAHoAAABNAAAAAAAAAAAAAADEfwAA1TNp-YTeuAKwM2n5cN64AgAALxQAAAAA",
+        "location": [
+         -110.545963,
+         45.67002
+        ],
+        "name": "North O Street",
+        "distance": 3.640364991
+       }
+      ]
+     },
+     "fixture": "osrm/bigtimber_livingston.json"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "miles": 33.9,
+     "minutes": 36.3,
+     "source": "osrm"
+    },
+    "upstreamCalls": [
+     "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false"
+    ],
+    "kvPuts": [
+     {
+      "key": "v1:drive:45.834,-109.95;45.67,-110.546",
+      "value": {
+       "ok": {
+        "miles": 33.9,
+        "minutes": 36.3,
+        "source": "osrm"
+       }
+      },
+      "ttl": 604800
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
+   "name": "drive: a stored {ok: [1]} isn't a hit; the provider is asked",
+   "refs": [
+    "§5"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/drive?from=45.834,-109.95&to=45.67,-110.546",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": {
+    "preset": {
+     "v1:drive:45.834,-109.95;45.67,-110.546": {
+      "ok": [
+       1
+      ]
+     }
+    }
+   },
+   "upstream": {
+    "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false": {
+     "status": 200,
+     "contentType": "application/json; charset=UTF-8",
+     "bodyKind": "json",
+     "body": {
+      "code": "Ok",
+      "routes": [
+       {
+        "legs": [
+         {
+          "steps": [],
+          "weight": 2176.1,
+          "summary": "",
+          "duration": 2176.1,
+          "distance": 54552.2
+         }
+        ],
+        "weight_name": "routability",
+        "weight": 2176.1,
+        "duration": 2176.1,
+        "distance": 54552.2
+       }
+      ],
+      "waypoints": [
+       {
+        "hint": "aUkkgH7Q7YUXAAAAJgAAAAAAAAAAAAAApB-lQQKiB0IAAAAAAAAAABcAAAAmAAAAAAAAAAAAAADEfwAAkEty-UNfuwLQS3L5EF-7AgAADwMAAAAA",
+        "location": [
+         -109.950064,
+         45.834051
+        ],
+        "name": "East 4th Avenue",
+        "distance": 7.540932727
+       },
+       {
+        "hint": "IEEigCNBIoB6AAAATQAAAAAAAAAAAAAAkvWqQtiEU0IAAAAAAAAAAHoAAABNAAAAAAAAAAAAAADEfwAA1TNp-YTeuAKwM2n5cN64AgAALxQAAAAA",
+        "location": [
+         -110.545963,
+         45.67002
+        ],
+        "name": "North O Street",
+        "distance": 3.640364991
+       }
+      ]
+     },
+     "fixture": "osrm/bigtimber_livingston.json"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "miles": 33.9,
+     "minutes": 36.3,
+     "source": "osrm"
+    },
+    "upstreamCalls": [
+     "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false"
+    ],
+    "kvPuts": [
+     {
+      "key": "v1:drive:45.834,-109.95;45.67,-110.546",
+      "value": {
+       "ok": {
+        "miles": 33.9,
+        "minutes": 36.3,
+        "source": "osrm"
+       }
+      },
+      "ttl": 604800
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
+   "name": "drive: a stored another endpoint's miss code isn't a hit; the provider is asked",
+   "refs": [
+    "§5"
+   ],
+   "request": {
+    "method": "GET",
+    "url": "https://worker.test/drive?from=45.834,-109.95&to=45.67,-110.546",
+    "origin": "null"
+   },
+   "env": {
+    "USER_AGENT": "pod-test/1.0 (fixture contact)",
+    "ALLOW_ORIGINS": "https://zlepkowski.github.io"
+   },
+   "kv": {
+    "preset": {
+     "v1:drive:45.834,-109.95;45.67,-110.546": {
+      "miss": "not_found"
+     }
+    }
+   },
+   "upstream": {
+    "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false": {
+     "status": 200,
+     "contentType": "application/json; charset=UTF-8",
+     "bodyKind": "json",
+     "body": {
+      "code": "Ok",
+      "routes": [
+       {
+        "legs": [
+         {
+          "steps": [],
+          "weight": 2176.1,
+          "summary": "",
+          "duration": 2176.1,
+          "distance": 54552.2
+         }
+        ],
+        "weight_name": "routability",
+        "weight": 2176.1,
+        "duration": 2176.1,
+        "distance": 54552.2
+       }
+      ],
+      "waypoints": [
+       {
+        "hint": "aUkkgH7Q7YUXAAAAJgAAAAAAAAAAAAAApB-lQQKiB0IAAAAAAAAAABcAAAAmAAAAAAAAAAAAAADEfwAAkEty-UNfuwLQS3L5EF-7AgAADwMAAAAA",
+        "location": [
+         -109.950064,
+         45.834051
+        ],
+        "name": "East 4th Avenue",
+        "distance": 7.540932727
+       },
+       {
+        "hint": "IEEigCNBIoB6AAAATQAAAAAAAAAAAAAAkvWqQtiEU0IAAAAAAAAAAHoAAABNAAAAAAAAAAAAAADEfwAA1TNp-YTeuAKwM2n5cN64AgAALxQAAAAA",
+        "location": [
+         -110.545963,
+         45.67002
+        ],
+        "name": "North O Street",
+        "distance": 3.640364991
+       }
+      ]
+     },
+     "fixture": "osrm/bigtimber_livingston.json"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "headers": {
+     "content-type": "application/json; charset=utf-8",
+     "cache-control": "no-store",
+     "vary": "Origin",
+     "access-control-allow-origin": "null"
+    },
+    "body": {
+     "miles": 33.9,
+     "minutes": 36.3,
+     "source": "osrm"
+    },
+    "upstreamCalls": [
+     "https://router.project-osrm.org/route/v1/driving/-109.95,45.834;-110.546,45.67?overview=false&alternatives=false&steps=false"
+    ],
+    "kvPuts": [
+     {
+      "key": "v1:drive:45.834,-109.95;45.67,-110.546",
+      "value": {
+       "ok": {
+        "miles": 33.9,
+        "minutes": 36.3,
+        "source": "osrm"
+       }
+      },
+      "ttl": 604800
+     }
+    ]
+   },
+   "work": ""
+  },
+  {
    "name": "drive: a cache that throws is ignored",
    "refs": [
     "§5"

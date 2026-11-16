@@ -370,6 +370,11 @@ wcase("drive: a cache hit answers without the provider", ["§5"], "/drive?from=%
 wcase("drive: a cached miss answers 404 without the provider", ["§5"], "/drive?from=%s&to=%s" % (BT, LV), None,
       err_expect("no_route"), kv={"preset": {key_bt: {"miss": "no_route"}}})
 url_bt = drive_url(("45.834", "-109.95"), ("45.67", "-110.546"))
+for label, stored in [("{ok: null}", {"ok": None}), ('{ok: "x"}', {"ok": "x"}), ("{ok: [1]}", {"ok": [1]}),
+                      ("another endpoint's miss code", {"miss": "not_found"})]:
+    wcase("drive: a stored %s isn't a hit; the provider is asked" % label, ["§5"], "/drive?from=%s&to=%s" % (BT, LV),
+          {url_bt: rec("osrm/bigtimber_livingston.json")},
+          ok_expect(body_bt, [url_bt], [{"key": key_bt, "value": {"ok": body_bt}, "ttl": 604800}]), kv={"preset": {key_bt: stored}})
 wcase("drive: a cache that throws is ignored", ["§5"], "/drive?from=%s&to=%s" % (BT, LV), {url_bt: rec("osrm/bigtimber_livingston.json")},
       ok_expect(body_bt, [url_bt], []), kv="throws")
 wcase("drive: a KV whose get and put never settle is given up after 1 s", ["§5"], "/drive?from=%s&to=%s" % (BT, LV),

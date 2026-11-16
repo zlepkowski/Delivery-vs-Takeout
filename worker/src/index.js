@@ -53,8 +53,9 @@ function normalizeQuery(raw) {
 async function serve(spec) {
   const { kv, key, ttl, misses, run, origin, env } = spec;
   const cached = await cacheGet(kv, key);
-  if (cached !== null && Object.prototype.hasOwnProperty.call(cached, "ok")) {
-    return jsonResponse(200, cached.ok, origin, env);
+  const okBody = cached !== null && Object.prototype.hasOwnProperty.call(cached, "ok") ? cached.ok : null;
+  if (okBody !== null && typeof okBody === "object" && !Array.isArray(okBody)) {   // §5: only a plain-object body is a hit
+    return jsonResponse(200, okBody, origin, env);
   }
   if (cached !== null && misses.includes(cached.miss)) {
     return errorResponse(cached.miss, 404, origin, env);
