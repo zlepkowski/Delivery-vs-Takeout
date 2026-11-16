@@ -82,7 +82,7 @@ FR = st("fresh")
 # ---------------------------------------------------------------- fresh
 sc("fresh: blank state with the defaults", ["§2"], [FR], {
     "address": "", "pos": None, "zip": None, "zipRec": None, "state": None, "tax": None, "gas": None,
-    "make": "", "model": "", "fuel": "regular", "mpg": None, "miPerKwh": None, "kwh": 0.17,
+    "make": "", "model": "", "year": None, "fuel": "regular", "mpg": None, "miPerKwh": None, "kwh": 0.17,
     "brand": None, "rest": None, "store": None, "storePicked": False, "cart": {}, "manualSubtotal": 0, "dealOn": True,
     "miles": None, "minutes": None, "speed": SPEED, "milesAuto": True, "milesSrc": None, "milesBy": {},
     "tipDel": 15, "tipPick": 0, "wear": 0.11, "hourly": 0, "regFee": 0, "smallMin": 10, "smallFee": 2.5,
@@ -166,6 +166,66 @@ sc("setCar: a listed make with no model yet clears the old mpg", ["§6"],
 sc("setCar: from a typed car to a listed one takes the data", ["§6"],
    [FR, st("setCar", "Other", ""), st("setPath", "mpg", 33, returns=True), st("setCar", "Acme", "Sport")],
    {"mpg": 25, "fuel": "premium"}, "Sport:25* is listed: applyCar sets 25 and premium.")
+
+# ---------------------------------------------------------------- car by model year (D-037)
+# CY is patched over S1 for these scenarios. Its newest runs equal S1's CAR_DATA (Sedan 30, Volt 35e),
+# as in the real data. Classic exists only here; Zeta only in CAR_DATA.
+CY = {"CAR_YEARS": ["Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"]}
+NY = st("setAddress", "10004")
+sc("setCar with a year takes that year's run", ["§4.0", "§4.1", "§6", "D-037"], [FR, NY, st("setCar", "Acme", "Sedan", 2003)],
+   {"make": "Acme", "model": "Sedan", "year": 2003, "fuel": "regular", "mpg": 22, "miPerKwh": None, "gas": 4.1},
+   "22@2003 covers 2003. NY regular 4.1 + 0.", patch=CY)
+sc("setCar with a year inside a run", ["§4.0", "D-037"], [FR, NY, st("setCar", "Acme", "Sedan", 2020)],
+   {"year": 2020, "mpg": 26}, "26@2019-2024 covers 2020.", patch=CY)
+sc("setCar without a year: the newest run", ["§4.0", "§6", "D-037"], [FR, NY, st("setCar", "Acme", "Sedan")],
+   {"year": None, "mpg": 30, "fuel": "regular"}, "Four arguments: year null -> the run with the largest to (2026): 30.", patch=CY)
+sc("setCar: a model only in CAR_YEARS, no year", ["§4.0", "D-037"], [FR, NY, st("setCar", "Acme", "Classic")],
+   {"year": None, "mpg": 18}, "Classic isn't in CAR_DATA; its newest run is 18@2000-2004. S.year stays null.", patch=CY)
+sc("setCar: a year with no figure clears the old mpg", ["§6", "D-037"],
+   [FR, NY, st("setCar", "Acme", "Sedan"), st("setCar", "Acme", "Sedan", 2010)],
+   {"year": 2010, "mpg": None, "miPerKwh": None, "fuel": "regular", "$missing": ["rest", "mpg", "miles", "minutes"]},
+   "Sedan null year = 30; (Acme, Sedan, 2010) differs and no run covers 2004-2018, so mpg is cleared and asked for.", patch=CY)
+sc("setCar: a year after the newest run", ["§4.0", "D-037"], [FR, NY, st("setCar", "Acme", "Sedan"), st("setCar", "Acme", "Sedan", 2027)],
+   {"year": 2027, "mpg": None}, "The newest run ends 2026.", patch=CY)
+sc("setCar: an electric year", ["§4.0", "§4.1", "D-037"], [FR, NY, st("setCar", "Acme", "Volt", 2021)],
+   {"year": 2021, "fuel": "ev", "miPerKwh": 3.0, "mpg": None}, "30e@2020-2022 -> 30 / 10 = 3.0 mi/kWh.", patch=CY)
+sc("setCar: an electric gap year keeps ev and clears miPerKwh", ["§6", "D-037"],
+   [FR, NY, st("setCar", "Acme", "Volt", 2021), st("setCar", "Acme", "Volt", 2023)],
+   {"year": 2023, "fuel": "ev", "miPerKwh": None, "mpg": None}, "2023 is between the runs; 3.0 is cleared, fuel stays ev.", patch=CY)
+sc("setCar: the same unlisted year again keeps the user's own mpg", ["§6", "D-037"],
+   [FR, NY, st("setCar", "Acme", "Sedan", 2010), st("setPath", "mpg", 28, returns=True), st("setCar", "Acme", "Sedan", 2010)],
+   {"year": 2010, "mpg": 28}, "The triple didn't change, so the typed 28 stays.", patch=CY)
+sc("setCar: from an unlisted year to a listed one takes the data", ["§6", "D-037"],
+   [FR, NY, st("setCar", "Acme", "Sedan", 2010), st("setPath", "mpg", 28, returns=True), st("setCar", "Acme", "Sedan", 2003)],
+   {"year": 2003, "mpg": 22}, "22@2003 is found; applyCar replaces the typed 28.", patch=CY)
+for bad_year, why in (("2003", "a string"), (2003.5, "a fraction"), (1899, "below 1900"), (2101, "above 2100"), (True, "a boolean"), (None, "null")):
+    sc("setCar: a year that is %s means null" % why, ["§6", "D-037"], [FR, NY, st("setCar", "Acme", "Sedan", bad_year)],
+       {"year": None, "mpg": 30}, "Not an integer in 1900-2100 -> null -> the newest run, 30.", patch=CY)
+sc("setCar: year 1900 and 2100 are kept", ["§6", "D-037"], [FR, NY, st("setCar", "Acme", "Sedan", 1900)],
+   {"year": 1900, "mpg": None}, "1900 is in range (no run covers it, so mpg stays null).", patch=CY)
+sc("setCar: year 2100 is kept", ["§6", "D-037"], [FR, NY, st("setCar", "Acme", "Sedan", 2100)],
+   {"year": 2100, "mpg": None}, "In range, no run.", patch=CY)
+sc("setCar: CAR_DATA answers a null year when CAR_YEARS lacks the pair", ["§4.0", "D-037"], [FR, NY, st("setCar", "Zeta", "Sedan")],
+   {"year": None, "mpg": 40}, "CY has no Zeta: CAR_DATA's Zeta Sedan 40.", patch=CY)
+sc("setCar: CAR_DATA never answers a year", ["§4.0", "§6", "D-037"],
+   [FR, NY, st("setCar", "Zeta", "Sedan"), st("setCar", "Zeta", "Sedan", 2020)],
+   {"year": 2020, "mpg": None}, "An integer year reads CAR_YEARS only; Zeta isn't there, so 40 is cleared.", patch=CY)
+sc("setCar: Other with a year", ["§6", "D-037"], [FR, NY, st("setCar", "Acme", "Sedan", 2003), st("setCar", "Other", "", 2003)],
+   {"make": "Other", "model": "", "year": 2003, "mpg": None}, "Other is never found; 22 is cleared.", patch=CY)
+sc("save then load keeps the year and re-derives its figure", ["§8", "D-037"],
+   [FR, NY, st("setCar", "Acme", "Sedan", 2003), st("save", returns=True), st("load")],
+   {"year": 2003, "mpg": 22, "fuel": "regular", "$saved.year": 2003, "$saved.mpg": 22},
+   "year is a user field; mpg (saved too) is re-derived by applyCar from the 2003 run.", patch=CY, storage={"kind": "memory"})
+sc("load: an unlisted year keeps the user's saved mpg", ["§8", "D-037"], [st("load")],
+   {"year": 2010, "mpg": 28, "fuel": "regular", "$storageWrites": 0},
+   "(Acme, Sedan, 2010) isn't found, so applyCar leaves the saved 28.", patch=CY,
+   storage={"kind": "memory", "value": json.dumps({"address": "10004", "make": "Acme", "model": "Sedan", "year": 2010, "mpg": 28})})
+for raw, why in (("2003", "a string"), (2003.5, "a fraction"), (1899, "below 1900"), (True, "a boolean")):
+    sc("load: a saved year that is %s becomes null" % why, ["§8", "D-037"], [st("load")], {"year": None, "mpg": 30},
+       "Falls back to fresh's null; the newest run gives 30.", patch=CY,
+       storage={"kind": "memory", "value": json.dumps({"address": "10004", "make": "Acme", "model": "Sedan", "year": raw})})
+sc("load: saved years 1900 and 2100 are kept", ["§8", "D-037"], [st("load")], {"year": 2100},
+   "In range.", patch=CY, storage={"kind": "memory", "value": json.dumps({"make": "Acme", "model": "Sedan", "year": 2100})})
 
 # ---------------------------------------------------------------- brand and trip
 pz_store = {"id": "pz@40030,-74000", "lat": 40.03, "lon": -74}
@@ -485,7 +545,7 @@ round_trip = setup + [st("pinMiles", 7), st("toggleCard", "c_gold", True), st("s
     st("markUsed", "c_gold.dining", True), st("addManualCredit", {"name": "Gift card", "amount": 20, "plats": ["direct"]}),
     st("setPath", "tipDel", 20), st("setPath", "plats.dd.memberOwn", True), st("setPath", "promos.ue.type", "percent"),
     st("setPath", "promos.ue.value", 20), st("setPath", "plats.gh.delFee", 3.49), st("save", returns=True), st("load")]
-USER_KEYS = sorted(["address", "make", "model", "fuel", "mpg", "miPerKwh", "kwh", "brand", "store", "storePicked", "cart",
+USER_KEYS = sorted(["address", "make", "model", "year", "fuel", "mpg", "miPerKwh", "kwh", "brand", "store", "storePicked", "cart",
     "manualSubtotal", "dealOn", "miles", "speed", "milesAuto", "milesBy", "tipDel", "tipPick", "wear", "hourly", "regFee",
     "smallMin", "smallFee", "cards", "creditOptIn", "usedIn", "manualCredits", "plats", "promos"])
 sc("save then load: user fields come back, derived ones are rebuilt", ["§8", "§4.7"], round_trip, {

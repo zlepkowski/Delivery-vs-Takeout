@@ -20,6 +20,15 @@
 
   ORACLE_GEO_N=200 python3 -I tests/oracle/run.py
 
+4. Insights (docs/insights-contract.md): fixtures and seeded scenarios (D-034).
+
+5. VIN and the car tables (docs/vin-contract.md, state contract §4.0; D-037, D-038): the
+   hand-worked cases in tests/fixtures/vin/cases.json are checked against the Python reference
+   (tests/oracle/vin.py). Once src/js/vin.js exists (it must then be in index.html), the cases
+   and ORACLE_VIN_N seeded random calls (default 400) run through the JS too, exactly.
+
+  ORACLE_VIN_N=4000 python3 -I tests/oracle/run.py
+
 On a failure it prints the receipt case or the scenario seed, the call, and the first
 differing field, then exits 1. Standard library only.
 """
@@ -36,6 +45,7 @@ sys.path.insert(0, HERE)  # -I leaves the script's own directory off sys.path
 import engine as E  # noqa: E402
 import geo as G  # noqa: E402
 import insights as I  # noqa: E402
+import vin as V  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 RECEIPTS = os.path.join(ROOT, "tests", "fixtures", "receipts")
@@ -44,6 +54,8 @@ SEED = int(os.environ.get("ORACLE_SEED", "20261112"))
 APPS = ("dd", "ue", "gh")
 GEO_FIX = os.path.join(ROOT, "tests", "fixtures", "geo")
 GEO_N = int(os.environ.get("ORACLE_GEO_N", "60"))
+VIN_FIX = os.path.join(ROOT, "tests", "fixtures", "vin")
+VIN_N = int(os.environ.get("ORACLE_VIN_N", "400"))
 
 
 # ---------------------------------------------------------------- helpers
@@ -604,6 +616,196 @@ def run_js(requests):
             return json.load(fh)
 
 
+# ---------------------------------------------------------------- VIN and car tables (D-037, D-038)
+
+def vin_dataset(doc, name):
+    if name is None:
+        return None
+    if name == "T1:bad":   # T1 with both tables replaced by values that aren't arrays
+        return dict(doc["datasets"]["T1"], CAR_DATA=5, CAR_YEARS={"a": 1})
+    return doc["datasets"][name]
+
+
+def vin_args(c):
+    if c.get("fixture"):
+        with open(os.path.join(VIN_FIX, "vpic", c["fixture"] + ".json"), encoding="utf-8") as fh:
+            return [json.load(fh)]
+    return c["args"]
+
+
+def vin_norm(v):
+    """JS has one number type: 3.0 and 3 are the same value. Booleans stay booleans."""
+    if isinstance(v, float) and v.is_integer():
+        return int(v)
+    if isinstance(v, list):
+        return [vin_norm(x) for x in v]
+    if isinstance(v, dict):
+        return {k: vin_norm(x) for k, x in v.items()}
+    return v
+
+
+def same(a, b):
+    """Exact equality that keeps true apart from 1 and null apart from 0 (compared as JSON text)."""
+    return json.dumps(vin_norm(a), sort_keys=True) == json.dumps(vin_norm(b), sort_keys=True)
+
+
+def vin_fix_check_digit(v):
+    total = sum((int(ch) if ch.isdigit() else V.LETTER[ch]) * w for ch, w in zip(v, V.WEIGHTS)) % 11
+    return v[:8] + ("X" if total == 10 else str(total)) + v[9:]
+
+
+def vin_random_cases(seed):
+    """Seeded random calls. Datasets are made per call and named R<i>."""
+    rnd = random.Random(seed)
+    datasets = {}
+    cases = []
+    junk = list("abcxyz-_ .\t\n\rßü ") + ["\U0001F600", "IOQ", "iOq"]
+    for i in range(VIN_N):
+        # clean / check / url / key on noisy strings, a third of them valid VINs
+        base = "".join(rnd.choice(V.ALLOWED) for _ in range(17))
+        if rnd.random() < 0.35:
+            base = vin_fix_check_digit(base)
+        s = list(base)
+        for _ in range(rnd.choice((0, 0, 1, 2, 3))):
+            op = rnd.random()
+            pos = rnd.randrange(len(s) + 1)
+            if op < 0.4:
+                s.insert(pos, rnd.choice(junk))
+            elif op < 0.7 and s:
+                del s[min(pos, len(s) - 1)]
+            elif s:
+                s[min(pos, len(s) - 1)] = s[min(pos, len(s) - 1)].lower()
+        text = "".join(s)
+        cases.append({"id": "rand %d clean" % i, "fn": "clean", "args": [text]})
+        cases.append({"id": "rand %d check" % i, "fn": "check", "args": [text]})
+        cases.append({"id": "rand %d check(clean)" % i, "fn": "check", "args": [V.clean(text)]})
+        cases.append({"id": "rand %d url" % i, "fn": "url", "args": [V.clean(text)]})
+        cases.append({"id": "rand %d key" % i, "fn": "key", "args": [text]})
+        # a small random pair of car tables, then lookups and a match on it
+        makes = ["Acme", "acme", "Bolt Co", "Mercedes-Benz", "Mercedes Benz", "Zed"]
+        models = ["Sedan", "F150", "F-150", "Model 3", "X", "Van 2WD", ""]
+        def entry_runs():
+            runs = []
+            year = rnd.randint(2015, 2030)
+            for _ in range(rnd.randint(0, 4)):
+                to = year
+                frm = to - rnd.choice((0, 0, 1, 3))
+                v = rnd.choice(("0", "5", "24", "38", "120"))
+                suf = rnd.choice(("", "", "*", "d", "e"))
+                if rnd.random() < 0.85:
+                    runs.append("%s%s@%d" % (v, suf, frm) if frm == to else "%s%s@%d-%d" % (v, suf, frm, to))
+                else:
+                    runs.append(rnd.choice(("x", "", "30@20", "25@2021-2020", "7@1999-2001", "12q@2020")))
+                year = frm - rnd.choice((1, 1, 2, 4))
+            return " ".join(runs)
+        def table(kind):
+            out = []
+            for _ in range(rnd.randint(0, 3)):
+                mk = rnd.choice(makes + [""])
+                es = []
+                for _ in range(rnd.randint(0, 3)):
+                    md = rnd.choice(models)
+                    if kind == "years":
+                        es.append(md + ":" + entry_runs())
+                    else:
+                        es.append(md + ":" + rnd.choice(("30", "41*", "22d", "35e", "x", "")))
+                out.append(mk + "|" + ",".join(es) if rnd.random() < 0.95 else mk)
+            return out
+        name = "R%d" % i
+        datasets[name] = {"CAR_DATA": table("data"), "CAR_YEARS": table("years")}
+        mk, md = rnd.choice(makes), rnd.choice(models)
+        yr = rnd.choice([None, None, rnd.randint(2008, 2032), rnd.randint(2008, 2032), 2003.5, "2020", 1899])
+        listed = [(m, n) for t in ("CAR_YEARS", "CAR_DATA") for m, es in V.rows(datasets[name], t) for n, _ in es]
+        if listed and rnd.random() < 0.8:   # mostly ask about a car the tables list, so lookups hit
+            mk, md = rnd.choice(listed)
+            runs = V.car_years(datasets[name], mk, md)
+            if runs and rnd.random() < 0.6:
+                r = rnd.choice(runs)
+                yr = rnd.randint(r["from"], r["to"])
+        cases.append({"id": "rand %d carMakes" % i, "fn": "carMakes", "args": [], "data": name})
+        cases.append({"id": "rand %d carModels" % i, "fn": "carModels", "args": [mk], "data": name})
+        cases.append({"id": "rand %d carYears" % i, "fn": "carYears", "args": [mk, md], "data": name})
+        cases.append({"id": "rand %d carLookup" % i, "fn": "carLookup", "args": [mk, md, yr], "data": name})
+        dec = {"year": rnd.choice((2019, 2019, 1899, 2003.5)), "make": rnd.choice(makes + ["ACME", "MERCEDES-BENZ", "---"]),
+               "model": rnd.choice(models + ["f-150", "MODEL 3", "---"])}
+        cases.append({"id": "rand %d match" % i, "fn": "match", "args": [dec], "data": name})
+    return datasets, cases
+
+
+def vin_built(failures):
+    if not os.path.exists(os.path.join(ROOT, "src", "js", "vin.js")):
+        return False
+    with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
+        if not re.search(r"""<script\b[^>]*\bsrc=["']src/js/vin\.js["']""", fh.read()):
+            failures.append("vin: src/js/vin.js exists but index.html doesn't load it")
+    return True
+
+
+def run_js_vin(datasets, cases):
+    with tempfile.TemporaryDirectory() as tmp:
+        fin = os.path.join(tmp, "in.json")
+        fout = os.path.join(tmp, "out.json")
+        with open(fin, "w", encoding="utf-8") as fh:
+            json.dump({"datasets": datasets, "cases": [{"fn": c["fn"], "args": c["args"], "data": c.get("data")}
+                                                       for c in cases]}, fh)
+        subprocess.run(["node", os.path.join("tests", "oracle", "vin_runner.js"), fin, fout], cwd=ROOT, check=True)
+        with open(fout, encoding="utf-8") as fh:
+            return json.load(fh)
+
+
+def vin_checks(failures):
+    with open(os.path.join(VIN_FIX, "cases.json"), encoding="utf-8") as fh:
+        doc = json.load(fh)
+    hand = doc["cases"]
+    if len(hand) < 100:   # a vanished case list must not pass quietly
+        failures.append("vin: only %d hand-worked cases (expected at least 100)" % len(hand))
+    bad = 0
+    for c in hand:
+        got = V.call(c["fn"], vin_args(c), vin_dataset(doc, c.get("data")))
+        if not same(got, c["expect"]):
+            bad += 1
+            failures.append("vin hand-worked %r, python reference: expected %r, got %r" % (c["id"], c["expect"], got))
+    print("oracle: vin hand-worked %d/%d cases match the python reference" % (len(hand) - bad, len(hand)))
+
+    if not vin_built(failures):
+        print("oracle: src/js/vin.js is not built yet, so the JS vin comparison is skipped")
+        return
+    datasets = {k: vin_dataset(doc, k) for k in list(doc["datasets"]) + ["T1:bad"]}
+    hand_js = [dict(c, args=vin_args(c)) for c in hand]
+    rdata, rand = vin_random_cases(SEED)
+    datasets.update(rdata)
+    seen = {}
+    for c in rand:
+        if c["fn"] in ("check", "carLookup", "match"):
+            v = V.call(c["fn"], c["args"], datasets.get(c.get("data")))
+            k = c["fn"] + ":" + (v if isinstance(v, str) else ("null" if v is None else
+                                 (v.get("fuel", "") if c["fn"] == "carLookup" else
+                                  ("Other" if v["make"] == "Other" else ("model" if v["model"] else "make-only")))))
+            seen[k] = seen.get(k, 0) + 1
+    print("oracle: vin random outcomes: " + ", ".join("%s %d" % kv for kv in sorted(seen.items())))
+    for must in ("check:ok", "check:digit", "check:chars", "check:length", "carLookup:null", "carLookup:regular",
+                 "carLookup:ev", "match:Other", "match:model", "match:make-only"):
+        if VIN_N >= 200 and seen.get(must, 0) < VIN_N // 100:
+            failures.append("vin random: outcome %s seen only %d times" % (must, seen.get(must, 0)))
+    res = run_js_vin(datasets, hand_js + rand)
+    if len(res) != len(hand_js) + len(rand):
+        failures.append("vin: the JS runner returned %d results for %d calls" % (len(res), len(hand_js) + len(rand)))
+        return
+    for name, cs, i0 in (("hand-worked", hand_js, 0), ("random", rand, len(hand_js))):
+        bad = 0
+        for j, c in enumerate(cs):
+            r_ = res[i0 + j]
+            if not r_["ok"]:
+                d = "JS error: " + r_["err"].splitlines()[0]
+            else:
+                exp = c["expect"] if name == "hand-worked" else V.call(c["fn"], c["args"], datasets.get(c.get("data")))
+                d = None if same(exp, r_["v"]) else "expected %r, JS gave %r" % (exp, r_["v"])
+            if d:
+                bad += 1
+                failures.append("vin %s %r: %s" % (name, c["id"], d))
+        print("oracle: vin %s %d/%d calls match the JS" % (name, len(cs) - bad, len(cs)))
+
+
 def main():
     failures = []
 
@@ -660,6 +862,7 @@ def main():
 
     geo_checks(failures)
     insights_checks(failures)
+    vin_checks(failures)
 
     for f in failures[:10]:
         print("FAIL " + f)

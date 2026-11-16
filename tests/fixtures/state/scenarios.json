@@ -427,6 +427,7 @@
     "gas": null,
     "make": "",
     "model": "",
+    "year": null,
     "fuel": "regular",
     "mpg": null,
     "miPerKwh": null,
@@ -1391,6 +1392,1117 @@
     "fuel": "premium"
    },
    "work": "Sport:25* is listed: applyCar sets 25 and premium."
+  },
+  {
+   "id": "setCar with a year takes that year's run",
+   "refs": [
+    "§4.0",
+    "§4.1",
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2003
+     ]
+    }
+   ],
+   "expect": {
+    "make": "Acme",
+    "model": "Sedan",
+    "year": 2003,
+    "fuel": "regular",
+    "mpg": 22,
+    "miPerKwh": null,
+    "gas": 4.1
+   },
+   "work": "22@2003 covers 2003. NY regular 4.1 + 0.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar with a year inside a run",
+   "refs": [
+    "§4.0",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2020
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2020,
+    "mpg": 26
+   },
+   "work": "26@2019-2024 covers 2020.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar without a year: the newest run",
+   "refs": [
+    "§4.0",
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30,
+    "fuel": "regular"
+   },
+   "work": "Four arguments: year null -> the run with the largest to (2026): 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a model only in CAR_YEARS, no year",
+   "refs": [
+    "§4.0",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Classic"
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 18
+   },
+   "work": "Classic isn't in CAR_DATA; its newest run is 18@2000-2004. S.year stays null.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a year with no figure clears the old mpg",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2010
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2010,
+    "mpg": null,
+    "miPerKwh": null,
+    "fuel": "regular",
+    "$missing": [
+     "rest",
+     "mpg",
+     "miles",
+     "minutes"
+    ]
+   },
+   "work": "Sedan null year = 30; (Acme, Sedan, 2010) differs and no run covers 2004-2018, so mpg is cleared and asked for.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a year after the newest run",
+   "refs": [
+    "§4.0",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2027
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2027,
+    "mpg": null
+   },
+   "work": "The newest run ends 2026.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: an electric year",
+   "refs": [
+    "§4.0",
+    "§4.1",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Volt",
+      2021
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2021,
+    "fuel": "ev",
+    "miPerKwh": 3.0,
+    "mpg": null
+   },
+   "work": "30e@2020-2022 -> 30 / 10 = 3.0 mi/kWh.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: an electric gap year keeps ev and clears miPerKwh",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Volt",
+      2021
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Volt",
+      2023
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2023,
+    "fuel": "ev",
+    "miPerKwh": null,
+    "mpg": null
+   },
+   "work": "2023 is between the runs; 3.0 is cleared, fuel stays ev.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: the same unlisted year again keeps the user's own mpg",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2010
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "mpg",
+      28
+     ],
+     "returns": true
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2010
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2010,
+    "mpg": 28
+   },
+   "work": "The triple didn't change, so the typed 28 stays.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: from an unlisted year to a listed one takes the data",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2010
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "mpg",
+      28
+     ],
+     "returns": true
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2003
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2003,
+    "mpg": 22
+   },
+   "work": "22@2003 is found; applyCar replaces the typed 28.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a year that is a string means null",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      "2003"
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Not an integer in 1900-2100 -> null -> the newest run, 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a year that is a fraction means null",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2003.5
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Not an integer in 1900-2100 -> null -> the newest run, 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a year that is below 1900 means null",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      1899
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Not an integer in 1900-2100 -> null -> the newest run, 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a year that is above 2100 means null",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2101
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Not an integer in 1900-2100 -> null -> the newest run, 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a year that is a boolean means null",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      true
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Not an integer in 1900-2100 -> null -> the newest run, 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: a year that is null means null",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      null
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Not an integer in 1900-2100 -> null -> the newest run, 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: year 1900 and 2100 are kept",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      1900
+     ]
+    }
+   ],
+   "expect": {
+    "year": 1900,
+    "mpg": null
+   },
+   "work": "1900 is in range (no run covers it, so mpg stays null).",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: year 2100 is kept",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2100
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2100,
+    "mpg": null
+   },
+   "work": "In range, no run.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: CAR_DATA answers a null year when CAR_YEARS lacks the pair",
+   "refs": [
+    "§4.0",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Zeta",
+      "Sedan"
+     ]
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 40
+   },
+   "work": "CY has no Zeta: CAR_DATA's Zeta Sedan 40.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: CAR_DATA never answers a year",
+   "refs": [
+    "§4.0",
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Zeta",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Zeta",
+      "Sedan",
+      2020
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2020,
+    "mpg": null
+   },
+   "work": "An integer year reads CAR_YEARS only; Zeta isn't there, so 40 is cleared.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "setCar: Other with a year",
+   "refs": [
+    "§6",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2003
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      "",
+      2003
+     ]
+    }
+   ],
+   "expect": {
+    "make": "Other",
+    "model": "",
+    "year": 2003,
+    "mpg": null
+   },
+   "work": "Other is never found; 22 is cleared.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   }
+  },
+  {
+   "id": "save then load keeps the year and re-derives its figure",
+   "refs": [
+    "§8",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan",
+      2003
+     ]
+    },
+    {
+     "call": "save",
+     "args": [],
+     "returns": true
+    },
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "year": 2003,
+    "mpg": 22,
+    "fuel": "regular",
+    "$saved.year": 2003,
+    "$saved.mpg": 22
+   },
+   "work": "year is a user field; mpg (saved too) is re-derived by applyCar from the 2003 run.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   },
+   "storage": {
+    "kind": "memory"
+   }
+  },
+  {
+   "id": "load: an unlisted year keeps the user's saved mpg",
+   "refs": [
+    "§8",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "year": 2010,
+    "mpg": 28,
+    "fuel": "regular",
+    "$storageWrites": 0
+   },
+   "work": "(Acme, Sedan, 2010) isn't found, so applyCar leaves the saved 28.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   },
+   "storage": {
+    "kind": "memory",
+    "value": "{\"address\": \"10004\", \"make\": \"Acme\", \"model\": \"Sedan\", \"year\": 2010, \"mpg\": 28}"
+   }
+  },
+  {
+   "id": "load: a saved year that is a string becomes null",
+   "refs": [
+    "§8",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Falls back to fresh's null; the newest run gives 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   },
+   "storage": {
+    "kind": "memory",
+    "value": "{\"address\": \"10004\", \"make\": \"Acme\", \"model\": \"Sedan\", \"year\": \"2003\"}"
+   }
+  },
+  {
+   "id": "load: a saved year that is a fraction becomes null",
+   "refs": [
+    "§8",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Falls back to fresh's null; the newest run gives 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   },
+   "storage": {
+    "kind": "memory",
+    "value": "{\"address\": \"10004\", \"make\": \"Acme\", \"model\": \"Sedan\", \"year\": 2003.5}"
+   }
+  },
+  {
+   "id": "load: a saved year that is below 1900 becomes null",
+   "refs": [
+    "§8",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Falls back to fresh's null; the newest run gives 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   },
+   "storage": {
+    "kind": "memory",
+    "value": "{\"address\": \"10004\", \"make\": \"Acme\", \"model\": \"Sedan\", \"year\": 1899}"
+   }
+  },
+  {
+   "id": "load: a saved year that is a boolean becomes null",
+   "refs": [
+    "§8",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "year": null,
+    "mpg": 30
+   },
+   "work": "Falls back to fresh's null; the newest run gives 30.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   },
+   "storage": {
+    "kind": "memory",
+    "value": "{\"address\": \"10004\", \"make\": \"Acme\", \"model\": \"Sedan\", \"year\": true}"
+   }
+  },
+  {
+   "id": "load: saved years 1900 and 2100 are kept",
+   "refs": [
+    "§8",
+    "D-037"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "year": 2100
+   },
+   "work": "In range.",
+   "patch": {
+    "CAR_YEARS": [
+     "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
+    ]
+   },
+   "storage": {
+    "kind": "memory",
+    "value": "{\"make\": \"Acme\", \"model\": \"Sedan\", \"year\": 2100}"
+   }
   },
   {
    "id": "setBrand: a profiled brand, its markups and the nearest store",
@@ -5102,7 +6214,8 @@
      "tipDel",
      "tipPick",
      "usedIn",
-     "wear"
+     "wear",
+     "year"
     ],
     "$saved.plats.dd": {
      "on": true,

@@ -1,0 +1,1650 @@
+{
+ "about": "Hand-worked cases for docs/vin-contract.md and docs/state-contract.md §4.0. `args` are the call's arguments without D; D (datasets[data], 'T1:bad' = T1 with both tables replaced by non-arrays) goes where the contract puts it: match(dec, D), carMakes(D), carModels(D, make), carYears(D, make, model), carLookup(D, make, model, year). A case with `fixture` takes tests/fixtures/vin/vpic/<fixture>.json as its one argument.",
+ "datasets": {
+  "T1": {
+   "CAR_DATA": [
+    "Acme|Roadster:30*,Sedan:40,Volt:35e",
+    "Ford|F-150 Lightning:20e,F150:21",
+    "Honda|Accord:38,Civic:42",
+    "Mercedes-Benz|C-Class:30*"
+   ],
+   "CAR_YEARS": [
+    "Acme|Classic:20@2001-2003,Sedan:40@2024-2026 33@2020-2023 30@2018,Volt:35e@2025-2026",
+    "Ford|F-150 Lightning:20e@2022-2025,F150:21@2024-2026 19@2018-2020",
+    "Honda|Accord:38@2023-2026 33@2018-2022 24@2003",
+    "Mercedes-Benz|C-Class:30*@2020-2026"
+   ]
+  },
+  "T2": {
+   "CAR_DATA": [
+    "Zed|Bad:x,Good:25d",
+    "Zed|Bad:31",
+    5,
+    "NoBar",
+    "|Empty:20",
+    "Zed|:20,Dup:30,Dup:40"
+   ],
+   "CAR_YEARS": [
+    "Zed|Car:0@2020 25@2021-2020 30@20 31@2019 x 28*@2015-2017  27d@2014,Car:22@2010",
+    "Tie|T:20@2019-2020 25@2018-2020",
+    "Odd|O:20@2010 30@2015",
+    "Mercedes Benz|C:10@2020",
+    null,
+    "Zed|NoColon"
+   ]
+  },
+  "T3": {
+   "CAR_DATA": [
+    "Mercedes-Benz|C-Class:30*"
+   ],
+   "CAR_YEARS": [
+    "Mercedes Benz|C:10@2020"
+   ]
+  }
+ },
+ "datasets_about": {
+  "T1": "T1: Acme has Roadster and Volt in CAR_DATA, Classic only in CAR_YEARS, Sedan in both (with a 2019 gap). Honda Civic is only in CAR_DATA. Ford has F150 and F-150 Lightning, whose keys are f150 and f150lightning. Made up.",
+  "T2": "T2: malformed runs and rows. 'Mercedes Benz' (a space) sorts before 'Mercedes-Benz' (0x20 < 0x2D) when both tables are merged with T1 by patch.",
+  "T3": "T3: two spellings of one make key."
+ },
+ "cases": [
+  {
+   "id": "clean NHTSA sample with case, hyphen, spaces and a newline",
+   "fn": "clean",
+   "args": [
+    " 1hgcm8-2633a004352\n"
+   ],
+   "expect": "1HGCM82633A004352",
+   "work": "lowercase a-z raised; space, '-', LF dropped"
+  },
+  {
+   "id": "clean a tab and a carriage return",
+   "fn": "clean",
+   "args": [
+    "1HG\tCM82633A00435\r2"
+   ],
+   "expect": "1HGCM82633A004352",
+   "work": "tab and CR dropped"
+  },
+  {
+   "id": "clean keeps other characters as they are",
+   "fn": "clean",
+   "args": [
+    "ß1.2_ü"
+   ],
+   "expect": "ß1.2_ü",
+   "work": "only ASCII a-z changes; '.', '_', non-ASCII kept"
+  },
+  {
+   "id": "clean a number",
+   "fn": "clean",
+   "args": [
+    12345
+   ],
+   "expect": "",
+   "work": "not a string"
+  },
+  {
+   "id": "clean null",
+   "fn": "clean",
+   "args": [
+    null
+   ],
+   "expect": "",
+   "work": "not a string"
+  },
+  {
+   "id": "clean empty",
+   "fn": "clean",
+   "args": [
+    ""
+   ],
+   "expect": "",
+   "work": ""
+  },
+  {
+   "id": "check NHTSA sample",
+   "fn": "check",
+   "args": [
+    "1HGCM82633A004352"
+   ],
+   "expect": "ok",
+   "work": "values 1 8 7 3 4 8 2 6 3 3 1 0 0 4 3 5 2 x weights 8 7 6 5 4 3 2 10 0 9 8 7 6 5 4 3 2 = 311; 311 % 11 = 3 = 9th char"
+  },
+  {
+   "id": "check digit X",
+   "fn": "check",
+   "args": [
+    "1M8GDM9AXKP042788"
+   ],
+   "expect": "ok",
+   "work": "8+28+48+35+16+12+18+10+0+18+56+0+24+10+28+24+16 = 351; 351 % 11 = 10 -> 'X' = 9th char"
+  },
+  {
+   "id": "check all ones",
+   "fn": "check",
+   "args": [
+    "11111111111111111"
+   ],
+   "expect": "ok",
+   "work": "sum of weights 89; 89 % 11 = 1 = 9th char"
+  },
+  {
+   "id": "check wrong digit",
+   "fn": "check",
+   "args": [
+    "1HGCM82643A004352"
+   ],
+   "expect": "digit",
+   "work": "9th char changed 3 -> 4; weight 0, so the sum stays 311 and r = 3 != '4'"
+  },
+  {
+   "id": "check X where a digit belongs",
+   "fn": "check",
+   "args": [
+    "11111111X11111111"
+   ],
+   "expect": "digit",
+   "work": "r = 1, 9th char 'X'"
+  },
+  {
+   "id": "check 16 chars",
+   "fn": "check",
+   "args": [
+    "1HGCM82633A00435"
+   ],
+   "expect": "length",
+   "work": "length 16"
+  },
+  {
+   "id": "check 18 chars",
+   "fn": "check",
+   "args": [
+    "1HGCM82633A0043521"
+   ],
+   "expect": "length",
+   "work": "length 18"
+  },
+  {
+   "id": "check not a string",
+   "fn": "check",
+   "args": [
+    17
+   ],
+   "expect": "length",
+   "work": "not a string"
+  },
+  {
+   "id": "check null",
+   "fn": "check",
+   "args": [
+    null
+   ],
+   "expect": "length",
+   "work": "not a string"
+  },
+  {
+   "id": "check I",
+   "fn": "check",
+   "args": [
+    "1HGCM82633I004352"
+   ],
+   "expect": "chars",
+   "work": "I isn't allowed (before the check digit)"
+  },
+  {
+   "id": "check O and Q",
+   "fn": "check",
+   "args": [
+    "1HGCM8263OQ004352"
+   ],
+   "expect": "chars",
+   "work": "O, Q not allowed"
+  },
+  {
+   "id": "check lowercase",
+   "fn": "check",
+   "args": [
+    "1hgcm82633a004352"
+   ],
+   "expect": "chars",
+   "work": "check doesn't clean; lowercase isn't allowed"
+  },
+  {
+   "id": "check an astral character makes 18 code units",
+   "fn": "check",
+   "args": [
+    "1HGCM82633A00435😀"
+   ],
+   "expect": "length",
+   "work": "16 ASCII + 2 UTF-16 units = 18"
+  },
+  {
+   "id": "check an astral character inside 17 units",
+   "fn": "check",
+   "args": [
+    "1HGCM82633A0043😀"
+   ],
+   "expect": "chars",
+   "work": "15 + 2 = 17 units; the surrogates aren't allowed"
+  },
+  {
+   "id": "url for a VIN that checks",
+   "fn": "url",
+   "args": [
+    "1HGCM82633A004352"
+   ],
+   "expect": "https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/1HGCM82633A004352?format=json",
+   "work": "check ok"
+  },
+  {
+   "id": "url for a bad check digit",
+   "fn": "url",
+   "args": [
+    "1HGCM82643A004352"
+   ],
+   "expect": null,
+   "work": "check 'digit'"
+  },
+  {
+   "id": "url for lowercase",
+   "fn": "url",
+   "args": [
+    "1hgcm82633a004352"
+   ],
+   "expect": null,
+   "work": "check 'chars'"
+  },
+  {
+   "id": "url not a string",
+   "fn": "url",
+   "args": [
+    null
+   ],
+   "expect": null,
+   "work": "check 'length'"
+  },
+  {
+   "id": "decode recorded accord2003",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 2003,
+    "make": "HONDA",
+    "model": "Accord"
+   },
+   "work": "Results[0].ModelYear '2003', Make 'HONDA', Model 'Accord' (recorded 2026-11-16)",
+   "fixture": "accord2003"
+  },
+  {
+   "id": "decode recorded camry2018",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 2018,
+    "make": "TOYOTA",
+    "model": "Camry"
+   },
+   "work": "Results[0].ModelYear '2018', Make 'TOYOTA', Model 'Camry' (recorded 2026-11-16)",
+   "fixture": "camry2018"
+  },
+  {
+   "id": "decode recorded model3_2019",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 2019,
+    "make": "TESLA",
+    "model": "Model 3"
+   },
+   "work": "Results[0].ModelYear '2019', Make 'TESLA', Model 'Model 3' (recorded 2026-11-16)",
+   "fixture": "model3_2019"
+  },
+  {
+   "id": "decode recorded f150_2019",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 2019,
+    "make": "FORD",
+    "model": "F-150"
+   },
+   "work": "Results[0].ModelYear '2019', Make 'FORD', Model 'F-150' (recorded 2026-11-16)",
+   "fixture": "f150_2019"
+  },
+  {
+   "id": "decode recorded ram2500d_2018",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 2018,
+    "make": "RAM",
+    "model": "2500"
+   },
+   "work": "Results[0].ModelYear '2018', Make 'RAM', Model '2500' (recorded 2026-11-16)",
+   "fixture": "ram2500d_2018"
+  },
+  {
+   "id": "decode recorded bmw330i_2019",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 2019,
+    "make": "BMW",
+    "model": "330i"
+   },
+   "work": "Results[0].ModelYear '2019', Make 'BMW', Model '330i' (recorded 2026-11-16)",
+   "fixture": "bmw330i_2019"
+  },
+  {
+   "id": "decode recorded bolt2020",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 2020,
+    "make": "CHEVROLET",
+    "model": "Bolt EV"
+   },
+   "work": "Results[0].ModelYear '2020', Make 'CHEVROLET', Model 'Bolt EV' (recorded 2026-11-16)",
+   "fixture": "bolt2020"
+  },
+  {
+   "id": "decode recorded accord1999",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 1999,
+    "make": "HONDA",
+    "model": "Accord"
+   },
+   "work": "Results[0].ModelYear '1999', Make 'HONDA', Model 'Accord' (recorded 2026-11-16)",
+   "fixture": "accord1999"
+  },
+  {
+   "id": "decode recorded civic2015",
+   "fn": "decode",
+   "args": null,
+   "expect": {
+    "year": 2015,
+    "make": "HONDA",
+    "model": "Civic"
+   },
+   "work": "Results[0].ModelYear '2015', Make 'HONDA', Model 'Civic' (recorded 2026-11-16)",
+   "fixture": "civic2015"
+  },
+  {
+   "id": "decode recorded undecodable",
+   "fn": "decode",
+   "args": null,
+   "expect": null,
+   "work": "ModelYear, Make, Model are all '' (manufacturer not registered)",
+   "fixture": "undecodable"
+  },
+  {
+   "id": "decode trims spaces, tabs, LF, CR only",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": " 2019\r",
+       "Make": " FORD\t",
+       "Model": "F-150\n"
+      }
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2019,
+    "make": "FORD",
+    "model": "F-150"
+   },
+   "work": "the four trim characters"
+  },
+  {
+   "id": "decode keeps a no-break space",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "2019",
+       "Make": " FORD",
+       "Model": "F-150"
+      }
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2019,
+    "make": " FORD",
+    "model": "F-150"
+   },
+   "work": "U+00A0 isn't one of the four trim characters"
+  },
+  {
+   "id": "decode two-digit year",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "19",
+       "Make": "FORD",
+       "Model": "F-150"
+      }
+     ]
+    }
+   ],
+   "expect": null,
+   "work": "not four digits"
+  },
+  {
+   "id": "decode 1899",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "1899",
+       "Make": "FORD",
+       "Model": "F"
+      }
+     ]
+    }
+   ],
+   "expect": null,
+   "work": "below 1900"
+  },
+  {
+   "id": "decode 2101",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "2101",
+       "Make": "FORD",
+       "Model": "F"
+      }
+     ]
+    }
+   ],
+   "expect": null,
+   "work": "above 2100"
+  },
+  {
+   "id": "decode 1900",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "1900",
+       "Make": "A",
+       "Model": "B"
+      }
+     ]
+    }
+   ],
+   "expect": {
+    "year": 1900,
+    "make": "A",
+    "model": "B"
+   },
+   "work": "lower edge"
+  },
+  {
+   "id": "decode 2100",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "2100",
+       "Make": "A",
+       "Model": "B"
+      }
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2100,
+    "make": "A",
+    "model": "B"
+   },
+   "work": "upper edge"
+  },
+  {
+   "id": "decode a numeric year",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": 2019,
+       "Make": "FORD",
+       "Model": "F-150"
+      }
+     ]
+    }
+   ],
+   "expect": null,
+   "work": "ModelYear must be a string"
+  },
+  {
+   "id": "decode a year with a sign",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "+2019",
+       "Make": "A",
+       "Model": "B"
+      }
+     ]
+    }
+   ],
+   "expect": null,
+   "work": "not [0-9]{4}"
+  },
+  {
+   "id": "decode a blank make",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "2019",
+       "Make": " \t",
+       "Model": "F-150"
+      }
+     ]
+    }
+   ],
+   "expect": null,
+   "work": "empty after trimming"
+  },
+  {
+   "id": "decode no model",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "2019",
+       "Make": "FORD"
+      }
+     ]
+    }
+   ],
+   "expect": null,
+   "work": "Model missing"
+  },
+  {
+   "id": "decode empty Results",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": []
+    }
+   ],
+   "expect": null,
+   "work": "no element"
+  },
+  {
+   "id": "decode Results not an array",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": {
+      "0": {}
+     }
+    }
+   ],
+   "expect": null,
+   "work": "not an array"
+  },
+  {
+   "id": "decode Results[0] an array",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      [
+       "2019"
+      ]
+     ]
+    }
+   ],
+   "expect": null,
+   "work": "not an object"
+  },
+  {
+   "id": "decode body an array",
+   "fn": "decode",
+   "args": [
+    [
+     {
+      "Results": []
+     }
+    ]
+   ],
+   "expect": null,
+   "work": "body isn't an object"
+  },
+  {
+   "id": "decode null",
+   "fn": "decode",
+   "args": [
+    null
+   ],
+   "expect": null,
+   "work": "body isn't an object"
+  },
+  {
+   "id": "decode a string",
+   "fn": "decode",
+   "args": [
+    "{}"
+   ],
+   "expect": null,
+   "work": "body isn't an object"
+  },
+  {
+   "id": "decode ignores ErrorCode",
+   "fn": "decode",
+   "args": [
+    {
+     "Results": [
+      {
+       "ModelYear": "2019",
+       "Make": "A",
+       "Model": "B",
+       "ErrorCode": "1,400"
+      }
+     ]
+    }
+   ],
+   "expect": {
+    "year": 2019,
+    "make": "A",
+    "model": "B"
+   },
+   "work": "ErrorCode isn't read"
+  },
+  {
+   "id": "key 'F-150'",
+   "fn": "key",
+   "args": [
+    "F-150"
+   ],
+   "expect": "f150",
+   "work": "A-Z lowered, a-z 0-9 kept, others dropped"
+  },
+  {
+   "id": "key 'MERCEDES-BENZ'",
+   "fn": "key",
+   "args": [
+    "MERCEDES-BENZ"
+   ],
+   "expect": "mercedesbenz",
+   "work": "A-Z lowered, a-z 0-9 kept, others dropped"
+  },
+  {
+   "id": "key 'Bolt EV'",
+   "fn": "key",
+   "args": [
+    "Bolt EV"
+   ],
+   "expect": "boltev",
+   "work": "A-Z lowered, a-z 0-9 kept, others dropped"
+  },
+  {
+   "id": "key '330i'",
+   "fn": "key",
+   "args": [
+    "330i"
+   ],
+   "expect": "330i",
+   "work": "A-Z lowered, a-z 0-9 kept, others dropped"
+  },
+  {
+   "id": "key 'Ünïcode X'",
+   "fn": "key",
+   "args": [
+    "Ünïcode X"
+   ],
+   "expect": "ncodex",
+   "work": "A-Z lowered, a-z 0-9 kept, others dropped"
+  },
+  {
+   "id": "key '---'",
+   "fn": "key",
+   "args": [
+    "---"
+   ],
+   "expect": "",
+   "work": "A-Z lowered, a-z 0-9 kept, others dropped"
+  },
+  {
+   "id": "key ''",
+   "fn": "key",
+   "args": [
+    ""
+   ],
+   "expect": "",
+   "work": "A-Z lowered, a-z 0-9 kept, others dropped"
+  },
+  {
+   "id": "key not a string",
+   "fn": "key",
+   "args": [
+    null
+   ],
+   "expect": "",
+   "work": "not a string"
+  },
+  {
+   "id": "carMakes T1",
+   "fn": "carMakes",
+   "args": [],
+   "expect": [
+    "Acme",
+    "Ford",
+    "Honda",
+    "Mercedes-Benz"
+   ],
+   "work": "both tables, once each, sorted",
+   "data": "T1"
+  },
+  {
+   "id": "carMakes T2 skips non-strings, no bar, empty make",
+   "fn": "carMakes",
+   "args": [],
+   "expect": [
+    "Mercedes Benz",
+    "Odd",
+    "Tie",
+    "Zed"
+   ],
+   "work": "5, None, 'NoBar' and '|Empty:20' skipped; 'Zed|NoColon' still names Zed",
+   "data": "T2"
+  },
+  {
+   "id": "carMakes tables not arrays",
+   "fn": "carMakes",
+   "args": [],
+   "expect": [],
+   "work": "patch both to non-arrays",
+   "data": "T1:bad"
+  },
+  {
+   "id": "carModels Acme: union",
+   "fn": "carModels",
+   "args": [
+    "Acme"
+   ],
+   "expect": [
+    "Classic",
+    "Roadster",
+    "Sedan",
+    "Volt"
+   ],
+   "work": "CAR_DATA Roadster Sedan Volt + CAR_YEARS Classic Sedan Volt",
+   "data": "T1"
+  },
+  {
+   "id": "carModels Ford sorted by code unit",
+   "fn": "carModels",
+   "args": [
+    "Ford"
+   ],
+   "expect": [
+    "F-150 Lightning",
+    "F150"
+   ],
+   "work": "'-' 0x2D < '1' 0x31",
+   "data": "T1"
+  },
+  {
+   "id": "carModels Zed: rows merged, empty model and no colon skipped",
+   "fn": "carModels",
+   "args": [
+    "Zed"
+   ],
+   "expect": [
+    "Bad",
+    "Car",
+    "Dup",
+    "Good"
+   ],
+   "work": "CAR_DATA Bad Good / Bad / Dup Dup ('' skipped); CAR_YEARS Car Car; 'NoColon' has no ':'",
+   "data": "T2"
+  },
+  {
+   "id": "carModels unknown make",
+   "fn": "carModels",
+   "args": [
+    "Nope"
+   ],
+   "expect": [],
+   "work": "no row",
+   "data": "T1"
+  },
+  {
+   "id": "carModels not a string",
+   "fn": "carModels",
+   "args": [
+    5
+   ],
+   "expect": [],
+   "work": "make not a string",
+   "data": "T1"
+  },
+  {
+   "id": "carModels Other",
+   "fn": "carModels",
+   "args": [
+    "Other"
+   ],
+   "expect": [],
+   "work": "Other isn't a table make",
+   "data": "T1"
+  },
+  {
+   "id": "carYears Acme Sedan, written order",
+   "fn": "carYears",
+   "args": [
+    "Acme",
+    "Sedan"
+   ],
+   "expect": [
+    {
+     "from": 2024,
+     "to": 2026,
+     "fuel": "regular",
+     "mpg": 40,
+     "miPerKwh": null
+    },
+    {
+     "from": 2020,
+     "to": 2023,
+     "fuel": "regular",
+     "mpg": 33,
+     "miPerKwh": null
+    },
+    {
+     "from": 2018,
+     "to": 2018,
+     "fuel": "regular",
+     "mpg": 30,
+     "miPerKwh": null
+    }
+   ],
+   "work": "three runs; '30@2018' is a single year",
+   "data": "T1"
+  },
+  {
+   "id": "carYears electric",
+   "fn": "carYears",
+   "args": [
+    "Acme",
+    "Volt"
+   ],
+   "expect": [
+    {
+     "from": 2025,
+     "to": 2026,
+     "fuel": "ev",
+     "mpg": null,
+     "miPerKwh": 3.5
+    }
+   ],
+   "work": "35e -> 35 / 10",
+   "data": "T1"
+  },
+  {
+   "id": "carYears only in CAR_DATA",
+   "fn": "carYears",
+   "args": [
+    "Honda",
+    "Civic"
+   ],
+   "expect": [],
+   "work": "CAR_YEARS has no Civic",
+   "data": "T1"
+  },
+  {
+   "id": "carYears malformed runs skipped, two entries merged",
+   "fn": "carYears",
+   "args": [
+    "Zed",
+    "Car"
+   ],
+   "expect": [
+    {
+     "from": 2019,
+     "to": 2019,
+     "fuel": "regular",
+     "mpg": 31,
+     "miPerKwh": null
+    },
+    {
+     "from": 2015,
+     "to": 2017,
+     "fuel": "premium",
+     "mpg": 28,
+     "miPerKwh": null
+    },
+    {
+     "from": 2014,
+     "to": 2014,
+     "fuel": "diesel",
+     "mpg": 27,
+     "miPerKwh": null
+    },
+    {
+     "from": 2010,
+     "to": 2010,
+     "fuel": "regular",
+     "mpg": 22,
+     "miPerKwh": null
+    }
+   ],
+   "work": "'0@2020' value 0; '25@2021-2020' from > to; '30@20' 2-digit year; 'x'; '' from the double space; then the second Car entry",
+   "data": "T2"
+  },
+  {
+   "id": "carYears not strings",
+   "fn": "carYears",
+   "args": [
+    null,
+    "Sedan"
+   ],
+   "expect": [],
+   "work": "make not a string",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup 2003 Accord",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Accord",
+    2003
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 24,
+    "miPerKwh": null,
+    "year": 2003
+   },
+   "work": "run 24@2003",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup a gap year",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Accord",
+    2010
+   ],
+   "expect": null,
+   "work": "no run covers 2004-2017",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup newest",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Accord",
+    null
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 38,
+    "miPerKwh": null,
+    "year": 2026
+   },
+   "work": "largest to = 2026",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup run edges",
+   "fn": "carLookup",
+   "args": [
+    "Acme",
+    "Sedan",
+    2023
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 33,
+    "miPerKwh": null,
+    "year": 2023
+   },
+   "work": "2020-2023 includes 2023",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup run start",
+   "fn": "carLookup",
+   "args": [
+    "Acme",
+    "Sedan",
+    2024
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 40,
+    "miPerKwh": null,
+    "year": 2024
+   },
+   "work": "2024-2026 includes 2024",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup single-year run",
+   "fn": "carLookup",
+   "args": [
+    "Acme",
+    "Sedan",
+    2018
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 30,
+    "miPerKwh": null,
+    "year": 2018
+   },
+   "work": "30@2018",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup the 2019 gap",
+   "fn": "carLookup",
+   "args": [
+    "Acme",
+    "Sedan",
+    2019
+   ],
+   "expect": null,
+   "work": "no run covers 2019",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup electric by year",
+   "fn": "carLookup",
+   "args": [
+    "Acme",
+    "Volt",
+    2025
+   ],
+   "expect": {
+    "fuel": "ev",
+    "mpg": null,
+    "miPerKwh": 3.5,
+    "year": 2025
+   },
+   "work": "35e",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup CAR_DATA fallback with null year",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Civic",
+    null
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 42,
+    "miPerKwh": null,
+    "year": null
+   },
+   "work": "CAR_YEARS lacks Civic; CAR_DATA 42; year null",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup no CAR_DATA fallback for a year",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Civic",
+    2020
+   ],
+   "expect": null,
+   "work": "an integer year reads CAR_YEARS only",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup premium from CAR_DATA",
+   "fn": "carLookup",
+   "args": [
+    "Acme",
+    "Roadster",
+    null
+   ],
+   "expect": {
+    "fuel": "premium",
+    "mpg": 30,
+    "miPerKwh": null,
+    "year": null
+   },
+   "work": "30*",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup CAR_YEARS wins over CAR_DATA when both list it",
+   "fn": "carLookup",
+   "args": [
+    "Ford",
+    "F150",
+    null
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 21,
+    "miPerKwh": null,
+    "year": 2026
+   },
+   "work": "newest run 21@2024-2026 (CAR_DATA also 21)",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup F150 by year",
+   "fn": "carLookup",
+   "args": [
+    "Ford",
+    "F150",
+    2019
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 19,
+    "miPerKwh": null,
+    "year": 2019
+   },
+   "work": "19@2018-2020",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup Other",
+   "fn": "carLookup",
+   "args": [
+    "Other",
+    "",
+    null
+   ],
+   "expect": null,
+   "work": "no such row",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup year 1899",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Accord",
+    1899
+   ],
+   "expect": null,
+   "work": "out of range",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup year 2003.5",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Accord",
+    2003.5
+   ],
+   "expect": null,
+   "work": "not an integer",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup year as a string",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Accord",
+    "2003"
+   ],
+   "expect": null,
+   "work": "not an integer or null",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup year true",
+   "fn": "carLookup",
+   "args": [
+    "Honda",
+    "Accord",
+    true
+   ],
+   "expect": null,
+   "work": "not an integer or null",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup make not a string",
+   "fn": "carLookup",
+   "args": [
+    5,
+    "Accord",
+    null
+   ],
+   "expect": null,
+   "work": "make not a string",
+   "data": "T1"
+  },
+  {
+   "id": "carLookup newest on a tie is the first written",
+   "fn": "carLookup",
+   "args": [
+    "Tie",
+    "T",
+    null
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 20,
+    "miPerKwh": null,
+    "year": 2020
+   },
+   "work": "both runs end 2020; the first written wins",
+   "data": "T2"
+  },
+  {
+   "id": "carLookup a year takes the first covering run",
+   "fn": "carLookup",
+   "args": [
+    "Tie",
+    "T",
+    2019
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 20,
+    "miPerKwh": null,
+    "year": 2019
+   },
+   "work": "20@2019-2020 covers 2019 before 25@2018-2020",
+   "data": "T2"
+  },
+  {
+   "id": "carLookup the second run when the first doesn't cover",
+   "fn": "carLookup",
+   "args": [
+    "Tie",
+    "T",
+    2018
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 25,
+    "miPerKwh": null,
+    "year": 2018
+   },
+   "work": "only 25@2018-2020 covers 2018",
+   "data": "T2"
+  },
+  {
+   "id": "carLookup newest isn't always written first",
+   "fn": "carLookup",
+   "args": [
+    "Odd",
+    "O",
+    null
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 30,
+    "miPerKwh": null,
+    "year": 2015
+   },
+   "work": "largest to is 2015, written second",
+   "data": "T2"
+  },
+  {
+   "id": "carLookup CAR_DATA skips an unparseable value",
+   "fn": "carLookup",
+   "args": [
+    "Zed",
+    "Bad",
+    null
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 31,
+    "miPerKwh": null,
+    "year": null
+   },
+   "work": "'Bad:x' doesn't match; the next row's 'Bad:31' does",
+   "data": "T2"
+  },
+  {
+   "id": "carLookup CAR_DATA first duplicate",
+   "fn": "carLookup",
+   "args": [
+    "Zed",
+    "Dup",
+    null
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 30,
+    "miPerKwh": null,
+    "year": null
+   },
+   "work": "Dup:30 before Dup:40",
+   "data": "T2"
+  },
+  {
+   "id": "carLookup CAR_DATA diesel",
+   "fn": "carLookup",
+   "args": [
+    "Zed",
+    "Good",
+    null
+   ],
+   "expect": {
+    "fuel": "diesel",
+    "mpg": 25,
+    "miPerKwh": null,
+    "year": null
+   },
+   "work": "25d",
+   "data": "T2"
+  },
+  {
+   "id": "match 2003 HONDA Accord",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2003,
+     "make": "HONDA",
+     "model": "Accord"
+    }
+   ],
+   "expect": {
+    "make": "Honda",
+    "model": "Accord",
+    "year": 2003
+   },
+   "work": "keys honda, accord",
+   "data": "T1"
+  },
+  {
+   "id": "match F-150 to F150, not the Lightning",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2019,
+     "make": "FORD",
+     "model": "F-150"
+    }
+   ],
+   "expect": {
+    "make": "Ford",
+    "model": "F150",
+    "year": 2019
+   },
+   "work": "key f150; 'F-150 Lightning' is f150lightning",
+   "data": "T1"
+  },
+  {
+   "id": "match the Lightning",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2022,
+     "make": "FORD",
+     "model": "F-150 Lightning"
+    }
+   ],
+   "expect": {
+    "make": "Ford",
+    "model": "F-150 Lightning",
+    "year": 2022
+   },
+   "work": "",
+   "data": "T1"
+  },
+  {
+   "id": "match MERCEDES-BENZ",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2021,
+     "make": "MERCEDES-BENZ",
+     "model": "C-Class"
+    }
+   ],
+   "expect": {
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "year": 2021
+   },
+   "work": "key mercedesbenz",
+   "data": "T1"
+  },
+  {
+   "id": "match an unknown make",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2019,
+     "make": "BMW",
+     "model": "330i"
+    }
+   ],
+   "expect": {
+    "make": "Other",
+    "model": "",
+    "year": 2019
+   },
+   "work": "no make key bmw",
+   "data": "T1"
+  },
+  {
+   "id": "match a known make, unknown model",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2018,
+     "make": "ACME",
+     "model": "Hover"
+    }
+   ],
+   "expect": {
+    "make": "Acme",
+    "model": "",
+    "year": 2018
+   },
+   "work": "no model key hover",
+   "data": "T1"
+  },
+  {
+   "id": "match a model only in CAR_YEARS",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2002,
+     "make": "acme",
+     "model": "CLASSIC"
+    }
+   ],
+   "expect": {
+    "make": "Acme",
+    "model": "Classic",
+    "year": 2002
+   },
+   "work": "",
+   "data": "T1"
+  },
+  {
+   "id": "match a model only in CAR_DATA",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2015,
+     "make": "Honda",
+     "model": "civic"
+    }
+   ],
+   "expect": {
+    "make": "Honda",
+    "model": "Civic",
+    "year": 2015
+   },
+   "work": "",
+   "data": "T1"
+  },
+  {
+   "id": "match an empty make key",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2018,
+     "make": "---",
+     "model": "Sedan"
+    }
+   ],
+   "expect": {
+    "make": "Other",
+    "model": "",
+    "year": 2018
+   },
+   "work": "key '' never matches",
+   "data": "T1"
+  },
+  {
+   "id": "match an empty model key",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2018,
+     "make": "Acme",
+     "model": "---"
+    }
+   ],
+   "expect": {
+    "make": "Acme",
+    "model": "",
+    "year": 2018
+   },
+   "work": "key '' never matches",
+   "data": "T1"
+  },
+  {
+   "id": "match first make in order on a shared key",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2020,
+     "make": "MERCEDES-BENZ",
+     "model": "C"
+    }
+   ],
+   "expect": {
+    "make": "Mercedes Benz",
+    "model": "C",
+    "year": 2020
+   },
+   "work": "carMakes = ['Mercedes Benz', 'Mercedes-Benz'] (0x20 < 0x2D); both key mercedesbenz; the first wins",
+   "data": "T3"
+  },
+  {
+   "id": "match keeps a year the tables don't cover",
+   "fn": "match",
+   "args": [
+    {
+     "year": 1999,
+     "make": "HONDA",
+     "model": "Accord"
+    }
+   ],
+   "expect": {
+    "make": "Honda",
+    "model": "Accord",
+    "year": 1999
+   },
+   "work": "match doesn't check years",
+   "data": "T1"
+  },
+  {
+   "id": "match null",
+   "fn": "match",
+   "args": [
+    null
+   ],
+   "expect": null,
+   "work": "not an object",
+   "data": "T1"
+  },
+  {
+   "id": "match a fractional year",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2003.5,
+     "make": "HONDA",
+     "model": "Accord"
+    }
+   ],
+   "expect": null,
+   "work": "not an integer",
+   "data": "T1"
+  },
+  {
+   "id": "match year 1899",
+   "fn": "match",
+   "args": [
+    {
+     "year": 1899,
+     "make": "HONDA",
+     "model": "Accord"
+    }
+   ],
+   "expect": null,
+   "work": "out of range",
+   "data": "T1"
+  },
+  {
+   "id": "match year as a string",
+   "fn": "match",
+   "args": [
+    {
+     "year": "2003",
+     "make": "HONDA",
+     "model": "Accord"
+    }
+   ],
+   "expect": null,
+   "work": "not an integer",
+   "data": "T1"
+  },
+  {
+   "id": "match make not a string",
+   "fn": "match",
+   "args": [
+    {
+     "year": 2003,
+     "make": null,
+     "model": "Accord"
+    }
+   ],
+   "expect": null,
+   "work": "make not a string",
+   "data": "T1"
+  }
+ ]
+}
