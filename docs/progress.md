@@ -72,11 +72,11 @@ Branch `claude/zen-hamilton-bp88d4` (this session's; fast-forwarded from the Pha
 
 | Task | Status | Commit |
 |---|---|---|
-| 10.1 BUILD.md v5 (orchestrator): the map to D-001…D-041 and the nine contracts, same section numbers as v4 so every `BUILD.md §n` citation still resolves; §11 Phase E per D-016/D-041; README status | ✅ written | — |
-| 10.2 Tester: `tests/unit/docs-build.test.js` pins BUILD.md to the repo (paths, links, ids, load order, storage key, contracts, every `BUILD.md §n` citation, data counts) | in progress | — |
-| 10.3 Live dry run of the Pages build: **failed every candidate twice** from a fresh cache: ATP's host intermittently answers a Range request with `200` (D-039 amendment) | fix in progress (10.3a) | — |
-| 10.3a `build-stores.py` retries an ignored Range with backoff (researcher) + `tests/unit/build-stores-range.test.js` (tester) | in progress | — |
-| 10.4 CI green, PR to `main`, Pages on, merge, deploy | pending | — |
+| 10.1 BUILD.md v5 (orchestrator): the map to D-001…D-041 and the nine contracts, same section numbers as v4 so every `BUILD.md §n` citation still resolves; §11 Phase E per D-016/D-041; README status. Review CHANGES-REQUESTED (an ambiguous markup sentence, the three unprofiled chains' reasons, r06's scope, nits) → fixed | ✅ | `425b080`, `268a84e` |
+| 10.2 Tester: `tests/unit/docs-build.test.js`, 25 tests: paths, links, ids, load order, storage key, contracts, every `BUILD.md §n` citation in the repo, and each stated number pinned to its source (data, `check-site.js` thresholds, DEFAULTS, npm scripts, the highest D-id, profile markups). Review fix round 1 (surviving mutants, a too-wide .gitignore exemption); 64 tester + 6 orchestrator mutants caught | ✅ | `1edd6c5` |
+| 10.3 Live dry run of the Pages build (`ATP_RUN=latest bash tools/build-site.sh`). **Dry runs 1 and 2 failed every candidate** from a fresh cache: ATP's host intermittently answers a Range GET with `200` (D-039 amendment). Dry run 3, with 10.3a, from a fresh cache: run 2026-11-07 skipped for its cut-off Taco Bell file (ISS-039, by design), **run 2026-10-31 built (339 members, 1,020 ranged requests, 4 retries) and passed all five gates**: 273 brands, 847 tiles, 182,567 stores; canary 82 brands within 5 mi of 10118; GAS_WEEK 2026-11-09; Big Timber → the Livingston Domino's 38.6 mi one way. The run 2026-10-24 has a cut-off Jack in the Box file too (ISS-043). The built site served over http under `/Delivery-vs-Takeout/` (as Pages serves it): the example prices, 15 brands near 10118 from the built tiles, hand-offs on every row, 0 console errors, no horizontal scroll at 390 and 1280 px; screenshots reviewed | ✅ | — |
+| 10.3a Researcher: `build-stores.py` retries an ignored Range (closed unread), 6 attempts with 1-2-4-8-16 s backoff; a 4xx or a wrong length fails at once. Tester: `tests/unit/build-stores-range.test.js`, 9 tests (6 of the first 7 fail on the old generator). Review APPROVE + fix round (a 503 case) | ✅ | `f78b879`, `d29b938` |
+| 10.4 CI green, PR to `main`, Pages on, merge, deploy | in progress | — |
 | 10.5 Close | pending | — |
 
 ### Phase 9: Phase E, deep links (2026-11-16, done)
