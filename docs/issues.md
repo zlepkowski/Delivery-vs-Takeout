@@ -51,12 +51,6 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** the rates match BUILD.md §6 but are not confirmed from the live pages.
 - **Next step:** a human checks the four pages (and the NH HB 1480 status) and confirms or corrects the rates in `tools/data/state-tax.csv`.
 
-### ISS-011 — No unit tests for the data generators' rules
-- **Opened:** 2026-11-12 by orchestrator (reviewer should-fix on 087d79c) · **Phase:** 1 → 7 · **Status:** open
-- **What:** the schema tests check the generated files' shape, counts and ranges, but nothing pins `tools/build-cars.py`'s tie order, half-up rounding, hydrogen/CNG drop or name cleaning. Switching `round_half_up` to Python's `round()` would still pass 11/11.
-- **Why it matters:** Phase 7 rewrites the generators for the scheduled refresh, and a silent rule change would ship.
-- **Next step:** before Phase 7 touches a generator, add a stdlib Python test per generator that runs it on a hand-written fixture with hand-computed expected output.
-
 ### ISS-012 — Category default markups are menu-only estimates with no per-platform split
 - **Opened:** 2026-11-12 by researcher (Phase 1, task 1.7 part D) · **Phase:** 1 · **Status:** open
 - **What:** `tools/data/categories.json` sets dd/ue/gh to the same value for every category, all marked `est: true`. The only menu-only measures found are Self Financial (McDonald's food-only +19.3%, Apr 2025, blended across apps), Gordon Haskett (fast food 15.3%, fast casual 12.6%, casual dining ~3%, Chick-fil-A 29.8%, Starbucks 20.3%, 2020, via Fox Business and Restaurant Dive) and Credit Suisse (limited-service ~20%; Papa John's third-party equal to first-party, date given as 2022 or 2023). The per-app totals in FinanceBuzz (2024; 2026 update) and Self include fees and tips, so they were not used as markups. Pizza is 0 on one chain's measure, which may be too low for a category default.
@@ -202,9 +196,28 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** the per-item path is exercised by receipts r14/r15 and the fuzzer, but it doesn't change a real total until one of the two sources exists. BOGO already works on real data (it uses the chain's rate for the free item).
 - **Next step:** the user decides whether to add per-item app prices typed by the user (a state field such as `itemPrices[p][i]`, an override that `forEngine` puts on its copy of `rest.menu`, inputs on the order rows; contract changes first) or wait for researched per-item data. Never scrape the apps (D-027).
 
+### ISS-037 — `setPath` can write `make`, `model` or `year` without `setCar`'s rules (review of 7.4)
+- **Opened:** 2026-11-16 by orchestrator (reviewer should-fix) · **Phase:** 7 · **Status:** open
+- **What:** `setPath(S, "year", "2016")` (or `2016.5`) is accepted, because `setPath` takes any plain value for a path `fresh` has (state contract §3). `carLookup` then finds nothing, so `applyCar` keeps the old mpg for a listed car, and `save` writes a value `load` later drops. The same was already true for `make` and `model`: `setPath` skips `setCar`'s clearing rule (D-031 amendment).
+- **Why it matters:** not reachable today: the page changes the car only through `data-action` (`setCar`), never `data-bind`. A future control bound to one of these paths would price the old car silently.
+- **Next step:** a later state-contract amendment: `setPath` refuses `make`, `model` and `year` (scenarios first), so the car changes only through `setCar`.
+
+### ISS-038 — ATP's `history.json` lags `latest.json` by about a week (found in the 7.6 dry run)
+- **Opened:** 2026-11-16 by orchestrator (researcher report) · **Phase:** 7 · **Status:** open
+- **What:** on 2026-11-16 `data.alltheplaces.xyz/runs/latest.json` named run `2026-11-07-13-32-32`, but that host's `history.json` (425 runs) ended at `2026-10-31-13-32-34`. `tools/build-stores.py --run latest` looked the run up in `history.json` and failed, so the Monday deploy would have failed every week until history caught up.
+- **Next step:** `resolve_run` uses `latest.json`'s own record (it has the same fields as a history entry). Close when the live dry run passes on the latest run.
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
+
+### ISS-011 — No unit tests for the data generators' rules
+- **Opened:** 2026-11-12 by orchestrator (reviewer should-fix on 087d79c) · **Phase:** 1 → 7 · **Status:** closed (2026-11-16, Phase 7: d573421, 9347c12)
+- **What:** the schema tests check the generated files' shape, counts and ranges, but nothing pins `tools/build-cars.py`'s tie order, half-up rounding, hydrogen/CNG drop or name cleaning. Switching `round_half_up` to Python's `round()` would still pass 11/11.
+- **Why it matters:** Phase 7 rewrites the generators for the scheduled refresh, and a silent rule change would ship.
+- **Next step:** before Phase 7 touches a generator, add a stdlib Python test per generator that runs it on a hand-written fixture with hand-computed expected output.
+- **Resolved 2026-11-16 (Phase 7):** `tests/unit/build-cars.test.js` (28 tests: every D-023 rule plus the D-037 year rules, offline on a fixture zip; 20 D-023 mutants caught) and `tests/unit/build-states.test.js` (21 tests on fixture EIA pages; 15 mutants caught) were written before either generator changed. `build-stores.py` still has no rule tests of its own (its output is checked by `data-brands.test.js` and, at deploy, by the D-039 gates).
+
 
 - **Update 2026-11-14 (Phase 5, D-033, D-035):** app pickup is now priced without the delivery fees (D-033), and the results show an inline "Add what your app's checkout shows" box listing exactly the fees each app is missing. Still open: whether to switch any app to labeled estimates.
 ### ISS-033 — tipDel and tipPick have no sourced default tip (task 4.1B, defaults-trip)
