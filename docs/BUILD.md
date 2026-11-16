@@ -197,7 +197,7 @@ net   = max(gross − disc − credit, 0)
 | **Unlock** | you're N items from a direct-only deal; here's the total with the cheapest deal item added |
 | **Distance** | the round trip at which delivery starts to win |
 | **Fuel** | the gas price at which delivery would win (capped at $12/gal; skipped for an EV) |
-| **Minimum** | a promo just out of reach, and what adding the cheapest item does to the total (counts a `bogo` promo at a profiled brand) |
+| **Minimum** | a promo just out of reach, and what adding the cheapest item does to the total (counts a `bogo` promo at a profiled brand when reaching the minimum makes something free) |
 | **Wallet** | the restaurant is an Amex Gold dining partner, so the credit works ordering direct |
 | **Timing** | unused credits that apply here, and the days until each resets |
 | **Locked** | credits on your cards that can't pay for this order, and restricted ones not opted in |
@@ -300,16 +300,18 @@ An ordered array of 22 cards (13 Amex, 7 Chase with a DoorDash benefit, Capital 
 v4's fixed `CHAINS` list is replaced by **restaurants near the user** (D-005). `BRANDS` holds the 273 US food brands with at least 25 stores in an All The Places run (`{id: {name, category, wikidata, stores}}`), from 182,567 deduplicated stores in 847 one-degree tiles (run `2026-10-31-13-32-34` in the committed copy; the Pages build uses the latest run). A brand's `category` (one of 10: pizza, burger, chicken, mexican, sandwich, asian, coffee, dessert, casual, other) comes from its stores' `cuisine` tags (D-021). Tiles (`src/data/stores/<cell>.js`) assign `POD.data.TILES[cell] = {run, s: "b,la,lo;…"}` and are loaded by script injection with `?v=<BRANDS_RUN>`, which works over `file://` (D-035).
 
 ### `PROFILES`, `CATEGORY_DEFAULTS`
-**Profiled** brands have a researched menu, deal, direct delivery fee, app markup and the Amex Gold flag; **unprofiled** brands use their category's default markup (`est`), the user's typed cart total, no direct-delivery channel, and are labeled estimates (D-006). Nine chains are profiled (D-026, D-028): `buffalo_wild_wings`, `chipotle`, `dominos`, `dunkin`, `little_caesars`, `papa_johns`, `subway`, `the_cheesecake_factory`, `wingstop`. `taco_bell`, `pizza_hut` and `five_guys` were chosen but couldn't be researched without getting around bot protection, which isn't done, so they ship unprofiled (ISS-013, ISS-017, ISS-021).
+**Profiled** brands have a researched menu, deal, direct delivery fee, app markup and the Amex Gold flag; **unprofiled** brands use their category's default markup (`est`), the user's typed cart total, no direct-delivery channel, and are labeled estimates (D-006). Nine chains are profiled (D-026, D-028): `buffalo_wild_wings`, `chipotle`, `dominos`, `dunkin`, `little_caesars`, `papa_johns`, `subway`, `the_cheesecake_factory`, `wingstop`. `taco_bell`, `pizza_hut` and `five_guys` were chosen but couldn't be researched from here: Taco Bell answers only browser-like user agents (ISS-013), Five Guys sits behind a Cloudflare bot check (ISS-017), and Pizza Hut's site reset or timed out every connection (ISS-021). Getting around a block isn't done (§9.10), so they ship unprofiled.
 
 ```js
 PROFILES[brandId] = {
   menu: [{ name, price, dealItem, markup? }],   // prices: medians of 2–3 stores in different states (D-027)
   deal: { label, price, minItems, scope } | null,
-  markup: { dd?, ue?, gh? }, markupEst,           // percent; every profile uses its category default today
+  markup: { dd?, ue?, gh? }, markupEst,           // percent, a key for each listed platform only; every value today is the
+                                                   // category default (markupEst: true, ISS-012); no platform → {} (Buffalo Wild Wings)
   directDelivery, directFee?,                      // no observed fee → directDelivery: false, never directFee: 0 (only Wingstop has one, $2.99)
+  directSvc?,                                      // a direct-channel service fee; none researched yet (ISS-031)
   amexGoldDirect,                                  // buffalo_wild_wings, the_cheesecake_factory (five_guys is unprofiled)
-  platforms: ["dd", "ue", "gh"]                    // only apps with dated evidence
+  platforms: ["dd", "ue", "gh"]                    // only apps with dated evidence (none for Buffalo Wild Wings)
 }
 CATEGORY_DEFAULTS[category] = { markup: { dd, ue, gh }, est }
 ```
@@ -522,14 +524,14 @@ npm run test:e2e      # Playwright over file:// at 390×844 and 1280×800; any c
 - **Oracle (differential tests):** each pure module has a standard-library Python reference written from its contract (`tests/oracle/engine.py`, `geo.py`, `insights.py`, `vin.py`, `links.py`, and `tests/fixtures/api/build.py` for the seam) and hand-worked fixtures. `run.py` checks the references against the fixtures first, then the JS against the references on the fixtures and on thousands of seeded random scenarios. Expected values never come from the code under test.
 - **Receipts:** `tests/fixtures/receipts/` holds receipts worked by hand, with the arithmetic shown, from the real data.
 - **Unit:** schema and provenance tests for every data file (pinned to the sources item by item), generator rules, the §9 traps by name, purity, never-throw guards, the gates in `tools/check-site.js`, the Pages workflow, and the Worker (no live calls, ever).
-- **e2e:** the v4 manual checklist automated (switch restaurant, an EV, three cards, a ZIP in another state, pin a distance, reload), the first-visit example, geolocation, a failing tile, escaping, the VIN lookup (recorded vPIC answers), BOGO, every row's hand-off, and the Worker on, off and failing (the page with the Worker off is byte-for-byte the Phase 7 page, after removing exactly the Phase 9 hand-offs).
+- **e2e:** the v4 manual checklist automated (switch restaurant, an EV, three cards, a ZIP in another state, pin a distance, reload), the first-visit example, geolocation, a failing tile, escaping, the VIN lookup (recorded vPIC answers), BOGO, every row's hand-off, and the Worker on, off and failing (the page with the Worker off is byte-for-byte the Phase 7 page, after removing exactly the Phase 9 hand-offs and the fine-print links line).
 - **CI** (`.github/workflows/test.yml`) runs `npm test` on every push and pull request and keeps the e2e screenshots as an artifact.
 
 The v4 "scenarios worth pinning" are each pinned (`checklist.e2e.js` names them "§13 scenario n"):
 
 1. **Domino's in Brooklyn ranks every route**: `checklist.e2e.js` (v4's $15.62 / $52.13 aren't reproduced, D-001; the receipts hold v5's hand-worked totals).
 2. **Amex Gold's Resy credit never drops a total by $50** until opted in (§9.1): `checklist.e2e.js` and receipt `r05-credit-tiers-and-clamp`.
-3. **The Amex Gold partner path**: the credit applies ordering direct at a partner, receipt `r06-gold-partner-direct` (at Buffalo Wild Wings and The Cheesecake Factory; Five Guys is unprofiled, D-028).
+3. **The Amex Gold partner path**: the credit applies ordering direct at a partner, receipt `r06-gold-partner-direct` at Buffalo Wild Wings (The Cheesecake Factory carries the same flag but no receipt prices it; Five Guys is unprofiled, D-028).
 4. **An EV's pickup** prices kWh and the receipt line says "Charging": receipt `r07-ev-and-time`.
 5. **Rural 59011 vs urban 10118** differ by ≥10×: `geo.test.js` for the estimator, `checklist.e2e.js` for the page.
 6. **A promo with an unmet minimum** shows the Minimum insight with its delta: `checklist.e2e.js` and the insights fixtures.
