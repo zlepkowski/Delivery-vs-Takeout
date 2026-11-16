@@ -1,6 +1,6 @@
 # Pickup or Delivery — Build Guide (v5)
 
-> **v5 (2026-11-16).** This is the spec for the v5 rebuild as shipped. It replaces the v4 build guide, which described a single-file prototype and is kept in git history (`git show 2a84085:docs/BUILD.md`). v5 folds in every decision from D-001 to D-041 ([`decisions.md`](decisions.md)) and points to the nine contracts below for the exact rules. **Where this file and a contract or decision differ, the contract or decision wins**: they're the definitions the code and the independent references are tested against, and this file is the map.
+> **v5 (2026-11-16).** This is the spec for the v5 rebuild as shipped. It replaces the v4 build guide, which described a single-file prototype and is kept in git history (`git show 2a84085:docs/BUILD.md`). v5 folds in every decision from D-001 to D-043 ([`decisions.md`](decisions.md)) and points to the nine contracts below for the exact rules. D-042 (labeled estimates) and D-043 (the quick flow and its look) are Phase 11, in progress: their contracts are amended, and the code follows task by task ([`progress.md`](progress.md)). **Where this file and a contract or decision differ, the contract or decision wins**: they're the definitions the code and the independent references are tested against, and this file is the map.
 
 A decision engine that answers one question: **is it cheaper to have food delivered, to order pickup through a delivery app, or to order direct from the restaurant**, once gas, fees, menu markup, promos, card credits and direct-only deals are all priced in?
 
@@ -11,13 +11,13 @@ A decision engine that answers one question: **is it cheaper to have food delive
 |---|---|---|
 | [`engine-contract.md`](engine-contract.md) | `POD.engine`: channels, the §4.2 order, every formula and its rounding, credits, receipt lines | D-029 (amended by D-033, D-036, D-040) |
 | [`geo-contract.md`](geo-contract.md) | `POD.geo`: ZIPs, the estimator, cells and tiles, `storesNear`, `nearestStore` | D-030 |
-| [`state-contract.md`](state-contract.md) | `POD.state`: `S`, the derivation cascade, user actions, the wallet, persistence | D-031 (amended by D-033, D-036, D-037, D-040) |
+| [`state-contract.md`](state-contract.md) | `POD.state`: `S`, the derivation cascade, user actions, the wallet, persistence | D-031 (amended by D-033, D-036, D-037, D-040, D-042) |
 | [`insights-contract.md`](insights-contract.md) | `POD.insights.build`: the nine advice cards, their numbers and sentences | D-034 (amended by D-036) |
-| [`ui-contract.md`](ui-contract.md) | the page: sections, events, tiles, geolocation, the example, escaping | D-035 (amended by D-036 to D-041) |
+| [`ui-contract.md`](ui-contract.md) | the page: sections, events, tiles, geolocation, the example, escaping | D-035 (amended by D-036 to D-043) |
 | [`vin-contract.md`](vin-contract.md) | `POD.vin`: checking a VIN, NHTSA's decoder, matching onto the car tables | D-038 |
-| [`api-contract.md`](api-contract.md) | the optional Worker (`worker/`) and the browser seam `POD.api` | D-040 |
-| [`links-contract.md`](links-contract.md) | `POD.links` and `POD.data.LINKS`: where each result row hands off | D-041 |
-| [`decisions.md`](decisions.md) | every product and engineering choice, D-001 to D-041 | — |
+| [`api-contract.md`](api-contract.md) | the optional Worker (`worker/`) and the browser seam `POD.api` | D-040 (amended by D-043) |
+| [`links-contract.md`](links-contract.md) | `POD.links` and `POD.data.LINKS`: where each result row hands off | D-041 (amended by D-043) |
+| [`decisions.md`](decisions.md) | every product and engineering choice, D-001 to D-043 | — |
 
 ---
 
@@ -243,7 +243,7 @@ An empty order gets no advice. The bar for a new insight is unchanged: it must s
 }
 ```
 
-Defaults come from `src/data/defaults.js` and are **official numbers only** (D-032): a fee an app doesn't publish starts `null`, the page asks the user for it, and that app's delivery row waits until it's filled (D-033). On the shipped data every app's delivery fee starts empty.
+Defaults come from `src/data/defaults.js`: an app's published number where there is one, and otherwise a **labeled estimate** (D-042, which supersedes D-032's "official numbers only" for app fees and the car). Each estimate cites the app's page, the user's own dated checkouts, or a published survey, and the page marks it "est." (`POD.state.sourceOf`, state contract §4.8). `mpg` starts at the typical car's (`DEFAULTS.trip.mpg`, the U.S. on-road fleet average from EIA), so a first visit is priced without picking a car. A value the user clears is still `null`, the page asks for it, and that app's delivery row waits until it's filled (D-033). *Phase 11 task 11.2 fills the estimates; until then the shipped data keeps D-032's nulls.*
 
 ### 5.2 The derivation cascade
 
@@ -319,7 +319,7 @@ CATEGORY_DEFAULTS[category] = { markup: { dd, ue, gh }, est }
 A brand in `BRANDS` whose category has no default can't be priced: `restFor` returns `null`, because a missing markup must never become 0% (§9.6).
 
 ### `DEFAULTS`
-`{fees, plats, tips, trip}`: the sourced starting values (D-032). Wear $0.1104/mi (AAA 2025), home electricity $0.1816/kWh (EIA), speed 27 mph (FHWA NHTS, `est`), tips 15% delivery / 0% pickup (the user's product choice, ISS-033), and DoorDash's published service rates. Unpublished fees are `null`.
+`{fees, plats, tips, trip}`: the sourced starting values (D-032). Wear $0.1104/mi (AAA 2025), home electricity $0.1816/kWh (EIA), speed 27 mph (FHWA NHTS, `est`), tips 15% delivery / 0% pickup (the user's product choice, ISS-033), and DoorDash's published service rates. Unpublished fees, and the typical car's `trip.mpg`, are labeled estimates (D-042; `null` until task 11.2 lands).
 
 ### `LINKS`
 Where each result row hands off ([`links-contract.md`](links-contract.md), D-041): each app's home page and confirmed search format, Google Maps' directions and search formats, and each profiled chain's home page, every URL with how and when it was seen working.
@@ -338,7 +338,7 @@ Where each result row hands off ([`links-contract.md`](links-contract.md), D-041
 | Card credits | issuers' card pages (D-024) | 2026-11-12 | by hand, orchestrator only | **High**: terms change often |
 | Menu prices, fees | chains' own ordering sites (D-027) | 2026-11-12 | by hand | **High**: franchise-variable |
 | App markups | category defaults from published reporting (ISS-012) | 2026-11-12 | by hand | Medium: estimates, labeled |
-| App fees | apps' own fee pages (D-032) | 2026-11-13 | by hand | Medium: most are `null` and entered by the user (ISS-034) |
+| App fees | apps' own fee pages (D-032); labeled estimates from checkouts and surveys (D-042) | 2026-11-13 | by hand | Medium: most are estimates, marked "est." (ISS-034) |
 | App platform presence | dated announcements (ISS-030) | various | by hand | Medium: flagged in the fine print |
 | Link formats | seen working (D-041) | 2026-11-16 | by hand | Medium |
 
@@ -488,6 +488,14 @@ v4 asked for a hand-off "with the cart pre-built where the platform allows it". 
 - **Ordering direct** opens a profiled chain's own home page (not a deep path: those break). Unprofiled chains and independents have no checked site yet (ISS-042).
 - **Pickup from the restaurant** also gets Google Maps directions to the store the trip was measured to, or a map search by name.
 
+### Phase F: a 2-minute answer — in progress (D-042, D-043)
+
+The user's verdict on v5: too many inputs, and a dull page. The page now asks three things (where, what, and the order), prices the rest with labeled estimates, and answers with one card: the cheapest way, what it saves, and the button that starts the order. The car, the memberships, the cards and each app's fees move into a Personalize drawer. The look is clean fintech (UI contract §10).
+
+### Phase G: bring your real numbers — planned
+
+A screenshot of the app's checkout, read by Claude through the Worker, or pasted checkout text parsed in the browser, replaces the estimates with the user's own fees, after a review step. Its decisions are still to be written.
+
 ### Open product questions
 
 - **Cart quantization.** The cheapest channel changes with cart size; Unlock and Minimum suggest the cheapest item to add, not yet the best one.
@@ -524,7 +532,7 @@ npm run test:e2e      # Playwright over file:// at 390×844 and 1280×800; any c
 - **Oracle (differential tests):** each pure module has a standard-library Python reference written from its contract (`tests/oracle/engine.py`, `geo.py`, `insights.py`, `vin.py`, `links.py`, and `tests/fixtures/api/build.py` for the seam) and hand-worked fixtures. `run.py` checks the references against the fixtures first, then the JS against the references on the fixtures and on thousands of seeded random scenarios. Expected values never come from the code under test.
 - **Receipts:** `tests/fixtures/receipts/` holds receipts worked by hand, with the arithmetic shown, from the real data.
 - **Unit:** schema and provenance tests for every data file (pinned to the sources item by item), generator rules, the §9 traps by name, purity, never-throw guards, the gates in `tools/check-site.js`, the Pages workflow, and the Worker (no live calls, ever).
-- **e2e:** the v4 manual checklist automated (switch restaurant, an EV, three cards, a ZIP in another state, pin a distance, reload), the first-visit example, geolocation, a failing tile, escaping, the VIN lookup (recorded vPIC answers), BOGO, every row's hand-off, and the Worker on, off and failing (the page with the Worker off is byte-for-byte the Phase 7 page, after removing exactly the Phase 9 hand-offs and the fine-print links line).
+- **e2e:** the v4 manual checklist automated (switch restaurant, an EV, three cards, a ZIP in another state, pin a distance, reload), the first-visit example, geolocation, a failing tile, escaping, the VIN lookup (recorded vPIC answers), BOGO, every row's hand-off, and the Worker on, off and failing (with the Worker off the page makes no Worker request, and with it failing in each of 4 ways `#app` is byte-for-byte the Worker-off page of the same build; the comparison with the Phase 7 page is retired by D-043). A quick-flow e2e (Phase 11, task 11.4) enforces D-043's budgets: at most 8 visible controls and 1.5 screen heights on a first visit, and at most 3 interactions to an answer with its button (UI contract §10).
 - **CI** (`.github/workflows/test.yml`) runs `npm test` on every push and pull request and keeps the e2e screenshots as an artifact.
 
 The v4 "scenarios worth pinning" are each pinned (`checklist.e2e.js` names them "§13 scenario n"):

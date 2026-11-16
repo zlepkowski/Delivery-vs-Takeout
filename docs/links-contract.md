@@ -75,6 +75,8 @@ The hand-off for one result row: `ch` is the row's channel id (`r.id`), `S` the 
 
 ## 4. The Phase 7 baseline e2e (`tests/e2e/worker.e2e.js`)
 
+*Retired by D-043 (Phase 11):* after the re-layout no earlier page is byte-equal, so the comparison with `BASE_REV` goes. What stays: with the Worker off the page makes no Worker request, and with the Worker failing `#app` equals the Worker-off page of the same build byte for byte, hand-offs included. The paragraph below is the Phase 9 rule, kept for the record.
+
 Phase 8's "with the Worker off, `#app` is byte-identical to the Phase 7 page" (`BASE_REV = '556bc34'`) changes by this decision, not by loosening: before comparing, the new page's copy of `#app` has every `[data-testid="handoff"]` and `[data-testid="fine-links"]` element removed (a no-op on the Phase 7 page, which has neither), and the test first checks that the off page has one hand-off per result row, so the removal can't hide a missing one. **Everything else stays Phase 7's byte for byte.** And "the Worker adds nothing": with the Worker failing, the new page's whole `#app`, hand-offs included, equals the Worker-off page's on the same code.
 
 ## 5. Tests

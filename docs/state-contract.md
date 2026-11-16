@@ -6,6 +6,8 @@
 
 *Amended 2026-11-16 (D-040, Phase 8, `docs/api-contract.md` §7):* the Worker's answers in `opts.api`: a geocoded address (§4.3, `pos.src "addr"`), driving distance (§4.5, `milesSrc "drive"`), and the picked independent `place` (§2, §6, §8). **With `opts.api` absent (the Worker off), every function is exactly as before.**
 
+*Amended 2026-11-16 (D-042, Phase 11):* labeled estimates. `fresh` copies the typical car's `mpg` (§2); the new pure `defaultOf` and `sourceOf` (§4.8); `setCar` (§6) and `load` (§8) fall back to the typical car instead of a blank `mpg`. `missing`, `appMissing` and `forEngine` (§7) are unchanged.
+
 The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, the derivation cascade, the wallet, and persistence. It fills in BUILD.md §3 and §5. **Where this file and BUILD.md §5 differ, this file wins** (D-031). Change it only by a decision; the hand-worked scenarios (`tests/fixtures/state/`) change first, the code after.
 
 ## 0. Rules for every function
@@ -52,6 +54,8 @@ The exact definition of `POD.state` in `src/js/state.js`: the state object `S`, 
 | `missing(S)` | which shared inputs the engine still needs (§7) | an array of paths |
 | `appMissing(S, p)` | which of app `p`'s fees are still empty (§7) | an array of paths |
 | `forEngine(S)` | the copy of `S` the page prices: an app missing a pickup input switched off, one missing only delivery inputs marked `noDelivery` (§7, D-033) | a new object, or `null` |
+| `defaultOf(D, path)` | a path's starting value and whether it's an estimate (§4.8, D-042) | `{value, est, source}`, or `null` |
+| `sourceOf(S, D, path)` | where the path's current value comes from (§4.8, D-042) | `"est"`, `"published"` or `"you"`, or `null` |
 | `load(storage, D, now, opts)` | saved state merged over `fresh`, then `derive` (§8) | `S` |
 | `save(S, storage)` | writes the user fields (§8) | `true` / `false` |
 
@@ -62,7 +66,7 @@ A **trip status** is `{ status, need, partial }`: `status` is `"ok"`, `"need"` (
 ```
 {
   address: "",  pos: null,  zip: null,  zipRec: null,  state: null,  tax: null,  gas: null,
-  make: "",  model: "",  year: null,  fuel: "regular",  mpg: null,  miPerKwh: null,  kwh: T.kwh,
+  make: "",  model: "",  year: null,  fuel: "regular",  mpg: T.mpg,  miPerKwh: null,  kwh: T.kwh,
   brand: null,  rest: null,  store: null,  storePicked: false,  place: null,
   cart: {},  manualSubtotal: 0,  dealOn: true,
   miles: null,  minutes: null,  speed: T.speed,  milesAuto: true,  milesSrc: null,  milesBy: {},
@@ -81,7 +85,9 @@ A **trip status** is `{ status, need, partial }`: `status` is `"ok"`, `"need"` (
 
 `T = D.DEFAULTS.trip`, `TIPS = D.DEFAULTS.tips`, `F = D.DEFAULTS.fees`, `P = D.DEFAULTS.plats` (the sourced defaults in `src/data/defaults.js`, D-032). **Each default is copied only if it's a finite number; anything else (missing, `null`) becomes `null`**, and `missing(S)` (§7) then asks the user for it. A default is never replaced by a made-up number. `hourly: 0` is BUILD.md §4.2's "time is not priced by default", not data.
 
-An empty default is expected, not an error: on 2026-11-13 every app's delivery fee is `null` (D-032).
+*Amended 2026-11-16 (D-042):* the defaults are labeled estimates where no number is published, so once task 11.2's estimates land, none is `null` in the shipped data, and a first visit is priced as soon as there is a place, a restaurant and an order. `mpg: T.mpg` is the **typical car**: the on-road fleet average, an estimate, with `fuel: "regular"`. A car the user picks replaces it through `applyCar` (§4.1). §4.8 tells the page which values are still estimates.
+
+An empty default is expected, not an error: on 2026-11-13 every app's delivery fee was `null` (D-032). D-042 fills them with labeled estimates; a value the user clears is still `null` and asked for (§7).
 
 Field meanings beyond BUILD.md §5: `promos[p].item` = the menu index a `bogo` promo is on, or `null` (D-036, engine contract §5.4); `pos` = `{lat, lon, src}` with `src` `"zip"` (a ZIP centroid) or `"gps"`; `storePicked` = the user chose `store` (not the nearest); `milesSrc` = `"store"`, `"estimate"`, `"pinned"` or `null`; `usedIn` = `{creditKey: periodId}`; `manualCredits` = the user's own credits (§5.3); `memberOwn` = "I pay for this membership"; `cardMember` = "use the membership my card includes" (D-024: on by default, the user can turn it off); `member` is derived (§5.4).
 
@@ -161,6 +167,35 @@ Then `applyState(S, D)`. (An unknown ZIP keeps `zip` so the page can say "ZIP 99
 
 In this order: `applyCar`, `applyAddress(S, D, opts)` (which runs `applyState`), `applyBrand`, `syncCredits`, then the trip: if `milesAuto` is `true` run `autoMiles` and return its status; else `milesSrc = "pinned"` (it isn't saved, so a reload needs it back), `applyMinutes`, and return `{status: "off", need: [], partial: false}`. `derive` never resets a user field (cart, pins, picked store); that's what makes it safe to run after `load`.
 
+### 4.8 Estimates: `defaultOf(D, path)` and `sourceOf(S, D, path)` (D-042)
+
+Both are pure and read only their arguments. Neither throws.
+
+**The default's key.** A state path maps to a key of `D.DEFAULTS` as follows:
+- `plats.{p}.{f}` (`p` in `APPS`; `f` one of `delFee`, `svc`, `svcMin`, `memberSvc`, `memberMin`, `pickDisc`) → the same string, e.g. `"plats.dd.delFee"`;
+- `regFee`, `smallMin`, `smallFee` → `"fees." + path`;
+- `mpg`, `wear`, `kwh`, `speed` → `"trip." + path`;
+- `tipDel`, `tipPick` → `"tips." + path`.
+
+Any other path, or a path that isn't a string, has no default.
+
+**`defaultOf(D, path)`:**
+- `null` when the path has no default.
+- `null` when the value at its key isn't a finite number. The value is found by walking own keys of objects from `D.DEFAULTS`; a missing step means not found.
+- Otherwise a new object `{value, est, source}`:
+  - `value`: the number.
+  - `est`: `e.est === true`.
+  - `source`: `e.source` when it's a string, else `null`.
+  - `e` is the own key of `D.DEFAULT_SOURCES` for that key, when that's an object; else `{}`.
+
+**`sourceOf(S, D, path)`**, with `v = getPath(S, path)`:
+1. `null` when `v` isn't a finite number.
+2. `path === "mpg"` and `carLookup(D, S.make, S.model, S.year)` isn't `null` → `"published"`: the figure is EPA's, for the user's own car.
+3. `d = defaultOf(D, path)` isn't `null` and `v === d.value` → `"est"` when `d.est`, else `"published"`.
+4. Otherwise → `"you"`.
+
+A value the user typed that happens to equal its default reads as the default. That's the same number, so the label stays honest.
+
 ## 5. The wallet
 
 ### 5.1 `syncCredits(S, D, now)`: destructive by design (BUILD.md §5)
@@ -201,7 +236,7 @@ For each app `p`: `plats[p].member = plats[p].memberOwn === true || (cardHas(p) 
 
 - `setAddress(S, D, text, opts)`: `address = text` if it's a string, else `""`; `pos = null` (a typed address replaces a GPS position); `applyAddress(S, D, opts)`; then the trip (as in `derive`'s last step).
 - `setPosition(S, D, lat, lon, opts)`: lat in [−90, 90] and lon in [−180, 180], finite, else return `null` and change nothing. `pos = {lat, lon, src: "gps"}`; `applyAddress(S, D, opts)`; the trip.
-- `setCar(S, D, make, model, year)`: `make` and `model` are each the argument if it's a string, else `""`; `year` is the argument if it's an integer in 1900–2100, else `null` (so the four-argument call of Phase 5 means `null`). If the new `(make, model, year)` differs from the previous `(S.make, S.model, S.year)` and `carLookup(D, make, model, year)` is `null`, `mpg = null` and `miPerKwh = null` (`fuel` is kept): they belonged to the previous car, and the user now enters their own. Then `S.make`, `S.model`, `S.year` are set and `applyCar` runs. *(D-037: the year is part of the car; picking a year the tables don't list clears the old figure.)* *(Amended 2026-11-14, review of 5.3: "Other" kept the previous car's 46 mpg, so the page priced the old car without asking. `applyCar` itself is unchanged, so a reload keeps the user's own values.)*
+- `setCar(S, D, make, model, year)`: `make` and `model` are each the argument if it's a string, else `""`; `year` is the argument if it's an integer in 1900–2100, else `null` (so the four-argument call of Phase 5 means `null`). If the new `(make, model, year)` differs from the previous `(S.make, S.model, S.year)` and `carLookup(D, make, model, year)` is `null`, the car falls back to **the typical car**: `fuel = "regular"`, `mpg` = `D.DEFAULTS.trip.mpg` when it's a finite number (else `null`), and `miPerKwh = null`. The previous figures belonged to the previous car; the user can now enter their own. *(Amended by D-042: this was `mpg = null` and `miPerKwh = null` with `fuel` kept, which blocked every price until the user typed an mpg.)* Then `S.make`, `S.model`, `S.year` are set and `applyCar` runs. *(D-037: the year is part of the car; picking a year the tables don't list clears the old figure.)* *(Amended 2026-11-14, review of 5.3: "Other" kept the previous car's 46 mpg, so the page priced the old car without asking. `applyCar` itself is unchanged, so a reload keeps the user's own values.)*
 - `setBrand(S, D, brandId, opts)`: `brand` = the string, or `null`; `cart = {}`; `dealOn = true`; every app's `promos[p].item = null` (D-036: an index into the old menu would name a different item in the new one; the promo's type and numbers stay); `store = null`; `storePicked = false`; `place = null` unless `place` is an object whose `id === brandId` (D-040); `applyBrand`. Then, if `milesBy` has an own key `brand` with a finite number ≥ 0: `miles` = it, `milesAuto = false`, `milesSrc = "pinned"`, `applyMinutes`, return `{status: "off", …}`. Else `milesAuto = true` and return `autoMiles`. (`manualSubtotal` is kept.)
 - `pickStore(S, D, store, opts)`: `store` must be an object with a string `brand`, a string `id` that starts with `brand + "@"`, and finite `lat` and `lon` in range (a `storesNear` row), else return `null` and change nothing. If `store.brand !== S.brand`, run `setBrand(S, D, store.brand, opts)` first. Then `S.store = {id, lat, lon}`, `storePicked = true`, `milesAuto = true`, delete `milesBy[brand]`. **An independent (D-040):** when `store.brand` isn't an own key of `D.BRANDS`, and `D.PLACES` is an object whose own key `store.brand` holds an object with a string `name`, a string `category` and a valid `lat`, `lon`: `S.place = {id: store.brand, name, category, lat, lon}` (a new object). Return `autoMiles` (which takes step 3).
 - `setQty(S, index, qty)`: `S.rest` must be profiled, `index` an integer with `0 <= index < rest.menu.length`, and `qty` an integer ≥ 0, else `false`. `qty > 0` sets `cart[String(index)] = qty`; `0` deletes the key. `true`. (`setPath` can't do this: it never creates keys.)
@@ -245,7 +280,7 @@ The key is `POD.STORAGE_KEY` (`"pod.v5"`, D-010). `storage` is any object with `
 - `save(S, storage)`: `storage.setItem(key, JSON.stringify(those fields))` inside try/catch. `pos` is written only when it's a GPS position; otherwise the key is left out. `plats` is written with only the fields listed above (never `markup` or `member`). `true` on success; `false` if anything throws or `storage` has no `setItem`.
 - `load(storage, D, now, opts)`: `S = fresh(D)`. Read `storage.getItem(key)` and `JSON.parse` it inside try/catch; if anything throws, the value isn't a string, or the parse isn't an object, use `{}`. Then **merge field by field**: a saved field replaces the fresh one only when it has the right type, else the fresh value stays:
   - strings: `address`, `make`, `model`; `brand` a string or `null`; `fuel` one of the four.
-  - numbers (finite, ≥ 0): `mpg`, `miPerKwh`, `kwh`, `manualSubtotal`, `miles`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`; `speed` > 0. (`mpg`, `miPerKwh` and `miles` may also be `null`.)
+  - numbers (finite, ≥ 0): `mpg`, `miPerKwh`, `kwh`, `manualSubtotal`, `miles`, `tipDel`, `tipPick`, `wear`, `hourly`, `regFee`, `smallMin`, `smallFee`; `speed` > 0. (`miPerKwh` and `miles` may also be `null`. *Amended by D-042:* a saved `mpg: null` is ignored like any other bad value, so `mpg` keeps `fresh`'s typical-car figure; v5 saved `null` for a car with no figure, and that would block every price again.)
   - booleans: `dealOn`, `milesAuto`, `storePicked`.
   - `year`: an integer in 1900–2100, or `null` (D-037).
   - `pos`: `{lat, lon, src: "gps"}` with a valid position. `store`: `{id: string, lat, lon}` with finite numbers (or `null`).
