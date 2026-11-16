@@ -44,6 +44,7 @@ async function pickBrandFromList(page, brand) {
   await page.waitForSelector('[data-testid="near-list"]');
   if (await page.locator(row).count() === 0) await page.click('[data-action="more-stores"]');
   await page.click(row);
+  await H.openDrawer(page);                  // the trip line lives in Personalize (D-043)
   await H.waitText(page, '[data-testid="trip"]', 'mi round trip');
 }
 /** Clicks a checkbox and checks it took (a re-render replaces the element, so query again). */
@@ -52,17 +53,20 @@ async function tick(page, selector) {
   assert.ok(await page.isChecked(selector), selector + ' is checked');
 }
 async function chooseCar(page, make, model) {
+  await H.openDrawer(page);                  // the car selects live in Personalize (D-043)
   await page.selectOption('#make', make);
   await page.selectOption('#model', model);
 }
 async function addItem(page, i, times = 1) {
   for (let k = 0; k < times; k++) await page.click('[data-action="qty"][data-index="' + i + '"][data-delta="1"]');
 }
+/** The answer card: its title is the route's plain-language title, its price is the best route's net (D-043, UI contract §5.5). */
 async function assertResultsMatchSaved(page, label) {
   const exp = H.expected(await H.saved(page));
   assert.ok(exp.R && exp.R.length > 0, label + ': the saved state prices something');
   assert.deepEqual(await H.shownResults(page), H.wantResults(exp), label + ': the results shown are the engine\'s for the saved state');
-  assert.equal(await H.text(page, '[data-testid="verdict"]'), 'Cheapest: ' + exp.R[0].name + ' at ' + H.money(exp.R[0].net), label + ': verdict');
+  assert.equal(await H.text(page, '[data-testid="verdict"]'), H.title(exp.R[0].id, exp.S.rest.name), label + ': verdict');
+  assert.equal(await H.text(page, '[data-testid="answer-net"]'), H.money(exp.R[0].net), label + ': the answer\'s price');
   return exp;
 }
 async function shot(page, name) {
@@ -75,15 +79,22 @@ for (const [vp, size] of Object.entries(VIEWPORTS)) {
   test('first visit (' + vp + '): asks for location, restaurant and car; offers the example; no console errors', async () => {
     const { ctx, page, errors } = await H.openPage(browser, site.url, { viewport: size });
     assert.equal(await H.text(page, '[data-testid="loc-status"]'), 'Type your ZIP or address, or use your location.');
-    const missing = await H.text(page, '[data-testid="missing"]');
-    assert.ok(missing.startsWith('To compare, we still need: a restaurant, your ZIP or address, your car'), missing);
+    // D-042 (UI contract §5.5 step 1, amended): a fresh state has the typical car, so only the restaurant and the place are missing.
+    assert.equal(await H.text(page, '[data-testid="missing"]'), 'To compare, we still need: a restaurant, your ZIP or address.');
     assert.ok(await page.locator('[data-action="example"]').isVisible(), 'the example button shows');
     const options = await page.$$eval('#brand option', (os) => os.map((o) => o.value));
     assert.equal(options[0], '');
     assert.equal(options.length, POD().data.BRAND_IDS.length + 1, 'every brand is offered');
-    for (const id of ['loc', 'near', 'order', 'trip', 'results', 'insights', 'car', 'wallet', 'settings', 'fine']) {
+    // D-043 (UI contract §2): three steps, the answer side, Personalize, fine print; the drawer's sections are absent while it's closed.
+    assert.deepEqual(await page.$$eval('#app > *', (els) => els.map((e) => e.id)),
+      ['loc', 'near', 'order', 'side', 'more', 'fine'], '#app holds the steps, the side, the drawer and the fine print');
+    assert.deepEqual(await page.$$eval('#side > *', (els) => els.map((e) => e.id)), ['results', 'insights'], '#side holds the answer and its insights');
+    for (const id of ['loc', 'near', 'order', 'results', 'insights', 'more', 'fine']) {
       assert.equal(await page.locator('section#' + id).count(), 1, 'section ' + id);
     }
+    assert.notEqual(await page.getAttribute('#insights', 'hidden'), null, 'no insights yet: the section is hidden');
+    assert.equal(await page.getAttribute('#drawer', 'aria-expanded'), 'false', 'Personalize is closed by default');
+    assert.equal(await page.locator('section#trip, section#car, section#wallet, section#settings').count(), 0, 'the drawer\'s sections are absent while closed');
     assert.ok(await H.noHorizontalScroll(page) <= 0, 'no horizontal scroll');
     await shot(page, 'first-visit-' + vp);
     assert.deepEqual(errors, []);
@@ -117,8 +128,14 @@ test('§13 checklist: load, switch restaurant, EV, three cards, ZIP in another s
   let exp = await assertResultsMatchSaved(page, 'Domino\'s');
   const ids = exp.R.map((r) => r.id);
   assert.ok(ids.includes('dd-p') && ids.includes('ue-p'), 'app pickup is priced without delivery fees (D-033)');
-  assert.ok(!ids.includes('dd-d') && !ids.includes('ue-d'), 'app delivery waits for the user\'s fees (D-032)');
-  assert.ok(await page.locator('[data-testid="app-fees-dd"] #need-plats-dd-delFee').count() === 1, 'the page asks for DoorDash\'s delivery fee');
+  // An app's delivery is priced exactly when the engine has its fees, and the page asks for them exactly when it doesn't.
+  // Today those fees are still D-032's blanks; D-042's estimates (task 11.2) fill them, and then both checks still hold.
+  for (const p of ['dd', 'ue']) {
+    const missing = exp.appMissing(p);
+    assert.equal(ids.includes(p + '-d'), missing.length === 0, p + '-d is priced exactly when its fees are known (D-032, D-042)');
+    assert.equal(await page.locator('[data-testid="app-fees-' + p + '"]').count(), missing.length > 0 ? 1 : 0,
+      'the page asks for ' + p + '\'s fees exactly when the engine is missing them');
+  }
 
   // Switch restaurant (the cart empties, BUILD.md §5 / state contract §6).
   await page.selectOption('#brand', 'buffalo_wild_wings');
@@ -166,8 +183,9 @@ test('§13 checklist: load, switch restaurant, EV, three cards, ZIP in another s
   await shot(page, 'checklist-desktop');
 
   // Reload: everything persisted.
-  await page.reload();
+  await page.reload();                       // a reload closes Personalize (D-043)
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);
   assert.equal(await page.inputValue('#address'), '07030');
   assert.equal(await page.inputValue('#brand'), 'buffalo_wild_wings');
   assert.equal(await H.text(page, '[data-testid="qty-0"]'), '2');
@@ -209,16 +227,18 @@ test('§13 scenario 1: Domino\'s in Brooklyn, with DoorDash\'s fees entered, ran
   const { ctx, page, errors } = await H.openPage(browser, site.url);
   await chooseZip(page, '11201');
   await page.selectOption('#brand', 'dominos');
+  await H.openDrawer(page);
   await H.waitText(page, '[data-testid="trip"]', 'mi round trip');
   await chooseCar(page, 'Toyota', 'Camry');
   await addItem(page, 0, 2);
-  // The DoorDash fees the page asks for (from the user's checkout), in the app-fees box.
+  // The DoorDash fees from the user's checkout (D-032), entered in the app-fees box for each fee the engine is missing.
+  // D-042's estimates (task 11.2) fill them, and then the page asks for none and this loop enters none.
   const fees = { 'plats.dd.delFee': 2.99, 'plats.dd.svcMin': 3, regFee: 0, smallMin: 12, smallFee: 2.5 };
   const asked = H.expected(await H.saved(page)).appMissing('dd');
-  assert.deepEqual(asked, Object.keys(fees), 'exactly the fees DoorDash doesn\'t publish are asked for');
-  for (const [p, v] of Object.entries(fees)) await H.commit(page, '#need-' + p.replace(/\./g, '-'), v);
+  assert.ok(asked.every((p) => p in fees), 'the page asks only for fees this test knows: ' + asked.join(', '));
+  for (const p of asked) await H.commit(page, '#need-' + p.replace(/\./g, '-'), fees[p]);
   const exp = await assertResultsMatchSaved(page, 'fees entered');
-  assert.ok(exp.R.some((r) => r.id === 'dd-d'), 'DoorDash delivery is priced once its fees are in');
+  assert.ok(exp.R.some((r) => r.id === 'dd-d'), 'DoorDash delivery is priced once its fees are known');
   assert.equal(await page.locator('[data-testid="app-fees-dd"]').count(), 0, 'DoorDash no longer asks');
   const dd = (await H.shownResults(page)).find((r) => r.id === 'dd-d');
   assert.deepEqual(dd.lines.map(([l]) => l).slice(0, 3), ['Food', 'Delivery fee', 'Service fee']);
@@ -250,6 +270,7 @@ test('§13 scenario 5: rural 59011 vs urban 10118 trips to Domino\'s differ by m
   const { ctx, page, errors } = await H.openPage(browser, site.url);
   await chooseZip(page, '10118');
   await page.selectOption('#brand', 'dominos');
+  await H.openDrawer(page);
   await H.waitText(page, '[data-testid="trip-src"]', 'To the nearest Domino\'s');
   const urban = parseFloat(await H.text(page, '[data-testid="trip"]'));
   await chooseZip(page, '59011');
@@ -303,6 +324,7 @@ test('a click right after typing lands: the box commits on mouse down and the bu
   const { ctx, page, errors } = await H.openPage(browser, site.url);
   await page.click('[data-action="example"]');
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);
   await page.fill('#tipDel', '20');                                   // focus stays in the box: not committed yet
   await page.click('[data-action="qty"][data-index="6"][data-delta="1"]');   // mouse down commits the tip, then the click
   assert.equal(await H.text(page, '[data-testid="qty-6"]'), '1', 'the + click counted');
@@ -326,6 +348,7 @@ test('the example: 10118, a Toyota Camry, Domino\'s and one item, priced', async
   await page.waitForSelector('[data-testid="result-row"]');
   assert.equal(await page.inputValue('#address'), '10118');
   assert.equal(await page.inputValue('#brand'), 'dominos');
+  await H.openDrawer(page);
   assert.equal(await H.text(page, '[data-testid="car-summary"]'), '46 mpg · regular');
   assert.equal(await H.text(page, '[data-testid="qty-0"]'), '1');
   await assertResultsMatchSaved(page, 'example');
@@ -372,6 +395,7 @@ test('a tile that fails to load: the list says it may be incomplete; the only co
 
 test('escaping: a manual credit named like markup is shown as text', async () => {
   const { ctx, page, errors } = await H.openPage(browser, site.url);
+  await H.openDrawer(page);                  // the wallet lives in Personalize (D-043)
   const name = '<img src=x onerror="window.PWNED=1">Gift & "card"';
   await page.fill('#mc-name', name);
   await page.fill('#mc-amount', '25');
@@ -393,6 +417,7 @@ test('wallet: "Used this period" stops a credit applying and persists', async ()
   const { ctx, page, errors } = await H.openPage(browser, site.url);
   await page.click('[data-action="example"]');
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);
   await tick(page, '[data-action="toggle-card"][data-card="amex_platinum"]');
   const withCredit = await assertResultsMatchSaved(page, 'Uber Cash on');
   await tick(page, '[data-action="used"][data-key="amex_platinum.uber_cash"]');
@@ -401,6 +426,7 @@ test('wallet: "Used this period" stops a credit applying and persists', async ()
   assert.ok(ue(withCredit).credit > 0 && ue(used).credit === 0, 'the used credit no longer applies to Uber Eats pickup');
   await page.reload();
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);
   assert.ok(await page.isChecked('[data-action="used"][data-key="amex_platinum.uber_cash"]'));
   assert.deepEqual(errors, []);
   await ctx.close();
@@ -410,6 +436,7 @@ test('settings: a cleared tip is asked for; an unprofiled brand takes a typed me
   const { ctx, page, errors } = await H.openPage(browser, site.url);
   await page.click('[data-action="example"]');
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);
   await H.commit(page, '#tipDel', '');
   await H.waitText(page, '[data-testid="missing"]', 'the delivery tip');
   await H.commit(page, '#tipDel', '18');
@@ -434,6 +461,7 @@ test('results: the missing list follows the contract order; rows carry best, mem
   const { ctx, page, errors } = await H.openPage(browser, site.url);
   await page.click('[data-action="example"]');
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);
   await H.commit(page, '#wear', '');
   await H.commit(page, '#tipDel', '');
   assert.equal(await H.text(page, '[data-testid="missing"]'), 'To compare, we still need: the delivery tip, wear per mile.');
@@ -441,11 +469,12 @@ test('results: the missing list follows the contract order; rows carry best, mem
   await H.commit(page, '#wear', '0.1104');
   await page.waitForSelector('[data-testid="result-row"]');
 
-  // DashPass from the Sapphire Reserve; DoorDash's fees from the checkout.
+  // DashPass from the Sapphire Reserve; DoorDash's fees from the checkout (D-032), for each fee the engine is missing (see scenario 1).
   await tick(page, '[data-action="toggle-card"][data-card="chase_sapphire_reserve"]');
-  for (const [p, v] of Object.entries({ 'plats.dd.delFee': 2.99, 'plats.dd.svcMin': 3, regFee: 0, smallMin: 12, smallFee: 2.5 })) {
-    await H.commit(page, '#need-' + p.replace(/\./g, '-'), v);
-  }
+  const fees = { 'plats.dd.delFee': 2.99, 'plats.dd.svcMin': 3, regFee: 0, smallMin: 12, smallFee: 2.5 };
+  const asked = H.expected(await H.saved(page)).appMissing('dd');
+  assert.ok(asked.every((p) => p in fees), 'the page asks only for fees this test knows: ' + asked.join(', '));
+  for (const p of asked) await H.commit(page, '#need-' + p.replace(/\./g, '-'), fees[p]);
   const exp = await assertResultsMatchSaved(page, 'DashPass');
   const rows = page.locator('[data-testid="result-row"]');
   assert.equal(await page.locator('[data-testid="result-row"].best').count(), 1, 'one best row');
@@ -453,7 +482,9 @@ test('results: the missing list follows the contract order; rows carry best, mem
   const dd = page.locator('[data-testid="result-row"][data-channel="dd-d"]');
   assert.equal(exp.R.find((r) => r.id === 'dd-d').member, 'DashPass');
   assert.ok((await dd.textContent()).includes('DashPass'), 'the member badge shows');
-  assert.ok((await dd.locator('summary').textContent()).trim() === 'Receipt');
+  // D-043: the receipt opens from the row head (#row-{id}), and a row starts closed.
+  assert.equal(await dd.locator('.result-head').getAttribute('aria-expanded'), 'false', 'the receipt starts closed');
+  assert.equal(await dd.locator('.result-head').getAttribute('id'), 'row-dd-d');
   const neg = await dd.locator('[data-testid="line"]').evaluateAll((ls) => ls.filter((l) =>
     l.querySelector('[data-testid="line-label"]').textContent.trim() === 'Card credits').map((l) =>
     l.classList.contains('neg') || !!l.querySelector('.neg')));

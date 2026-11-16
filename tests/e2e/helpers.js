@@ -128,7 +128,32 @@ async function noHorizontalScroll(page) {
   return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 }
 
+/**
+ * Opens the Personalize drawer (D-043, UI contract §5.11) if it's closed, then waits until its
+ * sections are on the page. The drawer stays open across renders on the same page; a reload closes it.
+ */
+async function openDrawer(page) {
+  const toggle = page.locator('#drawer');
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click();
+  await page.waitForSelector('#more section#settings');
+}
+
+const APP_NAME = { dd: 'DoorDash', ue: 'Uber Eats', gh: 'Grubhub' };
+
+/**
+ * The plain-language title of a route (UI contract §5.5, D-043), written from the contract:
+ * direct-p "Pick it up from {rest}", direct-d "Delivery from {rest}", {p}-d "{App} delivery",
+ * {p}-p "{App} pickup".
+ */
+function title(id, restName) {
+  if (id === 'direct-p') return 'Pick it up from ' + restName;
+  if (id === 'direct-d') return 'Delivery from ' + restName;
+  const m = /^(dd|ue|gh)-([pd])$/.exec(id);
+  if (!m) throw new Error('no such route: ' + id);
+  return APP_NAME[m[1]] + (m[2] === 'd' ? ' delivery' : ' pickup');
+}
+
 module.exports = {
   buildSite, expected, money, openPage, commit, text, waitText, saved, shownResults, wantResults,
-  noHorizontalScroll, SHOTS, KEY, app,
+  noHorizontalScroll, openDrawer, title, SHOTS, KEY, app,
 };
