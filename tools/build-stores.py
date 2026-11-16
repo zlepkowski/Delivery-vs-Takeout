@@ -226,10 +226,20 @@ def fetch_json_cached(url, path):
 # ---------------------------------------------------------------- run resolution
 
 def resolve_run(arg, cache_dir):
-    """Returns (run_id, history_entry) where the entry has output_url and insights_url."""
+    """Returns (run_id, entry) where the entry has output_url and insights_url.
+
+    latest.json has the same fields as a history.json entry, and history.json can
+    lag a week behind it (checked 2026-11-16), so "latest" uses latest.json itself.
+    An explicit run id is looked up in history.json first, then in latest.json
+    (when that is the run), else it fails. Entries are cached per run id.
+    """
+    latest = None
     if arg == "latest":
         _, _, body = http_get(RUNS_BASE + "/latest.json")
-        run_id = json.loads(body.decode("utf-8"))["run_id"]
+        latest = json.loads(body.decode("utf-8"))
+        if not isinstance(latest, dict) or not isinstance(latest.get("run_id"), str):
+            fail("latest.json has no run_id")
+        run_id = latest["run_id"]
         print("latest run resolves to " + run_id)
     else:
         run_id = arg
@@ -239,12 +249,22 @@ def resolve_run(arg, cache_dir):
     if os.path.exists(entry_path):
         entry = json.loads(cache_read_gz(entry_path).decode("utf-8"))
     else:
-        _, _, body = http_get(RUNS_BASE + "/history.json")
-        history = json.loads(body.decode("utf-8"))
-        matches = [r for r in history if r.get("run_id") == run_id]
-        if not matches:
-            fail("run %s is not in history.json" % run_id)
-        entry = matches[0]
+        if latest is not None:
+            entry = latest
+        else:
+            _, _, body = http_get(RUNS_BASE + "/history.json")
+            history = json.loads(body.decode("utf-8"))
+            matches = [r for r in history if r.get("run_id") == run_id]
+            if matches:
+                entry = matches[0]
+            else:
+                # history.json can lag the newest run; latest.json is the same record.
+                _, _, body = http_get(RUNS_BASE + "/latest.json")
+                cand = json.loads(body.decode("utf-8"))
+                if not isinstance(cand, dict) or cand.get("run_id") != run_id:
+                    fail("run %s is not in history.json or latest.json" % run_id)
+                print("run %s is not in history.json yet; using latest.json" % run_id)
+                entry = cand
         cache_write_gz(entry_path, json.dumps(entry, sort_keys=True).encode("utf-8"))
     return run_id, entry
 
@@ -457,16 +477,61 @@ def write_text(path, text):
     os.replace(tmp, path)
 
 
+def candidate_runs(n):
+    """Up to n run ids, newest first: the run latest.json names, then history.json's newest, no repeats.
+
+    latest.json can answer from a replica that is a week old, and history.json can lag
+    latest.json (D-039 amendment), so both are listed. A history.json failure is a
+    warning, not an error: latest.json alone is still a candidate.
+    """
+    try:
+        _, _, body = http_get(RUNS_BASE + "/latest.json")
+        latest = json.loads(body.decode("utf-8"))
+        first = latest.get("run_id") if isinstance(latest, dict) else None
+    except (RuntimeError, ValueError) as e:
+        fail("cannot read latest.json for candidates: %s" % e)
+    if not isinstance(first, str) or not RUN_RE.match(first):
+        fail("latest.json has no valid run_id")
+    ids = [first]
+    try:
+        _, _, body = http_get(RUNS_BASE + "/history.json")
+        history = json.loads(body.decode("utf-8"))
+        seen = set()
+        for r in history:
+            rid = r.get("run_id") if isinstance(r, dict) else None
+            if isinstance(rid, str) and RUN_RE.match(rid):
+                seen.add(rid)
+        for rid in sorted(seen, reverse=True):
+            if rid not in ids:
+                ids.append(rid)
+    except (RuntimeError, ValueError, AttributeError) as e:
+        print("build-stores: history.json unavailable, candidates from latest.json only (%s)" % e,
+              file=sys.stderr)
+    return ids[:n]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--run", required=True, help="run id, or 'latest'")
-    ap.add_argument("--as-of", required=True, help="YYYY-MM-DD, written to the provenance headers")
-    ap.add_argument("--cache", required=True, help="scratch cache dir, outside the repo")
-    ap.add_argument("--brands-out", required=True)
-    ap.add_argument("--tiles-out", required=True)
+    ap.add_argument("--candidates", type=int, metavar="N",
+                    help="print up to N candidate run ids, one per line, and exit (no build)")
+    ap.add_argument("--run", help="run id, or 'latest'")
+    ap.add_argument("--as-of", help="YYYY-MM-DD, written to the provenance headers")
+    ap.add_argument("--cache", help="scratch cache dir, outside the repo")
+    ap.add_argument("--brands-out")
+    ap.add_argument("--tiles-out")
     ap.add_argument("--cells", default="", help="comma list of cells to write as tile files")
     ap.add_argument("--nsi-ref", default="main")
     args = ap.parse_args()
+
+    if args.candidates is not None:
+        if args.candidates < 1:
+            fail("--candidates must be at least 1")
+        for rid in candidate_runs(args.candidates):
+            print(rid)
+        return
+    for name in ("run", "as_of", "cache", "brands_out", "tiles_out"):
+        if getattr(args, name) is None:
+            fail("missing --%s (or use --candidates N)" % name.replace("_", "-"))
 
     if not re.match(r"\d{4}-\d{2}-\d{2}\Z", args.as_of):
         fail("--as-of must be YYYY-MM-DD")
@@ -503,7 +568,11 @@ def main():
         body = read_member(zf, spider, args.cache, run_id, stats)
         if body is None:
             continue
-        doc = json.loads(body.decode("utf-8"))
+        try:
+            doc = json.loads(body.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError) as e:
+            fail("member %s.geojson isn't valid JSON (%s); ATP's file for this run is cut off or damaged, "
+                 "so run %s can't be built" % (spider, e, run_id))
         for feat in doc.get("features", []):
             props = feat.get("properties") or {}
             if props.get("amenity") not in FOOD_AMENITIES:
