@@ -415,10 +415,10 @@ test('the drawer toggle: a click while a box inside the drawer commits still lan
   await toAnswer(page);
   await openDrawer(page);
   await page.fill('#tipDel', '21');                  // focus stays in the box: no change event yet
-  const toggle = await page.$('#drawer');
   await page.click('#drawer');                       // mouse down blurs the box -> change -> render -> the click
   await page.waitForFunction(() => /"tipDel":21/.test(window.localStorage.getItem('pod.v5') || ''));
-  assert.equal(await toggle.evaluate((e) => e.isConnected), true, 'the toggle was not replaced by the commit');
+  // Had the commit's render replaced the toggle under the pointer, the click would be lost and the drawer still open.
+  // (The click itself then replaces the toggle, since aria-expanded changes: §2. So no element-identity check here.)
   assert.equal(await page.getAttribute('#drawer', 'aria-expanded'), 'false', 'the click landed: the drawer closed');
   assert.equal(await page.locator('section#settings').count(), 0);
   assert.deepEqual(errors, []);
