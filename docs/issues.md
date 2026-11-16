@@ -27,6 +27,7 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Update 2026-11-12, partly resolved:** the user approved a new personal environment, **Delivery-vs-Takeout**, saved for this repo. It allows `www.fueleconomy.gov`, `gasprices.aaa.com`, `www.alltheplaces.xyz`, `data.alltheplaces.xyz`, `alltheplaces-data.openaddresses.io`, `www.americanexpress.com`, `creditcards.chase.com`, `www.chase.com`, `www.capitalone.com` and `taxfoundation.org`, and all ten answered. Still not allowed: `vpic.nhtsa.dot.gov` and `api.eia.gov` (Phase 7), the chain menu sites (request them once the 12 profiles are picked), and the bare `alltheplaces.xyz` that `www.` redirects to (not needed so far). The environment caps the list at 20 exact hosts, so the menu sites may need trimming. **Later the same day:** removed `gasprices.aaa.com` (Cloudflare blocks automated requests, D-022) and `www.alltheplaces.xyz` (not needed); added `www.eia.gov`, `www.revenue.nh.gov`, `tax.vermont.gov`, `www.tax.virginia.gov` and `otr.cfo.dc.gov`. EIA, VA and DC answer. The NH and VT sites return their own 403 to automated requests.
 - **Update 2026-11-12, research done:** the user approved reverting the environment from unrestricted to **limited** with the 16 hosts listed above (package registries and MCP servers still allowed). Checked: www.eia.gov 200, www.subway.com 302; www.restaurantdive.com and www.pymnts.com are refused. A future profile refresh needs the per-chain ordering API hosts too (e.g. order.littlecaesars.com, onlo-api.littlecaesars.com), which exceed the 20-host cap; that is a Phase 7 question (weekly refresh).
 - **Update 2026-11-13 (Phase 4, task 4.1):** the user approved swapping 3 chain sites that aren't profiled (`www.tacobell.com`, `www.pizzahut.com`, `www.fiveguys.com`) for the default-fee and trip-cost sources: `help.doordash.com`, `help.uber.com`, `www.uber.com`, `www.grubhub.com`, `about.grubhub.com`, `newsroom.aaa.com` and `rosap.ntl.bts.gov`. The list is now at the 20-host cap. Re-add a removed chain site only if that chain is profiled later (D-028).
+- **Update 2026-11-16 (Phase 7):** the user approved swapping `about.grubhub.com` (it refused every connection, see ISS-034) for `vpic.nhtsa.dot.gov`, to check vPIC's CORS header and record VIN fixtures (D-038). The list stays at the 20-host cap. `www.eia.gov`, `data.alltheplaces.xyz`, `alltheplaces-data.openaddresses.io` and `www.fueleconomy.gov` served the rest of Phase 7.
 - **Next step:** at the start of Phase 1, the orchestrator calls `get_environment` and requests the exact hosts in one approval: EPA, AAA, All The Places, NHTSA, the tax sources, the issuer sites (americanexpress.com, chase.com, capitalone.com) and the menu sites for the chosen profiles.
 
 ### ISS-004 — Phase 8 deployment needs the user's accounts
@@ -202,14 +203,22 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** not reachable today: the page changes the car only through `data-action` (`setCar`), never `data-bind`. A future control bound to one of these paths would price the old car silently.
 - **Next step:** a later state-contract amendment: `setPath` refuses `make`, `model` and `year` (scenarios first), so the car changes only through `setCar`.
 
-### ISS-038 — ATP's `history.json` lags `latest.json` by about a week (found in the 7.6 dry run)
+### ISS-039 — ATP run 2026-11-07-13-32-32 publishes a cut-off `taco_bell_us.geojson` (found in the 7.6 dry run)
 - **Opened:** 2026-11-16 by orchestrator (researcher report) · **Phase:** 7 · **Status:** open
-- **What:** on 2026-11-16 `data.alltheplaces.xyz/runs/latest.json` named run `2026-11-07-13-32-32`, but that host's `history.json` (425 runs) ended at `2026-10-31-13-32-34`. `tools/build-stores.py --run latest` looked the run up in `history.json` and failed, so the Monday deploy would have failed every week until history caught up.
-- **Next step:** `resolve_run` uses `latest.json`'s own record (it has the same fields as a history entry). Close when the live dry run passes on the latest run.
+- **What:** the member ends mid-features (`},` then end of file; `json.loads` fails at line 4818), and its zip CRC matches the cut bytes, so ATP published it that way. The other 358 food members of that run parse.
+- **Why it matters:** `build-stores.py` refuses the whole run (D-039 amendment: a run never ships partly, since dropping the file would silently remove Taco Bell's ~8,000 US stores), so the weekly build falls back to the previous run. If three runs in a row are broken the build fails, and Pages keeps the last good site.
+- **Next step:** none while the fallback holds. If the weekly log keeps skipping runs, check whether the spider is broken upstream (ATP's issue tracker) before considering a per-brand fallback to an older run (the ISS-007 idea).
 
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
+
+### ISS-038 — ATP's `history.json` lags `latest.json` by about a week (found in the 7.6 dry run)
+- **Opened:** 2026-11-16 by orchestrator (researcher report) · **Phase:** 7 · **Status:** closed (2026-11-16, 93eadd2)
+- **What:** on 2026-11-16 `data.alltheplaces.xyz/runs/latest.json` named run `2026-11-07-13-32-32`, but that host's `history.json` (425 runs) ended at `2026-10-31-13-32-34`. `tools/build-stores.py --run latest` looked the run up in `history.json` and failed, so the Monday deploy would have failed every week until history caught up.
+- **Next step:** `resolve_run` uses `latest.json`'s own record (it has the same fields as a history entry). Close when the live dry run passes on the latest run.
+- **Resolved 2026-11-16:** `resolve_run` takes `latest.json`'s own record for "latest" (same fields as a history entry), and the D-039 amendment's store-run fallback lists candidates from both files. The live dry run built with `latest` (93eadd2).
+
 
 ### ISS-011 — No unit tests for the data generators' rules
 - **Opened:** 2026-11-12 by orchestrator (reviewer should-fix on 087d79c) · **Phase:** 1 → 7 · **Status:** closed (2026-11-16, Phase 7: d573421, 9347c12)
