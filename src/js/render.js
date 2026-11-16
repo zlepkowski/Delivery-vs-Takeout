@@ -163,10 +163,11 @@
   }
 
   /** The independents block (D-040, ui-contract §5.2): '' when none is left after the search, else one wrapped block. */
-  function indieHtml(S, rows, q) {
+  function indieHtml(S, rows, q, only) {
     var list = '<ol class="near-list indie-list" data-testid="indie-list">', n = 0;
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
+      if (only !== null && i !== only) { continue; }     // D-043 folded: only the pressed independent (none if -1)
       if (!matches(row.name, q)) { continue; }
       n++;
       var on = !!S.store && S.store.id === row.id;
@@ -194,8 +195,13 @@
   function secNear(c, places) {
     var S = c.S, D = c.D, view = c.view, q = queryOf(c);
     var msg = "", list = "", more = "", search = "", found = 0;
+    var pStore = -1, pInd = -1, folded = false, i;
     nearRows = [];
     indieRows = places;
+    // The pressed independent (D-040), if the pick is one. Its index is in the whole list.
+    if (S.store) {
+      for (i = 0; i < places.length; i++) { if (places[i].id === S.store.id) { pInd = i; break; } }
+    }
     if (!S.pos) {
       msg = '<p class="muted">Type a ZIP or address, or use your location, to see restaurants near you.</p>';
     } else {
@@ -207,6 +213,12 @@
       } else {
         var stores = res.stores, n = stores.length;
         nearRows = stores;
+        if (S.store) {
+          for (i = 0; i < n; i++) { if (stores[i].id === S.store.id) { pStore = i; break; } }
+          if (pStore >= SHOWN_NEAR) { pStore = -1; }     // a pressed row must be shown to fold the list
+        }
+        // D-043 folding: no query, not expanded, and a shown row pressed (ui-contract §5.2).
+        folded = q === "" && !view.moreStores && (pStore >= 0 || pInd >= 0);
         if (res.partial) {
           msg += '<p data-testid="near-status">Some store data didn\'t load, so the list may be incomplete.</p>';
         }
@@ -216,8 +228,9 @@
           search = SEARCH_BOX;
           // Each row keeps its index in the whole list (POD.ui.storeAt); the cap counts the matching rows.
           var rows = "", cap = view.moreStores ? n : SHOWN_NEAR;
-          for (var i = 0; i < n; i++) {
+          for (i = 0; i < n; i++) {
             var st = stores[i], label = st.name || st.brand;
+            if (folded && i !== pStore) { continue; }
             if (!matches(label, q)) { continue; }
             found++;
             if (found > cap) { continue; }
@@ -228,12 +241,14 @@
               "<span>" + esc(label) + (st.profiled ? "" : ' <span class="tag">Estimate</span>') + "</span>" +
               '<span class="num">' + mi1(st.mi) + " mi</span></button></li>";
           }
-          if (found === 0) {
+          if (found === 0 && !folded) {
             list = '<p class="muted" data-testid="near-empty">Nothing near you matches “' + esc(c.view.q.replace(/^\s+|\s+$/g, "")) + "”.</p>";
-          } else {
+          } else if (rows !== "") {
             list = '<ol class="near-list" data-testid="near-list">' + rows + "</ol>";
           }
-          if (!view.moreStores && found > SHOWN_NEAR) {
+          if (folded) {
+            more = '<p><button type="button" data-action="more-stores">Change restaurant (' + n + " nearby)</button></p>";
+          } else if (!view.moreStores && found > SHOWN_NEAR) {
             more = '<p><button type="button" data-action="more-stores">Show all ' + found + "</button></p>";
           }
         }
@@ -243,7 +258,7 @@
     // D-043: the search box is the slot right after the heading, always one block (an empty div when absent).
     var h = none(search) + '<div>' + msg + "</div>" + none(list) + none(more) +
       '<label for="brand">Restaurant chain</label><select id="brand" data-action="brand">' + brandOptions(c) + "</select>" +
-      indieHtml(S, places, q);
+      indieHtml(S, places, q, folded ? pInd : null);
     return section("near", "What are you getting?", h);
   }
 

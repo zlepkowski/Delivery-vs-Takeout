@@ -116,7 +116,7 @@ test('§13 checklist: load, switch restaurant, EV, three cards, ZIP in another s
   assert.equal(await page.locator('[data-testid="near-list"] [data-action="pick-store"]').count(), 15, 'the first 15 nearby brands');
   assert.equal(await H.text(page, '[data-action="more-stores"]'), 'Show all 82');
   await pickBrandFromList(page, 'dominos');
-  assert.equal(await page.locator('[data-testid="near-list"] [data-action="pick-store"]').count(), 82, 'every brand after "Show all"');
+  // After a pick the near list folds (UI contract §5.2, "Change restaurant"): its row count isn't asserted, only that the picked row is pressed.
   assert.equal(await page.getAttribute('[data-testid="near-list"] [data-brand="dominos"]', 'aria-pressed'), 'true');
   assert.equal(await page.locator('[data-testid="menu-item"]').count(), POD().data.PROFILES.dominos.menu.length);
   await chooseCar(page, 'Toyota', 'Camry');
@@ -231,13 +231,19 @@ test('§13 scenario 1: Domino\'s in Brooklyn, with DoorDash\'s fees entered, ran
   await H.waitText(page, '[data-testid="trip"]', 'mi round trip');
   await chooseCar(page, 'Toyota', 'Camry');
   await addItem(page, 0, 2);
-  // The DoorDash fees from the user's checkout (D-032), entered in the app-fees box for each fee the engine is missing.
-  // D-042's estimates (task 11.2) fill them, and then the page asks for none and this loop enters none.
-  const fees = { 'plats.dd.delFee': 2.99, 'plats.dd.svcMin': 3, regFee: 0, smallMin: 12, smallFee: 2.5 };
-  const asked = H.expected(await H.saved(page)).appMissing('dd');
-  assert.ok(asked.every((p) => p in fees), 'the page asks only for fees this test knows: ' + asked.join(', '));
-  for (const p of asked) await H.commit(page, '#need-' + p.replace(/\./g, '-'), fees[p]);
+  // The page asks for exactly the DoorDash fees the data leaves blank (D-032; D-042's estimates, task 11.2, fill
+  // them and empty this list). Computed from the data, in appMissing's order: the app's own paths, then the shared ones.
+  const D = POD().data.DEFAULTS;
+  const blank = [['plats.dd.delFee', D.plats.dd.delFee], ['plats.dd.svcMin', D.plats.dd.svcMin],
+    ['regFee', D.fees.regFee], ['smallMin', D.fees.smallMin], ['smallFee', D.fees.smallFee]]
+    .filter(([, v]) => v === null).map(([p]) => p);
+  assert.deepEqual(H.expected(await H.saved(page)).appMissing('dd'), blank, 'the page asks for exactly the fees the data leaves blank');
+  // The fees from the user's checkout, typed in Personalize's settings inputs (D-042: the user corrects any estimate there).
+  // All five are entered whether or not they're asked for, so the scenario always prices the fees it names.
+  const fees = [['plats-dd-delFee', 2.99], ['plats-dd-svcMin', 3], ['regFee', 0], ['smallMin', 12], ['smallFee', 2.5]];
+  for (const [id, v] of fees) await H.commit(page, '#' + id, v);
   const exp = await assertResultsMatchSaved(page, 'fees entered');
+  assert.deepEqual(exp.appMissing('dd'), [], 'no DoorDash fee is left blank once they are entered');
   assert.ok(exp.R.some((r) => r.id === 'dd-d'), 'DoorDash delivery is priced once its fees are known');
   assert.equal(await page.locator('[data-testid="app-fees-dd"]').count(), 0, 'DoorDash no longer asks');
   const dd = (await H.shownResults(page)).find((r) => r.id === 'dd-d');
@@ -528,13 +534,18 @@ test('wallet: tier tags, and a credit with nowhere to apply is refused', async (
   await ctx.close();
 });
 
-test('car: switching from a listed car to "Other" asks for the new car\'s mpg instead of keeping the old one', async () => {
+// D-042 (renamed from "asks for the new car's mpg"): an unlisted car falls back to the typical car, labeled est.
+test('car: switching from a listed car to "Other" falls back to the typical car (est.); the old car\'s mpg is never kept', async () => {
   const { ctx, page, errors } = await H.openPage(browser, site.url);
   await page.click('[data-action="example"]');
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);
+  const typical = POD().data.DEFAULTS.trip.mpg;      // the typical car's mpg, read from the data (D-042)
   await page.selectOption('#make', 'Other');
-  await H.waitText(page, '[data-testid="missing"]', 'your car');
-  assert.equal(await page.inputValue('#mpg'), '', 'the Camry\'s 46 mpg isn\'t carried over');
+  await H.waitText(page, '[data-testid="car-summary"]', 'Typical car · ' + typical + ' mpg · est.');
+  assert.equal(await page.inputValue('#mpg'), String(typical), 'the typical car\'s mpg is in the box, not the Camry\'s 46');
+  assert.equal(await page.locator('label[for="mpg"] [data-testid="est-mpg"]').count(), 1, 'the box is labeled est. (D-042)');
+  await assertResultsMatchSaved(page, 'Other, typical car');
   await H.commit(page, '#mpg', '30');
   assert.equal(await H.text(page, '[data-testid="car-summary"]'), '30 mpg · regular');
   await assertResultsMatchSaved(page, 'Other, 30 mpg');
@@ -544,6 +555,7 @@ test('car: switching from a listed car to "Other" asks for the new car\'s mpg in
   await assertResultsMatchSaved(page, 'Other EV');
   await page.reload();
   await page.waitForSelector('[data-testid="result-row"]');
+  await H.openDrawer(page);
   assert.equal(await H.text(page, '[data-testid="car-summary"]'), '4 mi/kWh · electric', 'the typed car survives a reload');
   assert.deepEqual(errors, []);
   await ctx.close();

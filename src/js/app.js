@@ -224,9 +224,13 @@
     drawOnly();
   }
 
-  /** A new place starts with an empty search box and an unfiltered list (ui-contract §3). */
+  /**
+   * A new place starts with an empty search box and an unfiltered list (ui-contract §3), and the near list
+   * folds again (D-043: view.moreStores is false). Called by the place changes: address, locate, example.
+   */
   function resetQuery() {
     view.q = "";
+    view.moreStores = false;
     var box = document.getElementById("search");
     if (box) { box.value = ""; }
   }
@@ -380,11 +384,13 @@
         store = POD.ui.storeAt(parseInt(el.getAttribute("data-store"), 10));
         if (!store) { return; }
         POD.state.pickStore(S, D, store, opts);
+        view.moreStores = false;                       // D-043: a pick folds the list again
         break;
       case "pick-place":
         row = POD.ui.placeAt(parseInt(el.getAttribute("data-place"), 10));
         if (!row) { return; }
         POD.state.pickStore(S, D, row, opts);
+        view.moreStores = false;                       // D-043: a pick folds the list again
         break;
       case "qty":
         i = parseInt(el.getAttribute("data-index"), 10);
