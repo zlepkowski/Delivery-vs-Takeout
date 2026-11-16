@@ -9,7 +9,9 @@
   var POD = root.POD;
 
   // Page-only flags (not saved): see ui-contract §3 and §6.
-  var view = { moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false, vin: "", vinMsg: "" };
+  // drawer: Personalize is open; open[ch]: route ch's receipt is open; q: the search box's text (D-043).
+  var view = { moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false, vin: "", vinMsg: "",
+    drawer: false, open: {}, q: "" };
   var requested = {};   // tile cells asked for in this page load
   var pending = 0;      // tile scripts in flight
   var storage = null;
@@ -342,6 +344,14 @@
     var action = el.getAttribute("data-action");
     if (action === "locate") { view.mcError = false; locate(); return; }
     if (action === "vin") { vinLookup(); return; }
+    // D-043: page-only view flags. S is unchanged, so nothing is saved; render only.
+    if (action === "drawer") { view.drawer = !view.drawer; drawOnly(); return; }
+    if (action === "receipt") {
+      var ch = el.getAttribute("data-channel");
+      if (typeof ch === "string" && ch !== "") { view.open[ch] = view.open[ch] !== true; }
+      drawOnly();
+      return;
+    }
 
     var S = POD.S, D = POD.data, opts = POD.opts;
     var now = new Date();

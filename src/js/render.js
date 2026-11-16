@@ -1,10 +1,10 @@
 /*
- * render.js: the page's sections, POD.ui (docs/ui-contract.md §2 and §5).
+ * render.js: the page's sections, POD.ui (docs/ui-contract.md §2 and §5, D-043).
  *
  * render(ctx) turns S, D and the page-only view flags into HTML strings and patches #app. ctx = { S, D,
- * opts, view, now }; view = { moreStores, geoError, loading, canLocate, mcError, vin, vinMsg } is owned by app.js.
- * The builders read only their arguments. The one module variable is the last "Near you" rows, so
- * data-store="{i}" maps back to a store for POD.state.pickStore.
+ * opts, view, now }; view = { moreStores, geoError, loading, canLocate, mcError, vin, vinMsg, drawer, open, q }
+ * is owned by app.js. The builders read only their arguments. The one module variable is the last "Near you"
+ * rows, so data-store="{i}" maps back to a store for POD.state.pickStore.
  *
  * Patching (ui-contract §2): each section is built with a fixed number of top-level blocks (an empty
  * block is <div></div>), so a block that didn't change keeps its element and a click in flight on one
@@ -21,8 +21,8 @@
   var SHARED = ["regFee", "smallMin", "smallFee"];
   var SHOWN_NEAR = 15;
   var FRIENDLY = {
-    rest: "a restaurant", tax: "your ZIP or address",
-    fuel: "your car", mpg: "your car", gas: "your car", miPerKwh: "your car", kwh: "your car",
+    rest: "a restaurant", tax: "your ZIP or address", gas: "your ZIP or address",
+    fuel: "your car", mpg: "your car", miPerKwh: "your car", kwh: "your car",
     miles: "the trip distance", minutes: "the trip distance",
     manualSubtotal: "your order's menu total", tipDel: "the delivery tip", tipPick: "the pickup tip",
     wear: "wear per mile", hourly: "the value of your time"
@@ -40,6 +40,11 @@
   var PROMO_TYPES = [["none", "No promo"], ["percent", "% off"], ["dollar", "$ off"], ["freedel", "Free delivery"],
     ["bogo", "Buy one, get one free"]];
   var NOTE_DD = "DoorDash publishes 15% service (5% with DashPass, on orders of $12 or more) for markets not yet on its newer fee model; check your own checkout.";
+  var FINE_EST = "Numbers marked est. are estimates. Most app fees aren't published, so each comes from the app's own page, " +
+    "from real checkouts (the middle of at least two, in different places) or from a published survey. App menu prices " +
+    "use a typical markup for the restaurant's kind of food, an estimate too. The typical car is the U.S. on-road " +
+    "average from EIA. Make any of them yours in Personalize.";
+  var EST_NOTE = "Based on estimates (marked est.). Make them yours in Personalize.";
 
   var nearRows = [];
   var indieRows = [];   // D-040: the independents last rendered (POD.ui.placeAt)
@@ -66,14 +71,23 @@
     return D.PLACES[id];
   }
 
-  function section(id, heading, body) {
-    return '<section id="' + id + '"><h2>' + esc(heading) + "</h2>" + body + "</section>";
+  function section(id, heading, body, attrs) {
+    return '<section id="' + id + '"' + (attrs || "") + "><h2>" + esc(heading) + "</h2>" + body + "</section>";
+  }
+
+  /**
+   * The est. badge of a number input (ui-contract §5.9, D-042): inside its label, after the text, while the
+   * value is still the estimate. sourceOf is "est" only for the §4.8 key map, so nothing else gets one.
+   */
+  function estBadge(c, path, inputId) {
+    if (POD.state.sourceOf(c.S, c.D, path) !== "est") { return ""; }
+    return ' <span class="est" data-testid="est-' + esc(inputId) + '">est.</span>';
   }
 
   /** A labeled number box bound to a state path (ui-contract §5.9). */
-  function numField(path, label, v) {
+  function numField(c, path, label, v) {
     var id = idOf(path);
-    return '<label for="' + id + '">' + esc(label) + '</label><input id="' + id +
+    return '<label for="' + id + '">' + esc(label) + estBadge(c, path, id) + '</label><input id="' + id +
       '" type="number" step="0.01" min="0" data-bind="' + esc(path) + '" value="' + (isNum(v) ? String(v) : "") + '">';
   }
 
@@ -193,7 +207,7 @@
     var h = '<div>' + msg + "</div>" + none(list) + none(more) +
       '<label for="brand">Restaurant chain</label><select id="brand" data-action="brand">' + brandOptions(c) + "</select>" +
       indieHtml(S, places);
-    return section("near", "Near you", h);
+    return section("near", "What are you getting?", h);
   }
 
   // ---- order -------------------------------------------------------------------------------------
@@ -260,11 +274,15 @@
     return "";
   }
 
+  /** The trip line (ui-contract §5.4), also the answer card's (§5.5 item 7). Needs a numeric miles. */
+  function tripLine(S) {
+    return mi1(S.miles) + " mi round trip" + (isNum(S.minutes) ? " · about " + S.minutes + " min" : "");
+  }
+
   function secTrip(c) {
     var S = c.S, big, src;
     if (isNum(S.miles)) {
-      big = '<p class="big" data-testid="trip">' + mi1(S.miles) + " mi round trip" +
-        (isNum(S.minutes) ? " · about " + S.minutes + " min" : "") + "</p>";
+      big = '<p class="big" data-testid="trip">' + tripLine(S) + "</p>";
       src = '<p class="muted" data-testid="trip-src">' + esc(tripSource(S)) + "</p>";
     } else {
       big = '<p data-testid="trip">No trip yet.</p>';
@@ -283,12 +301,14 @@
   // ---- results -----------------------------------------------------------------------------------
 
   // ui-contract §5.5 step 1: the order the names are listed in.
-  var MISSING_ORDER = ["rest", "tax", "fuel", "mpg", "gas", "miPerKwh", "kwh", "miles", "minutes",
+  var MISSING_ORDER = ["rest", "tax", "gas", "fuel", "mpg", "miPerKwh", "kwh", "miles", "minutes",
     "manualSubtotal", "tipDel", "tipPick", "wear", "hourly"];
 
   function missingText(missing, loading) {
     var names = [], seen = {}, isMissing = {}, i, p, nm;
     for (i = 0; i < missing.length; i++) { isMissing[missing[i]] = true; }
+    // D-043: the trip follows from the place and the restaurant, so it's named only when neither is missing.
+    var tripAsked = !hasOwn(isMissing, "rest") && !hasOwn(isMissing, "tax");
     var order = MISSING_ORDER.slice(0);
     for (i = 0; i < missing.length; i++) {
       if (MISSING_ORDER.indexOf(missing[i]) < 0) { order.push(missing[i]); }
@@ -296,6 +316,7 @@
     for (i = 0; i < order.length; i++) {
       p = order[i];
       if (!hasOwn(isMissing, p)) { continue; }
+      if ((p === "miles" || p === "minutes") && !tripAsked) { continue; }
       nm = hasOwn(FRIENDLY, p) ? FRIENDLY[p] : p;
       if ((p === "miles" || p === "minutes") && loading) { nm = "the trip distance (finding stores near you…)"; }
       if (!hasOwn(seen, nm)) { seen[nm] = true; names.push(nm); }
@@ -303,7 +324,40 @@
     return "To compare, we still need: " + names.join(", ") + ".";
   }
 
-  /** The hand-off links of one row (links contract §3); nothing is written when there are none. */
+  /** ui-contract §5.5 title(r): a route's plain-language name. */
+  function titleOf(r, S) {
+    var dash = r.id.indexOf("-"), p = r.id.slice(0, dash), m = r.id.slice(dash + 1);
+    if (p === "direct") {
+      var rest = S.rest ? String(S.rest.name) : "";
+      return m === "p" ? "Pick it up from " + rest : "Delivery from " + rest;
+    }
+    return APP_LONG[p] + (m === "d" ? " delivery" : " pickup");
+  }
+
+  /** The state paths a route uses for its numbers (ui-contract §5.5 estOf, engine contract §5.3–§5.7). */
+  function usedPaths(S, p, m) {
+    var car = [S.fuel === "ev" ? "kwh" : "mpg", "wear"];
+    if (isNum(S.hourly) && S.hourly > 0) { car.push("speed"); }
+    if (p === "direct") { return m === "d" ? ["tipDel"] : ["tipPick"].concat(car); }
+    if (m === "p") { return ["plats." + p + ".pickDisc", "tipPick"].concat(car); }
+    var out = ["plats." + p + ".delFee", "plats." + p + ".svc", "plats." + p + ".svcMin",
+      "regFee", "smallMin", "smallFee", "tipDel"];
+    if (S.plats && S.plats[p] && S.plats[p].member) { out.push("plats." + p + ".memberSvc", "plats." + p + ".memberMin"); }
+    return out;
+  }
+
+  /** Whether a route's numbers include an estimate (ui-contract §5.5 estOf). */
+  function estOf(S, D, id) {
+    var dash = id.indexOf("-"), p = id.slice(0, dash), m = id.slice(dash + 1);
+    if (p !== "direct" && S.rest && S.rest.markupEst === true) { return true; }
+    var paths = usedPaths(S, p, m);
+    for (var i = 0; i < paths.length; i++) {
+      if (POD.state.sourceOf(S, D, paths[i]) === "est") { return true; }
+    }
+    return false;
+  }
+
+  /** The hand-off links of one route (links contract §3); nothing is written when there are none. */
   function handoffHtml(r, S, D) {
     var links = POD.links.forChannel(r.id, S, D);
     if (links.length === 0) { return ""; }
@@ -315,41 +369,99 @@
     return h + "</p>";
   }
 
-  function resultsList(R, S, D) {
+  /**
+   * The answer card (ui-contract §5.5, D-043): seven slots, each an empty <div></div> when it has nothing.
+   * best = R[0]; other = the first route of the other mode (pickup vs delivery), or null.
+   */
+  function answerCard(S, D, R) {
+    var best = R[0], other = null, i;
+    for (i = 0; i < R.length; i++) {
+      if (R[i].mode !== best.mode) { other = R[i]; break; }
+    }
+    var h = '<p class="answer-kicker">Cheapest way</p>' +
+      '<h3 class="answer-title" data-testid="verdict">' + esc(titleOf(best, S)) + "</h3>" +
+      '<p class="answer-net" data-testid="answer-net">' + money(best.net) + "</p>";
+    if (other !== null) {
+      var d = POD.util.round2(other.net - best.net);
+      h += '<p class="save" data-testid="save">' +
+        esc(d > 0 ? "Saves " + money(d) + " vs " + titleOf(other, S) : "Same price as " + titleOf(other, S)) + "</p>";
+    } else {
+      h += "<div></div>";
+    }
+    var links = POD.links.forChannel(best.id, S, D), ctas = "";
+    for (i = 0; i < links.length && i < 2; i++) {
+      var first = i === 0;
+      ctas += '<a class="' + (first ? "cta" : "cta-alt") + '" data-testid="' + (first ? "cta" : "cta-alt") +
+        '" href="' + esc(links[i].href) + '" target="_blank" rel="noopener noreferrer">' + esc(links[i].label) + "</a>";
+    }
+    h += ctas === "" ? "<div></div>" : '<div class="ctas">' + ctas + "</div>";
+    if (estOf(S, D, best.id) || (other !== null && estOf(S, D, other.id))) {
+      h += '<p class="est-note" data-testid="est-note">' + esc(EST_NOTE) + "</p>";
+    } else {
+      h += "<div></div>";
+    }
+    var hasPickup = false;
+    for (i = 0; i < R.length; i++) { if (R[i].mode === "p") { hasPickup = true; } }
+    h += hasPickup && isNum(S.miles) ? '<p class="answer-trip" data-testid="answer-trip">' + esc(tripLine(S)) + "</p>" : "<div></div>";
+    return '<div class="answer" data-testid="answer">' + h + "</div>";
+  }
+
+  /** The sticky bar (ui-contract §5.5, D-043): repeats the answer on a phone. */
+  function stickyBar(S, best) {
+    return '<a class="sticky" data-testid="sticky" href="#results"><span>' + esc(titleOf(best, S)) +
+      "</span> <strong>" + money(best.net) + "</strong></a>";
+  }
+
+  /** The result rows (ui-contract §5.5, D-043): one li per route, its head a button that opens its receipt. */
+  function resultsList(c, R) {
+    var S = c.S, D = c.D, open = c.view.open || {};
+    var M = 0, i, j;
+    for (i = 0; i < R.length; i++) { if (R[i].net > M) { M = R[i].net; } }
     var h = '<ol class="results-list" data-testid="results-list">';
-    for (var i = 0; i < R.length; i++) {
-      var r = R[i];
-      h += '<li class="result' + (i === 0 ? " best" : "") + '" data-testid="result-row" data-channel="' + esc(r.id) + '">';
-      h += '<div class="result-head"><span class="result-name">' + esc(r.name) +
+    for (i = 0; i < R.length; i++) {
+      var r = R[i], isOpen = open[r.id] === true;
+      var w = M > 0 ? Math.round(Math.max(r.net, 0) / M * 100) : 0;
+      h += '<li class="result' + (i === 0 ? " best" : "") + (isOpen ? " open" : "") + '" data-testid="result-row" data-channel="' +
+        esc(r.id) + '">';
+      h += '<button type="button" class="result-head" id="row-' + esc(r.id) + '" data-action="receipt" data-channel="' +
+        esc(r.id) + '" aria-expanded="' + (isOpen ? "true" : "false") + '">' +
+        '<span class="result-name">' + esc(titleOf(r, S)) +
         (r.member ? ' <span class="badge">' + esc(r.member) + "</span>" : "") + "</span>" +
-        '<span class="net" data-testid="net">' + money(r.net) + "</span></div>";
+        (estOf(S, D, r.id) ? '<span class="est" data-testid="est">est.</span>' : '<span class="est-none"></span>') +
+        '<span class="net" data-testid="net">' + money(r.net) + "</span>" +
+        '<span class="meter"><span class="meter-fill" data-testid="meter" style="width:' + w + '%"></span></span>' +
+        "</button>";
       if (r.notes && r.notes.length) {
         h += '<p class="notes">';
-        for (var k = 0; k < r.notes.length; k++) { h += '<span class="tag">' + esc(r.notes[k]) + "</span>"; }
+        for (j = 0; j < r.notes.length; j++) { h += '<span class="tag">' + esc(r.notes[j]) + "</span>"; }
         h += "</p>";
+      } else {
+        h += "<div></div>";
       }
-      h += handoffHtml(r, S, D);
-      h += '<details class="receipt"><summary>Receipt</summary><ul>';
-      for (var j = 0; j < r.lines.length; j++) {
+      h += '<div class="row-more" data-testid="row-more"' + (isOpen ? "" : " hidden") + ">" + handoffHtml(r, S, D) +
+        '<ul class="receipt" data-testid="receipt">';
+      for (j = 0; j < r.lines.length; j++) {
         var label = r.lines[j][0], amt = r.lines[j][1];
         var txt = label === "Delivery fee" && amt === 0 ? "waived" : money(amt);
         h += '<li data-testid="line"><span data-testid="line-label">' + esc(label) + "</span>" +
           '<span class="num' + (amt < 0 ? " neg" : "") + '" data-testid="line-amount">' + txt + "</span></li>";
       }
-      h += "</ul></details></li>";
+      h += "</ul></div></li>";
     }
     return h + "</ol>";
   }
 
-  function needField(path) {
+  function needField(c, path) {
     var f = path.split(".").pop();
     var label = hasOwn(FIELD_LABEL, f) ? FIELD_LABEL[f] : f;
-    return '<label for="need-' + idOf(path) + '">' + esc(label) + '</label><input id="need-' + idOf(path) +
+    var id = "need-" + idOf(path);
+    return '<label for="' + id + '">' + esc(label) + estBadge(c, path, id) + '</label><input id="' + id +
       '" type="number" step="0.01" min="0" data-bind="' + esc(path) + '">';
   }
 
   /** The apps still waiting for fees (ui-contract §5.5, step 4). */
-  function appFeesHtml(S) {
+  function appFeesHtml(c) {
+    var S = c.S;
     if (!S.rest || !Array.isArray(S.rest.platforms)) { return ""; }
     var blocks = "", shared = [];
     for (var a = 0; a < APPS.length; a++) {
@@ -369,21 +481,24 @@
       if (own.length === 0) { continue; }
       blocks += '<div class="app-need" data-testid="app-fees-' + p + '"><p>' + esc(APP_LONG[p]) +
         (pickup ? " isn't compared until you enter these." : ": delivery isn't compared until you enter these.") + "</p>";
-      for (var o = 0; o < own.length; o++) { blocks += needField(own[o]); }
+      for (var o = 0; o < own.length; o++) { blocks += needField(c, own[o]); }
       blocks += "</div>";
     }
     if (shared.length > 0) {
       blocks += '<div class="app-need" data-testid="app-fees-shared"><p>Shared by all three apps</p>';
-      for (var s = 0; s < shared.length; s++) { blocks += needField(shared[s]); }
+      for (var s = 0; s < shared.length; s++) { blocks += needField(c, shared[s]); }
       blocks += "</div>";
     }
     if (blocks === "") { return ""; }
     return '<div class="app-fees" data-testid="app-fees"><h3>Add what your app\'s checkout shows</h3>' + blocks + "</div>";
   }
 
-  /** Returns the section and the engine copy and results it computed (for insights). */
+  /**
+   * Returns the section and the engine copy and results it computed (for insights). The results section has
+   * a fixed five blocks after its heading: message, answer card, rows, app fees, sticky bar (ui-contract §5.5).
+   */
   function secResults(c) {
-    var S = c.S, msg = "", verdict = "", list = "", F = null, R = null;
+    var S = c.S, msg = "", answer = "", list = "", sticky = "", F = null, R = null;
     var missing = POD.state.missing(S);
     if (missing.length > 0) {
       msg = '<p data-testid="missing">' + esc(missingText(missing, c.view.loading)) + "</p>";
@@ -394,40 +509,45 @@
         if (R.length === 0) {
           msg = '<p class="muted">Nothing to compare: every way to order from this restaurant is switched off.</p>';
         } else {
-          verdict = '<p class="verdict" data-testid="verdict">Cheapest: ' + esc(R[0].name) + " at " + money(R[0].net) + "</p>";
-          list = resultsList(R, c.S, c.D);
+          answer = answerCard(S, c.D, R);
+          list = resultsList(c, R);
+          sticky = stickyBar(S, R[0]);
         }
       } else {
         F = null;
         msg = '<p class="muted" data-testid="empty-order">Add something to your order to compare.</p>';
       }
     }
-    var h = none(msg) + none(verdict) + none(list) + none(appFeesHtml(S));
-    return { html: section("results", "Cheapest way to get it", h), F: F, R: R };
+    var h = none(msg) + none(answer) + none(list) + none(appFeesHtml(c)) + none(sticky);
+    return { html: section("results", "Your best way to order", h, ' aria-live="polite"'), F: F, R: R };
   }
 
   // ---- insights ----------------------------------------------------------------------------------
 
+  /** ui-contract §5.6: the section is hidden, with only its heading, when there's nothing to flag. */
   function secInsights(c, F, R) {
     var list = F && R && R.length > 0 ? POD.insights.build(F, R, c.now) : [];
     var h = "";
     if (list.length === 0) {
-      h = '<p class="muted">Nothing to flag yet.</p>';
-    } else {
-      for (var i = 0; i < list.length; i++) {
-        var ins = list[i];
-        h += '<div class="insight' + (ins.cls ? " " + esc(ins.cls) : "") + '" data-testid="insight" data-id="' +
-          esc(ins.id) + '"><strong>' + esc(ins.label) + "</strong><p>" + esc(ins.text) + "</p></div>";
-      }
+      return section("insights", "Worth knowing", "", " hidden");
+    }
+    for (var i = 0; i < list.length; i++) {
+      var ins = list[i];
+      h += '<div class="insight' + (ins.cls ? " " + esc(ins.cls) : "") + '" data-testid="insight" data-id="' +
+        esc(ins.id) + '"><strong>' + esc(ins.label) + "</strong><p>" + esc(ins.text) + "</p></div>";
     }
     return section("insights", "Worth knowing", h);
   }
 
   // ---- car ---------------------------------------------------------------------------------------
 
-  function carSummary(S) {
+  /** ui-contract §5.7: the car's one-line summary, in the contract's order. */
+  function carSummary(S, D) {
     if (S.fuel === "ev" && isNum(S.miPerKwh)) { return S.miPerKwh + " mi/kWh · electric"; }
-    if (isNum(S.mpg)) { return S.mpg + " mpg · " + S.fuel; }
+    if (S.fuel !== "ev" && isNum(S.mpg) && POD.state.sourceOf(S, D, "mpg") === "est") {
+      return "Typical car · " + String(S.mpg) + " mpg · est.";
+    }
+    if (S.fuel !== "ev" && isNum(S.mpg)) { return String(S.mpg) + " mpg · " + S.fuel; }
     return "No car yet.";
   }
 
@@ -477,7 +597,7 @@
 
     var h = vinBlock(view);
     h += none(view.vinMsg ? '<p data-testid="vin-status">' + esc(view.vinMsg) + "</p>" : "");
-    h += '<p class="muted" data-testid="car-summary">' + esc(carSummary(S)) + "</p>";
+    h += '<p class="muted" data-testid="car-summary">' + esc(carSummary(S, D)) + "</p>";
     var fig = POD.state.carLookup(D, S.make, S.model, S.year);
     h += none(fig !== null && isNum(fig.year) && Math.floor(fig.year) === fig.year ?
       '<p class="muted" data-testid="car-epa">EPA figure for the ' + fig.year + " model.</p>" : "");
@@ -513,8 +633,9 @@
         manualBlock += '<label for="miPerKwh">Miles per kWh</label><input id="miPerKwh" type="number" step="0.01" min="0" ' +
           'data-bind="miPerKwh" value="' + (isNum(S.miPerKwh) ? String(S.miPerKwh) : "") + '">';
       } else {
-        manualBlock += '<label for="mpg">Miles per gallon</label><input id="mpg" type="number" step="0.1" min="0" ' +
-          'data-bind="mpg" value="' + (isNum(S.mpg) ? String(S.mpg) : "") + '">';
+        manualBlock += '<label for="mpg">Miles per gallon' + estBadge(c, "mpg", "mpg") + '</label>' +
+          '<input id="mpg" type="number" step="0.1" min="0" data-bind="mpg" value="' +
+          (isNum(S.mpg) ? String(S.mpg) : "") + '">';
       }
     }
     h += "<div>" + manualBlock + "</div>";
@@ -591,6 +712,7 @@
     '<label class="check"><input type="checkbox" id="mc-plat-gh"><span>Grubhub</span></label>' +
     '<p><button type="button" data-action="add-credit">Add credit</button></p></div>';
 
+  /** ui-contract §5.8 (D-043): memberships first, then the cards, the credits and the add form. */
   function secWallet(c) {
     var S = c.S, D = c.D, view = c.view;
     var issuers = [], by = {}, cards = "";
@@ -618,7 +740,7 @@
     var memberships = '<div class="memberships">' + membershipsHtml(S, D) + "</div>";
     var err = view.mcError ? '<p class="warn" data-testid="mc-error">' +
       "Give the credit a name, an amount above $0 and where it works.</p>" : "";
-    return section("wallet", "Your cards and credits", cards + credits + memberships + ADD_CREDIT_FORM + none(err));
+    return section("wallet", "Memberships and cards", memberships + cards + credits + ADD_CREDIT_FORM + none(err));
   }
 
   // ---- settings ----------------------------------------------------------------------------------
@@ -640,9 +762,9 @@
   function secSettings(c) {
     var S = c.S, h = "";
     h += '<div class="fields">' +
-      numField("tipDel", "Delivery tip (%)", S.tipDel) + numField("tipPick", "Pickup tip (%)", S.tipPick) +
-      numField("wear", "Wear per mile ($)", S.wear) + numField("hourly", "Value of your time ($/hour)", S.hourly) +
-      numField("speed", "Average driving speed (mph)", S.speed) + numField("kwh", "Electricity ($/kWh)", S.kwh) +
+      numField(c, "tipDel", "Delivery tip (%)", S.tipDel) + numField(c, "tipPick", "Pickup tip (%)", S.tipPick) +
+      numField(c, "wear", "Wear per mile ($)", S.wear) + numField(c, "hourly", "Value of your time ($/hour)", S.hourly) +
+      numField(c, "speed", "Average driving speed (mph)", S.speed) + numField(c, "kwh", "Electricity ($/kWh)", S.kwh) +
       "</div>";
     for (var a = 0; a < APPS.length; a++) {
       var p = APPS[a], pl = S.plats[p] || {}, pr = S.promos[p] || {};
@@ -651,7 +773,7 @@
         checked(pl.on === true) + "><span>Compare " + esc(APP_LONG[p]) + "</span></label>" +
         '<div class="fields">';
       for (var f = 0; f < APP_FIELDS.length; f++) {
-        h += numField("plats." + p + "." + APP_FIELDS[f], FIELD_LABEL[APP_FIELDS[f]], pl[APP_FIELDS[f]]);
+        h += numField(c, "plats." + p + "." + APP_FIELDS[f], FIELD_LABEL[APP_FIELDS[f]], pl[APP_FIELDS[f]]);
       }
       var opts = "";
       for (var t = 0; t < PROMO_TYPES.length; t++) {
@@ -660,20 +782,51 @@
       }
       h += '<label for="promos-' + p + '-type">Promo</label><select id="promos-' + p + '-type" data-bind="promos.' + p +
         '.type" data-type="text">' + opts + "</select>" + bogoItem(S, p, pr) +
-        numField("promos." + p + ".value", "Promo amount", pr.value) +
-        numField("promos." + p + ".cap", "Promo cap ($)", pr.cap) +
-        numField("promos." + p + ".min", "Promo minimum ($)", pr.min) + "</div>";
+        numField(c, "promos." + p + ".value", "Promo amount", pr.value) +
+        numField(c, "promos." + p + ".cap", "Promo cap ($)", pr.cap) +
+        numField(c, "promos." + p + ".min", "Promo minimum ($)", pr.min) + "</div>";
       if (p === "dd") { h += '<p class="muted">' + esc(NOTE_DD) + "</p>"; }
       h += "</div>";
     }
     h += '<div class="app-settings"><h3>Shared by all three apps</h3><div class="fields">' +
-      numField("regFee", FIELD_LABEL.regFee, S.regFee) + numField("smallMin", FIELD_LABEL.smallMin, S.smallMin) +
-      numField("smallFee", FIELD_LABEL.smallFee, S.smallFee) + "</div></div>";
+      numField(c, "regFee", FIELD_LABEL.regFee, S.regFee) + numField(c, "smallMin", FIELD_LABEL.smallMin, S.smallMin) +
+      numField(c, "smallFee", FIELD_LABEL.smallFee, S.smallFee) + "</div></div>";
     var direct = S.plats.direct || {};
     h += '<div class="app-settings"><h3>Ordering direct</h3>' +
       '<label class="check"><input type="checkbox" id="plats-direct-on" data-bind="plats.direct.on"' +
       checked(direct.on === true) + "><span>Compare ordering direct</span></label></div>";
     return section("settings", "Fees, tips and costs", h);
+  }
+
+  // ---- more: the Personalize drawer (D-043, ui-contract §5.11) ------------------------------------
+
+  /** The drawer's summary: the car, then the memberships it holds (ui-contract §5.11). */
+  function moreSummary(S, D) {
+    var car;
+    if (S.fuel === "ev" && isNum(S.miPerKwh)) { car = "Electric car"; }
+    else if (S.fuel !== "ev" && isNum(S.mpg) && POD.state.sourceOf(S, D, "mpg") === "est") { car = "Typical car (est.)"; }
+    else if (S.fuel !== "ev" && isNum(S.mpg)) { car = S.mpg + " mpg car"; }
+    else { car = "No car yet"; }
+    var names = [];
+    for (var a = 0; a < APPS.length; a++) {
+      var p = APPS[a];
+      if (S.plats && S.plats[p] && S.plats[p].member) { names.push(MEMBER[p]); }
+    }
+    return car + " · " + (names.length ? names.join(", ") : "No memberships");
+  }
+
+  /**
+   * Personalize (ui-contract §2, §5.11): the toggle, then the summary, always. Its tail (trip, car, wallet,
+   * settings) is there only while the drawer is open. The toggle's HTML depends only on view.drawer.
+   */
+  function secMore(c) {
+    var open = c.view.drawer === true;
+    var h = '<button type="button" class="drawer-btn" id="drawer" data-action="drawer" aria-expanded="' +
+      (open ? "true" : "false") + '"><span class="drawer-title">Personalize</span>' +
+      '<span class="chevron" aria-hidden="true"></span></button>' +
+      '<p class="more-summary" data-testid="more-summary">' + esc(moreSummary(c.S, c.D)) + "</p>";
+    if (open) { h += secTrip(c) + secCar(c) + secWallet(c) + secSettings(c); }
+    return '<section id="more">' + h + "</section>";
   }
 
   // ---- fine --------------------------------------------------------------------------------------
@@ -696,11 +849,11 @@
       "App listings come from the chains' and apps' own announcements, some several years old: check the app.",
       "Card credits: each issuer's card page, as of " + asOf + ".",
       "Gas: U.S. EIA weekly retail prices" + week + ". Meal tax: state rates. Fuel economy: EPA, by model year.",
-      "A VIN lookup goes from your browser to NHTSA's free decoder (vPIC). The VIN isn't saved.",
-      "Every app fee left blank is one the app doesn't publish (D-032): enter what your checkout shows."
+      "A VIN lookup goes from your browser to NHTSA's free decoder (vPIC). The VIN isn't saved."
     ];
     var h = "";
     for (var j = 0; j < lines.length; j++) { h += "<p>" + esc(lines[j]) + "</p>"; }
+    h += '<p data-testid="fine-est">' + esc(FINE_EST) + "</p>";
     h += '<p data-testid="fine-links">' + esc("Links open each app, the restaurant's own site or Google Maps. " +
       "Your order doesn't carry over, so add your items there. A link carries only the restaurant's name or the " +
       "store's location, never your address.") + "</p>";
@@ -738,7 +891,7 @@
         live.replaceChild(nu, old);
       }
     }
-    // A block appended or removed at the end (the independents, D-040) touches only the tail.
+    // A block appended or removed at the end (the independents, D-040; the drawer's tail, D-043) touches only the tail.
     for (j = lk.length - 1; j >= n; j--) { live.removeChild(lk[j]); }
     for (j = n; j < fk.length; j++) { live.appendChild(fk[j]); }
   }
@@ -753,9 +906,9 @@
     var S = ctx.S;
     var fromWorker = S.milesSrc === "drive" || (!!S.pos && S.pos.src === "addr") || places.length > 0;
     var res = secResults(ctx);
-    var html = secLoc(ctx) + secNear(ctx, places) + secOrder(ctx) + secTrip(ctx) +
+    var html = secLoc(ctx) + secNear(ctx, places) + secOrder(ctx) +
       '<div id="side">' + res.html + secInsights(ctx, res.F, res.R) + "</div>" +
-      secCar(ctx) + secWallet(ctx) + secSettings(ctx) + secFine(ctx.D, fromWorker);
+      secMore(ctx) + secFine(ctx.D, fromWorker);
 
     var was = doc.activeElement;
     var inApp = !!was && app.contains(was);
