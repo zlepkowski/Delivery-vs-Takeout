@@ -223,6 +223,12 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** "Order from Taco Bell" would beat a map for the second most common chain (D-026). Nothing is wrong today: the row still hands off.
 - **Next step:** a data pass decides the source and records each URL with a check, as `LINKS.order` does (a key-set change to the D-041 data test).
 
+### ISS-043 — ATP run 2026-10-24-13-32-37 publishes a cut-off `jack_in_the_box.geojson` (found in the Phase 10 dry run)
+- **Opened:** 2026-11-16 by orchestrator · **Phase:** 10 · **Status:** open
+- **What:** the member is 161,647 bytes and ends after a feature's `},` with nothing after it (`json.loads`: "Expecting value: line 182 column 1"); it read through `zipfile` with no CRC error, so ATP published it that way, like ISS-039's Taco Bell file. The 2026-10-31 run's copy (86,938 bytes) parses.
+- **Why it matters:** of the three candidate runs on 2026-11-16 (2026-11-07, 2026-10-31, 2026-10-24), two are unbuildable (ISS-039 and this), so the weekly build has exactly one good run in its window (2026-10-31, the committed one). The D-039 fallback handles it; if the next two runs are also damaged, the build fails and Pages keeps the last good deploy. On the **first** deploy there is no last good deploy, so a failing first build means no site until a run passes.
+- **Next step:** none while 2026-10-31 is in the window. Watch the weekly log's "skipped" lines. If damaged spider files keep appearing, consider a per-brand fallback to an older run (the ISS-007 / ISS-039 idea) by decision.
+
 ## Closed
 
 <!-- Move entries here with the closing commit or decision. -->
