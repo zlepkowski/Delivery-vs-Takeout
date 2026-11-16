@@ -343,7 +343,7 @@ label.check {
   width: 32px;
   height: 32px;
   border-radius: var(--r-s);
-  background: hsl(var(--h) 55% 45%);
+  background: hsl(var(--h) 45% 34%);
   color: #fff;
   font-weight: 700;
   font-size: .9375rem;
@@ -787,9 +787,17 @@ a.cta-alt:hover { border-color: var(--accent); }
     font-weight: 600;
   }
 
-  .sticky span { min-width: 0; overflow-wrap: anywhere; }
-  .sticky strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* A fixed height: the name is one line with an ellipsis, so the 80px padding always clears the bar. */
+  .sticky span {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sticky strong { flex: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+  /* :has() is the only way to tie the padding to the bar; Firefox < 121 gets no padding (accepted gap). */
   #app:has(.sticky) { padding-bottom: 80px; }
 }
 
