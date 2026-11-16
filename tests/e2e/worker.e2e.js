@@ -16,6 +16,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
+const os = require('node:os');
+const { execFileSync } = require('node:child_process');
 const { chromium } = require('playwright');
 const H = require('./helpers');
 const { APP_ROOT } = require('../helpers/load');
@@ -58,11 +60,29 @@ function onlyBrowserErrors(errors, text, n, where) {
 let browser;
 let off;
 let on;
+let base;
+
+// The Phase 8 done-when, "the site is identical with the Worker off", is checked against the real
+// thing: the page as Phase 7 left it (commit 556bc34, the Phase 7 tip), built from git with the same
+// fixture tiles. (CI checks out the full history for this: .github/workflows/test.yml fetch-depth 0.)
+// A later phase that changes the page on purpose re-baselines this by decision.
+const BASE_REV = '556bc34';
+function buildBaseline() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pod-phase7-'));
+  const tar = execFileSync('git', ['archive', BASE_REV, 'index.html', 'src'], { cwd: APP_ROOT, maxBuffer: 1 << 30 });
+  execFileSync('tar', ['-x', '-C', dir], { input: tar, maxBuffer: 1 << 30 });
+  const tiles = path.join(APP_ROOT, 'tests', 'fixtures', 'stores');
+  fs.mkdirSync(path.join(dir, 'src', 'data', 'stores'), { recursive: true });
+  for (const f of fs.readdirSync(tiles)) if (f.endsWith('.js')) fs.copyFileSync(path.join(tiles, f), path.join(dir, 'src', 'data', 'stores', f));
+  return { dir, url: require('node:url').pathToFileURL(path.join(dir, 'index.html')).href, remove: () => fs.rmSync(dir, { recursive: true, force: true }) };
+}
 
 test.before(async () => {
   browser = await chromium.launch();
   off = H.buildSite();
   on = H.buildSite();
+  base = buildBaseline();
+  assert.ok(!fs.existsSync(path.join(base.dir, 'src', 'js', 'api.js')), 'the baseline predates D-040');
   fs.writeFileSync(path.join(on.dir, 'src', 'js', 'config.js'),
     '(function (root) { "use strict"; root.POD.config = { apiBase: "' + API + '" }; })(typeof window !== "undefined" ? window : this);\n');
   fs.mkdirSync(H.SHOTS, { recursive: true });
@@ -71,6 +91,7 @@ test.after(async () => {
   if (browser) await browser.close();
   if (off) off.remove();
   if (on) on.remove();
+  if (base) base.remove();
 });
 
 /** The Worker's answer to one seam request, as the stub serves it. */
@@ -97,7 +118,7 @@ function answer(u) {
  * mode: "answer" (the stub above), "500", "garbage", "abort" or "hang". Returns the page, its
  * console errors and warnings, and every http(s) request it made.
  */
-async function open(site, { mode = 'answer', viewport = { width: 1280, height: 800 }, ctx: reuse = null } = {}) {
+async function open(site, { mode = 'answer', viewport = { width: 1280, height: 800 }, ctx: reuse = null, holdNearby = false } = {}) {
   const ctx = reuse || await browser.newContext({ viewport });
   const requests = [];
   const hung = [];
@@ -109,6 +130,7 @@ async function open(site, { mode = 'answer', viewport = { width: 1280, height: 8
       ctx._apiRequests.push({ url: req.url(), method: req.method(), headers: req.headers() });
       if (ctx._mode === 'abort') return route.abort('failed');
       if (ctx._mode === 'hang') { hung.push(route); return undefined; }
+      if (holdNearby && new URL(req.url()).pathname === '/nearby') { hung.push(route); return undefined; }
       if (ctx._mode === '500') return route.fulfill({ status: 500, headers: HEADERS, body: '{"error":{"code":"upstream","message":"x"}}' });
       if (ctx._mode === 'garbage') {
         const u = new URL(req.url());
@@ -179,6 +201,30 @@ test('Worker off: no request leaves the page, no opts.api, and none of the Worke
   assert.deepEqual(o.errors, []);
   assert.deepEqual(o.warns, []);
   await o.ctx.close();
+});
+
+test('Phase 8 done-when: with the Worker off, #app is byte-identical to the Phase 7 page (3 flows)', async () => {
+  const flows = {
+    'Big Timber, Domino\'s, a Camry, one pizza': (page) => order(page, '59011'),
+    'the first-visit example': async (page) => { await page.click('[data-action="example"]'); await page.waitForSelector('[data-testid="result-row"]'); },
+    'a street address typed (no ZIP lookup change)': async (page) => {
+      await order(page, '10118');
+      await H.commit(page, '#address', '350 5th Ave, New York, NY 10118');
+      await H.waitText(page, '[data-testid="loc-status"]', 'ZIP 10118');
+    },
+  };
+  for (const [name, run] of Object.entries(flows)) {
+    const a = await open(base);
+    const b = await open(off);
+    await run(a.page);
+    await run(b.page);
+    await settle(b.page);
+    assert.equal(await appHtml(b.page), await appHtml(a.page), name + ': #app is exactly Phase 7\'s');
+    assert.deepEqual(b.requests, [], name + ': no request');
+    assert.deepEqual(b.errors, []);
+    await a.ctx.close();
+    await b.ctx.close();
+  }
 });
 
 // ---- on, answering ---------------------------------------------------------------------------
@@ -293,8 +339,8 @@ test('Worker on: a bare ZIP is never sent to /geocode', async () => {
 // ---- on, failing: the page is the Worker-off page ---------------------------------------------
 
 for (const mode of ['500', 'garbage', 'abort']) {
-  test('Worker failing (' + mode + '): the page is exactly the Worker-off page, with one warning', async () => {
-    const a = await open(off);
+  test('Worker failing (' + mode + '): the page is exactly the Phase 7 page, with one warning', async () => {
+    const a = await open(base);
     const b = await open(on, { mode });
     for (const o of [a, b]) {
       await order(o.page, '10118');
@@ -314,7 +360,7 @@ for (const mode of ['500', 'garbage', 'abort']) {
 }
 
 test('Worker hanging: nothing waits for it, and the 4 s timeout falls back with one warning', async () => {
-  const a = await open(off);
+  const a = await open(base);
   const b = await open(on, { mode: 'hang' });
   await order(a.page, '10118');
   await order(b.page, '10118');
@@ -325,6 +371,29 @@ test('Worker hanging: nothing waits for it, and the 4 s timeout falls back with 
   assert.deepEqual(b.errors, []);
   await a.ctx.close();
   await b.ctx.close();
+});
+
+test('Worker on: the independents arriving while a chain row is pressed don\'t lose the click', async () => {
+  const o = await open(on, { holdNearby: true });
+  await chooseZip(o.page, '59011');
+  const row = '[data-testid="near-list"] [data-action="pick-store"][data-brand="dominos"]';
+  await o.page.waitForSelector(row);
+  const box = await o.page.locator(row).boundingBox();
+  await o.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await o.page.mouse.down();
+  // 2 mi answers with nothing, then 5 mi with the small town: the list appears under the pressed row.
+  for (let i = 0; i < 2; i++) {
+    while (o.hung.length === 0) await o.page.waitForTimeout(20);
+    const route = o.hung.shift();
+    const [status, b] = answer(new URL(route.request().url()));
+    await route.fulfill({ status, headers: HEADERS, body: JSON.stringify(b) });
+  }
+  await o.page.waitForSelector('[data-testid="indie-list"]');
+  await o.page.mouse.up();
+  await H.waitText(o.page, '[data-testid="trip-src"]', "To the Domino's you picked, ");
+  assert.equal(await o.page.getAttribute(row, 'aria-pressed'), 'true', 'the click on the pressed row landed');
+  assert.deepEqual(o.errors, []);
+  await o.ctx.close();
 });
 
 // ---- layout ---------------------------------------------------------------------------------

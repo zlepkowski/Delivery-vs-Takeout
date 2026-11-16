@@ -684,6 +684,16 @@ def places_for(S, D, opts):
     p0 = pt(S.get("pos"))
     if p0 is None:
         return []
+    stopped = False                      # §6.2: [] until the widening has stopped (§6.1 step 3's rule)
+    for r in (2, 5, 10):
+        v = opts["api"]["nearby"].get(p0 + "/" + str(r))
+        if not isinstance(v, dict) and v is not False:
+            break
+        if v is False or len(v["places"]) >= 10 or r == 10:
+            stopped = True
+            break
+    if not stopped:
+        return []
     ans = None
     for r in (10, 5, 2):
         v = opts["api"]["nearby"].get(p0 + "/" + str(r))
@@ -708,13 +718,17 @@ PL3 = {"places": [{"id": "osm:n5", "name": "Far Grill", "category": "casual", "l
                   {"id": "osm:w2", "name": "Same Spot", "category": "pizza", "lat": 40.7495, "lon": -73.9861}]}
 P12 = {"places": [{"id": "osm:n%d" % (20 + i), "name": "Spot %d" % i, "category": "casual", "lat": 40.7491 + 0.0001 * i, "lon": -73.9861} for i in range(12)]}
 for label, S, opts in [
-        ("sorted by distance from S.pos, chains by name dropped, ties by id", SPOS, api(nearby={"40.749,-73.986/2": PL3})),
+        ("sorted by distance from S.pos, chains by name dropped, ties by id", SPOS, api(nearby={"40.749,-73.986/2": PL3, "40.749,-73.986/5": PL3, "40.749,-73.986/10": PL3})),
         ("the largest answered radius wins; false is skipped", SPOS, api(nearby={"40.749,-73.986/2": places(2), "40.749,-73.986/5": PL3, "40.749,-73.986/10": False})),
         ("at most 10 rows", SPOS, api(nearby={"40.749,-73.986/2": P12})),
+        ("widening not finished: 2 mi has 4, 5 mi not answered yet", SPOS, api(nearby={"40.749,-73.986/2": PL3})),
+        ("widening finished at 10 mi with few places", SPOS, api(nearby={"40.749,-73.986/2": places(1), "40.749,-73.986/5": places(2, 1), "40.749,-73.986/10": PL3})),
+        ("a failure at 5 mi stops the widening: 2 mi's rows show", SPOS, api(nearby={"40.749,-73.986/2": PL3, "40.749,-73.986/5": False})),
         ("no answer yet", SPOS, api()), ("Worker off", SPOS, {"failed": {}}), ("no position", {"address": "", "pos": None}, api(nearby={"40.749,-73.986/2": PL3}))]:
     seam("placesFor", [S, {"BRANDS": BR}, opts], places_for(S, {"BRANDS": BR}, opts), label=label,
          work="mi is distMi from S.pos (40.7491, -73.9861), compared with a relative tolerance of 1e-9; 'SUBWAY' -> nameKey 'subway' = Subway's.")
-r0 = places_for(SPOS, {"BRANDS": BR}, api(nearby={"40.749,-73.986/2": PL3}))
+r0 = places_for(SPOS, {"BRANDS": BR}, api(nearby={"40.749,-73.986/2": PL3, "40.749,-73.986/5": PL3, "40.749,-73.986/10": PL3}))
+assert places_for(SPOS, {"BRANDS": BR}, api(nearby={"40.749,-73.986/2": PL3})) == []
 assert [r["brand"] for r in r0] == ["osm:n7", "osm:w2", "osm:n5"] and r0[0]["id"] == "osm:n7@40.750,-73.986"
 
 def remember(D, opts, ask, value):

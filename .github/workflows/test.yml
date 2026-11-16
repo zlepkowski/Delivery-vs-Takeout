@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tests/e2e/worker.e2e.js builds the Phase 7 page from git (D-040)
       - uses: actions/setup-node@v4
         with:
           node-version: 22

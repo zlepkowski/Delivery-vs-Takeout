@@ -9145,6 +9145,70 @@
           "lon": -73.9861
          }
         ]
+       },
+       "40.749,-73.986/5": {
+        "places": [
+         {
+          "id": "osm:n5",
+          "name": "Far Grill",
+          "category": "casual",
+          "lat": 40.7531,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n6",
+          "name": "SUBWAY",
+          "category": "sandwich",
+          "lat": 40.7492,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n7",
+          "name": "Near Cafe",
+          "category": "coffee",
+          "lat": 40.7495,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:w2",
+          "name": "Same Spot",
+          "category": "pizza",
+          "lat": 40.7495,
+          "lon": -73.9861
+         }
+        ]
+       },
+       "40.749,-73.986/10": {
+        "places": [
+         {
+          "id": "osm:n5",
+          "name": "Far Grill",
+          "category": "casual",
+          "lat": 40.7531,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n6",
+          "name": "SUBWAY",
+          "category": "sandwich",
+          "lat": 40.7492,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n7",
+          "name": "Near Cafe",
+          "category": "coffee",
+          "lat": 40.7495,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:w2",
+          "name": "Same Spot",
+          "category": "pizza",
+          "lat": 40.7495,
+          "lon": -73.9861
+         }
+        ]
        }
       }
      }
@@ -9537,6 +9601,317 @@
    ],
    "work": "mi is distMi from S.pos (40.7491, -73.9861), compared with a relative tolerance of 1e-9; 'SUBWAY' -> nameKey 'subway' = Subway's.",
    "label": "at most 10 rows"
+  },
+  {
+   "fn": "placesFor",
+   "args": [
+    {
+     "address": "",
+     "pos": {
+      "lat": 40.7491,
+      "lon": -73.9861,
+      "src": "gps"
+     }
+    },
+    {
+     "BRANDS": {
+      "subway": {
+       "name": "Subway",
+       "category": "sandwich",
+       "wikidata": "Q1",
+       "stores": 1
+      },
+      "dominos": {
+       "name": "Domino's",
+       "category": "pizza",
+       "wikidata": "Q2",
+       "stores": 1
+      }
+     }
+    },
+    {
+     "failed": {},
+     "api": {
+      "drive": {},
+      "geo": {},
+      "nearby": {
+       "40.749,-73.986/2": {
+        "places": [
+         {
+          "id": "osm:n5",
+          "name": "Far Grill",
+          "category": "casual",
+          "lat": 40.7531,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n6",
+          "name": "SUBWAY",
+          "category": "sandwich",
+          "lat": 40.7492,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n7",
+          "name": "Near Cafe",
+          "category": "coffee",
+          "lat": 40.7495,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:w2",
+          "name": "Same Spot",
+          "category": "pizza",
+          "lat": 40.7495,
+          "lon": -73.9861
+         }
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "returns": [],
+   "work": "mi is distMi from S.pos (40.7491, -73.9861), compared with a relative tolerance of 1e-9; 'SUBWAY' -> nameKey 'subway' = Subway's.",
+   "label": "widening not finished: 2 mi has 4, 5 mi not answered yet"
+  },
+  {
+   "fn": "placesFor",
+   "args": [
+    {
+     "address": "",
+     "pos": {
+      "lat": 40.7491,
+      "lon": -73.9861,
+      "src": "gps"
+     }
+    },
+    {
+     "BRANDS": {
+      "subway": {
+       "name": "Subway",
+       "category": "sandwich",
+       "wikidata": "Q1",
+       "stores": 1
+      },
+      "dominos": {
+       "name": "Domino's",
+       "category": "pizza",
+       "wikidata": "Q2",
+       "stores": 1
+      }
+     }
+    },
+    {
+     "failed": {},
+     "api": {
+      "drive": {},
+      "geo": {},
+      "nearby": {
+       "40.749,-73.986/2": {
+        "places": [
+         {
+          "id": "osm:n1",
+          "name": "P1",
+          "category": "casual",
+          "lat": 40.749,
+          "lon": -73.986
+         }
+        ]
+       },
+       "40.749,-73.986/5": {
+        "places": [
+         {
+          "id": "osm:n2",
+          "name": "P2",
+          "category": "casual",
+          "lat": 40.749,
+          "lon": -73.986
+         },
+         {
+          "id": "osm:n3",
+          "name": "P3",
+          "category": "casual",
+          "lat": 40.749,
+          "lon": -73.986
+         }
+        ]
+       },
+       "40.749,-73.986/10": {
+        "places": [
+         {
+          "id": "osm:n5",
+          "name": "Far Grill",
+          "category": "casual",
+          "lat": 40.7531,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n6",
+          "name": "SUBWAY",
+          "category": "sandwich",
+          "lat": 40.7492,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n7",
+          "name": "Near Cafe",
+          "category": "coffee",
+          "lat": 40.7495,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:w2",
+          "name": "Same Spot",
+          "category": "pizza",
+          "lat": 40.7495,
+          "lon": -73.9861
+         }
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "returns": [
+    {
+     "brand": "osm:n7",
+     "id": "osm:n7@40.750,-73.986",
+     "name": "Near Cafe",
+     "category": "coffee",
+     "lat": 40.7495,
+     "lon": -73.9861,
+     "mi": 0.0276376377711162,
+     "profiled": false
+    },
+    {
+     "brand": "osm:w2",
+     "id": "osm:w2@40.750,-73.986",
+     "name": "Same Spot",
+     "category": "pizza",
+     "lat": 40.7495,
+     "lon": -73.9861,
+     "mi": 0.0276376377711162,
+     "profiled": false
+    },
+    {
+     "brand": "osm:n5",
+     "id": "osm:n5@40.753,-73.986",
+     "name": "Far Grill",
+     "category": "casual",
+     "lat": 40.7531,
+     "lon": -73.9861,
+     "mi": 0.27637637771214385,
+     "profiled": false
+    }
+   ],
+   "work": "mi is distMi from S.pos (40.7491, -73.9861), compared with a relative tolerance of 1e-9; 'SUBWAY' -> nameKey 'subway' = Subway's.",
+   "label": "widening finished at 10 mi with few places"
+  },
+  {
+   "fn": "placesFor",
+   "args": [
+    {
+     "address": "",
+     "pos": {
+      "lat": 40.7491,
+      "lon": -73.9861,
+      "src": "gps"
+     }
+    },
+    {
+     "BRANDS": {
+      "subway": {
+       "name": "Subway",
+       "category": "sandwich",
+       "wikidata": "Q1",
+       "stores": 1
+      },
+      "dominos": {
+       "name": "Domino's",
+       "category": "pizza",
+       "wikidata": "Q2",
+       "stores": 1
+      }
+     }
+    },
+    {
+     "failed": {},
+     "api": {
+      "drive": {},
+      "geo": {},
+      "nearby": {
+       "40.749,-73.986/2": {
+        "places": [
+         {
+          "id": "osm:n5",
+          "name": "Far Grill",
+          "category": "casual",
+          "lat": 40.7531,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n6",
+          "name": "SUBWAY",
+          "category": "sandwich",
+          "lat": 40.7492,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:n7",
+          "name": "Near Cafe",
+          "category": "coffee",
+          "lat": 40.7495,
+          "lon": -73.9861
+         },
+         {
+          "id": "osm:w2",
+          "name": "Same Spot",
+          "category": "pizza",
+          "lat": 40.7495,
+          "lon": -73.9861
+         }
+        ]
+       },
+       "40.749,-73.986/5": false
+      }
+     }
+    }
+   ],
+   "returns": [
+    {
+     "brand": "osm:n7",
+     "id": "osm:n7@40.750,-73.986",
+     "name": "Near Cafe",
+     "category": "coffee",
+     "lat": 40.7495,
+     "lon": -73.9861,
+     "mi": 0.0276376377711162,
+     "profiled": false
+    },
+    {
+     "brand": "osm:w2",
+     "id": "osm:w2@40.750,-73.986",
+     "name": "Same Spot",
+     "category": "pizza",
+     "lat": 40.7495,
+     "lon": -73.9861,
+     "mi": 0.0276376377711162,
+     "profiled": false
+    },
+    {
+     "brand": "osm:n5",
+     "id": "osm:n5@40.753,-73.986",
+     "name": "Far Grill",
+     "category": "casual",
+     "lat": 40.7531,
+     "lon": -73.9861,
+     "mi": 0.27637637771214385,
+     "profiled": false
+    }
+   ],
+   "work": "mi is distMi from S.pos (40.7491, -73.9861), compared with a relative tolerance of 1e-9; 'SUBWAY' -> nameKey 'subway' = Subway's.",
+   "label": "a failure at 5 mi stops the widening: 2 mi's rows show"
   },
   {
    "fn": "placesFor",
