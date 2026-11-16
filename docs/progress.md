@@ -66,6 +66,19 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
+### Phase 10: Ship (2026-11-16, in progress)
+
+Branch `claude/zen-hamilton-bp88d4` (this session's; fast-forwarded from the Phase 2 tip to `claude/blissful-goldberg-jwe17y` at `71264c5`, the Phase 9 tip). Baseline at the start: `npm test` exits 0 from a fresh `npm ci` (es5 20 files, unit 1,364/1,364, every oracle line, e2e 60/60); CI green at `71264c5`. On GitHub: Pages off (`has_pages: false`), default branch still `claude/sharp-heisenberg-tbo63x` (ISS-005), no PRs.
+
+| Task | Status | Commit |
+|---|---|---|
+| 10.1 BUILD.md v5 (orchestrator): the map to D-001…D-041 and the nine contracts, same section numbers as v4 so every `BUILD.md §n` citation still resolves; §11 Phase E per D-016/D-041; README status | ✅ written | — |
+| 10.2 Tester: `tests/unit/docs-build.test.js` pins BUILD.md to the repo (paths, links, ids, load order, storage key, contracts, every `BUILD.md §n` citation, data counts) | in progress | — |
+| 10.3 Live dry run of the Pages build: **failed every candidate twice** from a fresh cache: ATP's host intermittently answers a Range request with `200` (D-039 amendment) | fix in progress (10.3a) | — |
+| 10.3a `build-stores.py` retries an ignored Range with backoff (researcher) + `tests/unit/build-stores-range.test.js` (tester) | in progress | — |
+| 10.4 CI green, PR to `main`, Pages on, merge, deploy | pending | — |
+| 10.5 Close | pending | — |
+
 ### Phase 9: Phase E, deep links (2026-11-16, done)
 
 Branch `claude/blissful-goldberg-jwe17y` (this session's; fast-forwarded from the Phase 2 tip to `claude/charming-heisenberg-wag8bg` at `c332e15`, the Phase 8 tip). User decisions at the start: the user opened three sample app searches for "Ben & Jerry's": **DoorDash's search worked; Uber Eats (a human check) and Grubhub (an address prompt) went to their home pages**; and **Google Maps** for directions.
