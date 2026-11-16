@@ -90,7 +90,9 @@ FAIL tests/unit/engine.test.js:88  '§9.4 tip uses the pre-discount subtotal'
 ## Learned rules
 
 <!-- The reflector adds rules here. Each one cites its evidence. -->
-- **Pin every lookup table to the source's own list, item by item.** A test that checks shape and range passes a state filed under the wrong PADD. Assert the expected group for each row from the source (c539fc3: DE, DC, MD on 1C, 12/12 green).
+- **Pin every lookup table to the source's own list, item by item, and check each pinned figure's key (make, model, year) as carefully as its value.** A shape test passes a state filed under the wrong PADD (c539fc3: DE, DC, MD on 1C, 12/12 green). A 2020 Bolt pinned under `BOLT` (EPA files it as `Bolt EV`) had the right number and a false justification (d573421).
+- **Exclude tests with `--test-skip-pattern`; a negative lookahead in `--test-name-pattern` doesn't filter on this Node.** Two workers diagnosed it separately in Phase 7 (progress.md Phase 7, 7.3b).
+- **A test that stubs an upstream failure (HTTP 500) expects Chromium's own resource error for it.** Page code can't suppress it, so allow that exact message in that one test only, as for `ERR_FILE_NOT_FOUND`. A builder reported BLOCKED rather than drop the console check; UI contract §0 names it (12d34d3).
 - **Pin aggregates by value, with independent expected numbers.** Cover an even count, a .5 rounding case and a min-vs-median case. A shape test passes a median that returns the minimum (1.7 review, findings 1 and 2).
 - **Quote the issuer sentence beside every pinned credit amount.** A reimbursed membership is not an included one. The Platinum test pinned an over-credit because the card row said so (83f24d7, blocker).
 - **Read data through `tests/helpers/data.js` `loadData()`, and compare VM-realm values with literals or JSON.** A `deepStrictEqual` against `[]` fails on VM-realm arrays even when empty. To copy one, use `Array.from(v, f)`, a `for` loop into `[]`, or JSON. Never `map`, `filter` or `slice`: they build their result with the VM array's own constructor, so 37 of 87 runner scenarios failed on prototypes (ISS-008: 8962e13, c4e21c4, a5b725d).

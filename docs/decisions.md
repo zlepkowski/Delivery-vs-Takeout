@@ -379,3 +379,17 @@ BUILD.md §11's `/vehicle?vin` without a server (D-004). [`docs/vin-contract.md`
 - code-review: ~ optional-input should-fix cites the per-item rejections found in Phase 6 (0f907b5)
 - data-research: ~ profiles.js shape: menu items are objects; per-item markup needs its own source, never estimated (D-036, 1359cf6)
 - backend: no change (no Phase 6 evidence)
+
+### Phase 7 (2026-11-16): reflector proposal, approved by the orchestrator with three changes (code-review: the two shortened rules are restored, since the reviewer loads only its own skill and "see the frontend rules" drops the failure scenarios; the late-async check is added to the stale-value blocker instead; frontend: the late-answer rule matches UI contract §6b, where any later action wins by sequence number, not only one that sets the same field; frontend's file table gains `src/js/vin.js`)
+- data-research: + a scheduled job's dry run uses the schedule's own inputs; a pinned pass is reported as pinned (ISS-038, ISS-039, e31bb4e, 93eadd2)
+- data-research: + one upstream's failure never blocks another's refresh; a generator never writes part of a run (ISS-039, 93eadd2, D-039 amendment)
+- test-runner: ~ pin-by-source rule extended: the key (make, model, year) is checked like the value (d573421)
+- test-runner: + exclude tests with `--test-skip-pattern`; a negative lookahead in `--test-name-pattern` doesn't filter here (7.3b, progress.md Phase 7)
+- test-runner: + a stubbed HTTP 500 yields Chromium's own resource error; allow it exactly, in that test only (12d34d3)
+- frontend: + a late async answer never overwrites a newer user action (8b27bc4, 5b49390, 9a17357)
+- code-review: ~ stale-value blocker merged with the frontend rules; now also checks late async answers (9a17357, e705a87, 8b27bc4)
+- code-review: ~ optional-input should-fix shortened; the writer rule lives in frontend (793577b, c4e21c4, 0f907b5)
+- backend: no change (no Phase 7 backend evidence; /vehicle is browser-side per D-038)
+- not a rule: "a card that adds exports names the API-enumerating test tables" (7.4, 022089e). An orchestrator card lesson, once; the fix belongs in the card's CONTEXT line, not a worker skill
+- not a rule: ISS-037 (setPath bypasses setCar), latent and logged; waits for a state-contract amendment
+- not a rule: frontend "Where things live" lacks `src/js/vin.js` (POD.vin); outside Learned rules, orchestrator to decide
