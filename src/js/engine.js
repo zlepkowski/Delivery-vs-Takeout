@@ -358,6 +358,13 @@
     return fuelPart + S.wear;
   }
 
+  /** D.PLACES[brandId] when it's an independent with a string name and category (D-040), else null. */
+  function independentOf(D, brandId) {
+    if (!isObj(D.PLACES) || !has(D.PLACES, brandId)) { return null; }
+    var p = D.PLACES[brandId];
+    return isObj(p) && typeof p.name === "string" && typeof p.category === "string" ? p : null;
+  }
+
   /** The S.rest object for a brand (contract 2.1, D-006). null for an unknown brand. */
   function restFor(brandId, D) {
     var brand = has(D.BRANDS, brandId) ? D.BRANDS[brandId] : null;
@@ -387,12 +394,14 @@
       return rest;
     }
 
-    if (!brand) { return null; }
-    var cat = has(D.CATEGORY_DEFAULTS, brand.category) ? D.CATEGORY_DEFAULTS[brand.category] : null;
+    // D-040: an independent (in D.PLACES only) is priced as an unprofiled brand of its own category.
+    var source = brand || independentOf(D, brandId);
+    if (!source) { return null; }
+    var cat = has(D.CATEGORY_DEFAULTS, source.category) ? D.CATEGORY_DEFAULTS[source.category] : null;
     if (!cat) { return null; }
     return {
       id: brandId,
-      name: brand.name,
+      name: source.name,
       profiled: false,
       menu: [],
       deal: null,

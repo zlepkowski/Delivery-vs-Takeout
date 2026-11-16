@@ -30,7 +30,7 @@ const NOW = new Date(2026, 10, 13, 12);                     // host realm; local
 const APPS = ['dd', 'ue', 'gh'];
 
 // Two sandboxes. S1 tests use the subset the fixture uses; the real-data tests load every script.
-const S1SB = loadApp({ only: ['pod.js', 'engine.js', 'geo.js', 'state.js'] });
+const S1SB = loadApp({ only: ['pod.js', 'engine.js', 'geo.js', 'api.js', 'state.js'] });   // state calls POD.api's key helpers (D-040)
 const S1ST = S1SB.POD.state;
 const FULL = loadApp();
 const ST = FULL.POD.state;

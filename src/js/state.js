@@ -21,7 +21,7 @@
   var SAVED_SCALARS = ["address", "make", "model", "year", "fuel", "mpg", "miPerKwh", "kwh", "brand",
     "storePicked", "manualSubtotal", "dealOn", "miles", "speed", "milesAuto", "tipDel", "tipPick",
     "wear", "hourly", "regFee", "smallMin", "smallFee"];           // §8
-  var SAVED_COPIED = ["store", "cart", "milesBy", "cards", "creditOptIn", "usedIn", "manualCredits"]; // §8
+  var SAVED_COPIED = ["store", "place", "cart", "milesBy", "cards", "creditOptIn", "usedIn", "manualCredits"]; // §8
   var NULLABLE_SAVED = ["mpg", "miPerKwh", "miles"];               // §8: may also be null
   var NUMBER_SAVED = ["kwh", "manualSubtotal", "tipDel", "tipPick", "wear", "hourly",
     "regFee", "smallMin", "smallFee"];                             // §8
@@ -30,6 +30,7 @@
   var CANON_INT = /^(0|[1-9][0-9]*)$/;                             // §8: cart keys
   var MANUAL_KEY = /^manual\.[1-9][0-9]{0,8}$/;                    // §8 (at most 9 digits)
   var MANUAL_N = /^manual\.([1-9][0-9]*)$/;                        // §5.3
+  var PLACE_ID = /^osm:[nwr][1-9][0-9]{0,15}$/;                    // §8 (D-040)
 
   // ---- helpers (§0) ----------------------------------------------------------
 
@@ -89,6 +90,12 @@
     try { return fn(); } catch (e) { return null; }
   }
   function statusOf(st, need, partial) { return { status: st, need: need, partial: partial }; }
+  function isNameLen(s) { return isStr(s) && s.length >= 1 && s.length <= 120; }
+
+  // ---- D-040 keys: POD.api's own helpers (api contract §6; api.js loads before state.js), so the state and
+  // the seam can never disagree on a key. Wrapped like the geography calls: a throw is null.
+  function driveKeyOf(pos, store) { return tryCall(function () { return POD.api.driveKey(pos, store); }); }
+  function geoKeyOf(text) { return tryCall(function () { return POD.api.geoKey(text); }); }
 
   // The geography and engine calls (geo-contract §1, engine-contract §2.1), wrapped so a throw is null.
   function geoMi(lat1, lon1, lat2, lon2) {
@@ -132,7 +139,7 @@
     var S = {
       address: "", pos: null, zip: null, zipRec: null, state: null, tax: null, gas: null,
       make: "", model: "", year: null, fuel: "regular", mpg: null, miPerKwh: null, kwh: num(T.kwh),
-      brand: null, rest: null, store: null, storePicked: false,
+      brand: null, rest: null, store: null, storePicked: false, place: null,
       cart: {}, manualSubtotal: 0, dealOn: true,
       miles: null, minutes: null, speed: num(T.speed), milesAuto: true, milesSrc: null, milesBy: {},
       tipDel: num(TIPS.tipDel), tipPick: num(TIPS.tipPick), wear: num(T.wear), hourly: 0,
@@ -393,7 +400,24 @@
     return last;
   }
 
-  function applyAddress(S, D) {
+  /** The Worker's geocode answer for the typed address (D-040): an object with an in-range point, or null. */
+  function geocodedAt(S, opts) {
+    if (!isObj(opts) || !isObj(opts.api) || !isObj(opts.api.geo)) { return null; }
+    var k = geoKeyOf(S.address);
+    if (k === null || !hasOwn(opts.api.geo, k)) { return null; }
+    var g = opts.api.geo[k];
+    return isObj(g) && isLatLon(g.lat, g.lon) ? g : null;
+  }
+
+  /** The ZIP record for a geocoded point: the typed ZIP's, else the answer's, else the nearest (D-040). */
+  function geocodedZip(zr, g, D) {
+    if (zr) { return zr; }
+    var fromAnswer = isStr(g.zip) ? geoZipByCode(g.zip, D) : null;
+    if (fromAnswer) { return fromAnswer; }
+    return geoNearestZip(g.lat, g.lon, D);
+  }
+
+  function applyAddress(S, D, opts) {
     if (isGps(S.pos)) {
       var rec = geoNearestZip(S.pos.lat, S.pos.lon, D);
       S.zipRec = rec;
@@ -402,10 +426,19 @@
     } else {
       var code = zipFromText(S.address);
       var zr = code === null ? null : geoZipByCode(code, D);
-      S.zip = code;
-      S.zipRec = zr;
-      S.state = zr ? zr.st : null;
-      S.pos = zr ? { lat: zr.la, lon: zr.lo, src: "zip" } : null;
+      var g = geocodedAt(S, opts);
+      if (g !== null) {
+        var grec = geocodedZip(zr, g, D);
+        S.pos = { lat: g.lat, lon: g.lon, src: "addr" };
+        S.zipRec = grec;
+        S.zip = grec ? grec.z : code;
+        S.state = grec ? grec.st : null;
+      } else {
+        S.zip = code;
+        S.zipRec = zr;
+        S.state = zr ? zr.st : null;
+        S.pos = zr ? { lat: zr.la, lon: zr.lo, src: "zip" } : null;
+      }
     }
     applyState(S, D);
   }
@@ -449,12 +482,24 @@
     return statusOf("ok", [], false);
   }
 
+  /** The drive rule (D-040, §4.5): a road distance from opts.api.drive replaces the straight-line trip. */
+  function roadTrip(S, opts) {
+    if (!isObj(opts) || !isObj(opts.api) || !isObj(opts.api.drive)) { return; }
+    var k = driveKeyOf(S.pos, S.store);
+    if (k === null || !hasOwn(opts.api.drive, k)) { return; }
+    var a = opts.api.drive[k];
+    if (!isObj(a) || !isNum(a.miles) || a.miles < 0 || a.miles > 1000) { return; }   // the checkDrive bound
+    S.miles = Math.round(2 * a.miles * 10) / 10;
+    S.milesSrc = "drive";
+  }
+
   /** Step 3: the user's own store. */
-  function pickedTrip(S, pos) {
+  function pickedTrip(S, pos, opts) {
     var st = S.store;
     var trip = geoTrip(geoMi(pos.lat, pos.lon, st.lat, st.lon));
     S.miles = isNonNeg(trip) ? trip : null;
     S.milesSrc = S.miles === null ? null : "store";
+    roadTrip(S, opts);
     applyMinutes(S);
     return statusOf("ok", [], false);
   }
@@ -486,6 +531,7 @@
       S.store = { id: st.id, lat: st.lat, lon: st.lon };
       S.miles = isNonNeg(st.trip) ? st.trip : null;
       S.milesSrc = S.miles === null ? null : "store";
+      roadTrip(S, opts);
       applyMinutes(S);
       return statusOf("ok", [], r.partial === true);
     }
@@ -495,7 +541,7 @@
   function autoMiles(S, D, opts) {
     if (S.milesAuto !== true) { return statusOf("off", [], false); }
     if (!isPos(S.pos) || !isStr(S.brand) || !isObj(S.rest)) { return noDistance(S); }
-    if (isPickedStore(S)) { return pickedTrip(S, S.pos); }
+    if (isPickedStore(S)) { return pickedTrip(S, S.pos, opts); }
     return nearestTrip(S, D, S.pos, opts);
   }
 
@@ -739,14 +785,14 @@
   function setAddress(S, D, text, opts) {
     S.address = isStr(text) ? text : "";
     S.pos = null;
-    applyAddress(S, D);
+    applyAddress(S, D, opts);
     return tripStatus(S, D, opts);
   }
 
   function setPosition(S, D, lat, lon, opts) {
     if (!isLatLon(lat, lon)) { return null; }
     S.pos = { lat: lat, lon: lon, src: "gps" };
-    applyAddress(S, D);
+    applyAddress(S, D, opts);
     return tripStatus(S, D, opts);
   }
 
@@ -784,6 +830,7 @@
     }
     S.store = null;
     S.storePicked = false;
+    if (!(isObj(S.place) && S.place.id === brandId)) { S.place = null; }   // D-040
     applyBrand(S, D);
     var pin = pinnedFor(S);
     if (pin !== null) {
@@ -803,6 +850,15 @@
       isLatLon(s.lat, s.lon);
   }
 
+  /** D-040: D.PLACES[id] as a place {id, name, category, lat, lon} when id isn't a chain of D.BRANDS; else null. */
+  function independentPlace(D, id) {
+    if (!isObj(D) || (isObj(D.BRANDS) && hasOwn(D.BRANDS, id))) { return null; }
+    if (!isObj(D.PLACES) || !hasOwn(D.PLACES, id)) { return null; }
+    var p = D.PLACES[id];
+    if (!isObj(p) || !isStr(p.name) || !isStr(p.category) || !isLatLon(p.lat, p.lon)) { return null; }
+    return { id: id, name: p.name, category: p.category, lat: p.lat, lon: p.lon };
+  }
+
   function pickStore(S, D, store, opts) {
     if (!isStoreRow(store)) { return null; }
     if (store.brand !== S.brand) { setBrand(S, D, store.brand, opts); }
@@ -810,6 +866,8 @@
     S.storePicked = true;
     S.milesAuto = true;
     if (isObj(S.milesBy) && hasOwn(S.milesBy, store.brand)) { delete S.milesBy[store.brand]; }
+    var place = independentPlace(D, store.brand);
+    if (place !== null) { S.place = place; }
     return autoMiles(S, D, opts);
   }
 
@@ -841,7 +899,7 @@
   /** The derivation cascade (§4.7). Never resets a user field. */
   function derive(S, D, now, opts) {
     applyCar(S, D);
-    applyAddress(S, D);
+    applyAddress(S, D, opts);
     applyBrand(S, D);
     syncCredits(S, D, now);
     return tripStatus(S, D, opts);
@@ -1062,11 +1120,21 @@
   }
 
   /** Each saved field replaces the fresh one only when it has the right type (§8). */
+  /** D-040: a saved place is kept only when it's an independent id of the loaded brand; else null. */
+  function mergePlace(S, v) {
+    var p = v.place;
+    S.place = null;
+    if (!isObj(p) || !isStr(p.id) || !PLACE_ID.test(p.id) || p.id !== S.brand || !isNameLen(p.name) ||
+        !isStr(p.category) || !isLatLon(p.lat, p.lon)) { return; }
+    S.place = { id: p.id, name: p.name, category: p.category, lat: p.lat, lon: p.lon };
+  }
+
   function mergeSaved(S, v) {
     mergeScalars(S, v);
     mergeNumbers(S, v);
     mergePos(S, v);
     mergeStore(S, v);
+    mergePlace(S, v);
     mergeCart(S, v);
     mergeMaps(S, v);
     mergeCards(S, v);

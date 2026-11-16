@@ -22,7 +22,7 @@ const FX = JSON.parse(fs.readFileSync(path.join(APP_ROOT, 'tests', 'fixtures', '
 const MIN_SCENARIOS = 80;
 const MIN_PERIODS = 12;
 
-const sandbox = loadApp({ only: ['pod.js', 'engine.js', 'geo.js', 'state.js'] });
+const sandbox = loadApp({ only: ['pod.js', 'engine.js', 'geo.js', 'api.js', 'state.js'] });   // state calls POD.api's key helpers (D-040)
 const POD = sandbox.POD;
 const ST = POD.state;
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
