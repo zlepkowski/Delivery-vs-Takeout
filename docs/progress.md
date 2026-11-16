@@ -65,6 +65,19 @@
 - No Pages workflow yet: it's added in Phase 1 with the store-tile build (ISS-005).
 - `npm test` from a clean install: es5 OK, 8/8 unit, oracle stub, 2/2 e2e.
 
+### Phase 9: Phase E, deep links (2026-11-16, in progress)
+
+Branch `claude/blissful-goldberg-jwe17y` (this session's; fast-forwarded from the Phase 2 tip to `claude/charming-heisenberg-wag8bg` at `c332e15`, the Phase 8 tip). User decisions at the start: the user opened three sample app searches for "Ben & Jerry's": **DoorDash's search worked; Uber Eats (a human check) and Grubhub (an address prompt) went to their home pages**; and **Google Maps** for directions.
+
+| Task | Status | Commit |
+|---|---|---|
+| 9.1 D-041, `docs/links-contract.md`; UI contract §5.5/§5.10 amended; ISS-042 (websites for unprofiled chains and independents) | ✅ | `4123339` |
+| 9.2 `src/data/links.js` (orchestrator, cards.js pattern): app formats, Google Maps formats, the 9 profiled chains' home pages, each with how and when it was seen working (7 loaded in Chromium 2026-11-16; Dunkin' from Phase 1's research; Little Caesars' 301 target) | ✅ | `4123339` |
+| 9.3 References first: `tests/oracle/links.py`, 85 hand-worked cases (`tests/fixtures/links/build.py`, asserted against the reference), `links_runner.js`, `run.py` links checks (cases + 2,000 seeded calls); `tests/e2e/links.e2e.js`; `worker.e2e.js` re-baselined by D-041 | ✅ e2e red by design until 9.4 | `4123339` |
+| 9.4 Builder: `src/js/links.js`, `render.js` hand-offs and the fine-print line, css | ✅ 1 loop; re-verified: es5 20 files, unit 1,243, links 85/85 + 2,000/2,000, e2e 60/60; reviewer APPROVE, no findings; screenshots reviewed at 390 and 1280 px | `e792441` |
+| 9.5 Tester: `links.test.js`, `data-links.test.js`, mutants | in progress | |
+| 9.6 Close | | |
+
 ### Phase 8: Phase A backend: the Worker behind the seam (2026-11-16, done)
 
 Branch `claude/charming-heisenberg-wag8bg` (this session's; fast-forwarded to `claude/phase-7-vin-lookup-refresh-3kq5sh` at `556bc34`, the Phase 7 tip). User decisions at the start: **OpenStreetMap providers** (OSRM, Nominatim, Overpass; no keys), the **host swap** (newsroom.aaa.com, rosap.ntl.bts.gov and www.dunkindonuts.com out; router.project-osrm.org, nominatim.openstreetmap.org and overpass.kumi.systems in; ISS-001), and **independents in Phase 8**.

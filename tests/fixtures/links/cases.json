@@ -393,7 +393,56 @@
     ]
    }
   },
-  "T:no-links": {}
+  "T:no-links": {},
+  "T:https-no-slashes": {
+   "LINKS": {
+    "asOf": "2026-11-16",
+    "apps": {
+     "dd": {
+      "home": "https://www.doordash.com/",
+      "search": "https:www.doordash.com/search/store/{q}/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "ue": {
+      "home": "https:www.ubereats.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "gh": {
+      "home": "https://www.grubhub.com/",
+      "search": null,
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    },
+    "maps": {
+     "name": "Google Maps",
+     "dir": "https:/www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+     "search": "https://www.google.com/maps/search/?api=1&query={q}",
+     "source": "s",
+     "checked": "2026-11-16"
+    },
+    "order": {
+     "dominos": {
+      "url": "https:www.dominos.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "wingstop": {
+      "url": "https://www.wingstop.com/",
+      "source": "s",
+      "checked": "2026-11-16"
+     },
+     "__proto__": {
+      "url": "https://proto.example/",
+      "source": "s",
+      "checked": "2026-11-16"
+     }
+    }
+   }
+  }
  },
  "cases": [
   {
@@ -1826,6 +1875,72 @@
    },
    "data": "T:no-links",
    "expect": []
+  },
+  {
+   "id": "a search starting https: without // falls back home",
+   "fn": "forChannel",
+   "ch": "dd-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:https-no-slashes",
+   "expect": [
+    {
+     "kind": "app",
+     "label": "Open DoorDash",
+     "href": "https://www.doordash.com/"
+    }
+   ]
+  },
+  {
+   "id": "a home page starting https: without //: nothing",
+   "fn": "forChannel",
+   "ch": "ue-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:https-no-slashes",
+   "expect": []
+  },
+  {
+   "id": "a site and directions starting https: without //: only the map search",
+   "fn": "forChannel",
+   "ch": "direct-p",
+   "S": {
+    "brand": "dominos",
+    "rest": {
+     "name": "Domino's"
+    },
+    "store": {
+     "id": "dominos@40755,-73989",
+     "lat": 40.755,
+     "lon": -73.989
+    }
+   },
+   "data": "T:https-no-slashes",
+   "expect": [
+    {
+     "kind": "map",
+     "label": "Find Domino's in Google Maps",
+     "href": "https://www.google.com/maps/search/?api=1&query=Domino's"
+    }
+   ]
   },
   {
    "id": "__proto__ as a brand with its own entry gets it",

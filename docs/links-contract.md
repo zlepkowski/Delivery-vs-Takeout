@@ -35,7 +35,7 @@ LINKS = {
 
 - `apps[p].home`: the app's home page. `apps[p].search`: a URL with `{q}` where the restaurant's name goes, or `null` when no search format has been confirmed. On 2026-11-16 the user confirmed DoorDash's (`https://www.doordash.com/search/store/{q}/`); Uber Eats' and Grubhub's sample searches went to their home pages, so those are `null`.
 - `maps.name`: the map's name, as the labels show it. `maps.dir`: directions to a point, with `{lat}` and `{lon}`. `maps.search`: a map search, with `{q}`. Google Maps (the user's choice; Google documents both formats, with no key).
-- `order[brand].url`: the chain's own site, where ordering direct starts: its home page on the host the profile was researched on, not a deep path. **Exactly the profiled chains** (`PROFILES`' keys), each checked; a newly profiled chain needs its entry (a data test pins the key sets equal).
+- `order[brand].url`: the chain's own site, where ordering direct starts: its home page on the chain's own domain, the one its profile was researched on, not a deep path. (Little Caesars' profile was researched on `order.littlecaesars.com`, and its link is `https://littlecaesars.com/`, where `www.littlecaesars.com` permanently redirects; a data test checks each link's domain appears in the chain's evidence file. *Clarified after the 9.5 test review.*) **Exactly the profiled chains** (`PROFILES`' keys), each checked; a newly profiled chain needs its entry (a data test pins the key sets equal).
 - Every `source` says what was seen; every `checked` is a `YYYY-MM-DD` date.
 
 ## 2. `POD.links.forChannel(ch, S, D)` → `[{kind, label, href}]`

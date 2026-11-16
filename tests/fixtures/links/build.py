@@ -78,6 +78,11 @@ DATASETS = {
     "T:apps-not-object": variant(apps=["dd", "ue", "gh"]),
     "T:order-array": variant(order=[{"url": "https://www.dominos.com/"}]),
     "T:no-links": {},
+    # "https:" without the "//" isn't https:// (added after the orchestrator's mutant check of 9.5:
+    # a check for "https:" alone passed every other case)
+    "T:https-no-slashes": variant(apps__dd__search="https:www.doordash.com/search/store/{q}/", apps__ue__home="https:www.ubereats.com/",
+                                  maps__dir="https:/www.google.com/maps/dir/?api=1&destination={lat}%2C{lon}",
+                                  order__dominos__url="https:www.dominos.com/"),
 }
 
 DOM_STORE = {"id": "dominos@40755,-73989", "lat": 40.755, "lon": -73.989}
@@ -224,6 +229,10 @@ case("an app missing from apps: nothing", "gh-p", DOM, [], data="T:no-gh")
 case("apps an array: nothing", "dd-p", DOM, [], data="T:apps-not-object")
 case("order an array: no site, directions still", "direct-p", DOM, [DIR_DOM], data="T:order-array")
 case("D without LINKS: nothing", "dd-p", DOM, [], data="T:no-links")
+case("a search starting https: without // falls back home", "dd-p", DOM, [home("DoorDash", DD_HOME)], data="T:https-no-slashes")
+case("a home page starting https: without //: nothing", "ue-p", DOM, [], data="T:https-no-slashes")
+case("a site and directions starting https: without //: only the map search", "direct-p", DOM, [mapl("Domino's", "Domino's")],
+     data="T:https-no-slashes")
 
 # ---- brand ids that are Object.prototype's names
 case("__proto__ as a brand with its own entry gets it", "direct-d", s("__proto__", "Proto"), [order("Proto", "https://proto.example/")])

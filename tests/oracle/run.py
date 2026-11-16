@@ -1028,14 +1028,15 @@ def links_random_data(rnd, base):
             L["apps"][p]["search"] = rnd.choice([None, "{q}", "http://a.example/{q}", "https://d.example/s?q={q}&r={q}",
                                                  5, "https://d.example/nosub", "https://www.ubereats.com/search?q={q}"])
         if pick(0.1):
-            L["apps"][p]["home"] = rnd.choice(["http://x.example/", None, "https://h.example/", "javascript:alert(1)", ""])
+            L["apps"][p]["home"] = rnd.choice(["http://x.example/", None, "https://h.example/", "javascript:alert(1)", "",
+                                               "https:h.example/", "https:/h.example/", "HTTPS://h.example/"])
         if pick(0.05):
             L["apps"][p] = rnd.choice(["https://www.grubhub.com/", None, [], {"home": "https://www.grubhub.com/"}])
     if pick(0.1):
         L["maps"]["name"] = rnd.choice(["", None, "Apple Maps", 7])
     if pick(0.15):
         L["maps"]["dir"] = rnd.choice([None, "https://m.example/?d={lat}", "https://m.example/?d={lon},{lat}&again={lat}",
-                                       "http://m.example/{lat},{lon}", "{lat}{lon}"])
+                                       "http://m.example/{lat},{lon}", "{lat}{lon}", "https:m.example/{lat},{lon}"])
     if pick(0.15):
         L["maps"]["search"] = rnd.choice([None, "https://m.example/?q={q}", "q={q}"])
     if pick(0.3):
