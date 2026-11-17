@@ -29,6 +29,7 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Update 2026-11-13 (Phase 4, task 4.1):** the user approved swapping 3 chain sites that aren't profiled (`www.tacobell.com`, `www.pizzahut.com`, `www.fiveguys.com`) for the default-fee and trip-cost sources: `help.doordash.com`, `help.uber.com`, `www.uber.com`, `www.grubhub.com`, `about.grubhub.com`, `newsroom.aaa.com` and `rosap.ntl.bts.gov`. The list is now at the 20-host cap. Re-add a removed chain site only if that chain is profiled later (D-028).
 - **Update 2026-11-16 (Phase 7):** the user approved swapping `about.grubhub.com` (it refused every connection, see ISS-034) for `vpic.nhtsa.dot.gov`, to check vPIC's CORS header and record VIN fixtures (D-038). The list stays at the 20-host cap. `www.eia.gov`, `data.alltheplaces.xyz`, `alltheplaces-data.openaddresses.io` and `www.fueleconomy.gov` served the rest of Phase 7.
 - **Update 2026-11-16 (Phase 8, D-040):** the user approved swapping `newsroom.aaa.com`, `rosap.ntl.bts.gov` and `www.dunkindonuts.com` (finished research) for `router.project-osrm.org`, `nominatim.openstreetmap.org` and `overpass-api.de`; then `overpass-api.de` (every TLS handshake reset from this egress) for the mirror `overpass.kumi.systems` (it never answered either; see ISS-040). OSRM and Nominatim answered and served the recorded fixtures. Still at the 20-host cap.
+- **Update 2026-11-16 (Phase 11, D-042):** the user approved swapping `overpass.kumi.systems`, `router.project-osrm.org` and `nominatim.openstreetmap.org` (fixtures recorded in Phase 8, so nothing in the repo needs them) for the fee-survey sources of task 11.2b: `uber.com` (Uber One terms), `www.wsmv.com` (Nashville test orders, 2025-05-21) and `www.kiro7.com` (Seattle-area test orders). Still at the 20-host cap. A later Worker re-record (ISS-040) needs the OSM hosts back.
 - **Next step:** at the start of Phase 1, the orchestrator calls `get_environment` and requests the exact hosts in one approval: EPA, AAA, All The Places, NHTSA, the tax sources, the issuer sites (americanexpress.com, chase.com, capitalone.com) and the menu sites for the chosen profiles.
 
 ### ISS-004 — Phase 8 deployment needs the user's accounts
@@ -181,6 +182,15 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** DONE WHEN check 1 fails (`missing` lists the keys above). The app would start without defaults for these, or with wrong ones if a snippet figure were used.
 - **Next step:** the orchestrator decides. Options: open Uber's "What fees may apply to my order" help article and Grubhub's fee pages from an allowed network, or set these values from a checkout screen the user captures. `ue.pickDisc` is also unsourced.
 - **Update 2026-11-13 (orchestrator, D-032):** the user chose **official numbers only**. Every value above stays `null` in `src/data/defaults.js`: the page asks the user for it, and an app with an empty fee is left out of the comparison until it is filled. The Uber grocery-guide values were withdrawn (not restaurant figures). Pickup discounts are 0 by product rule. Stays open: a later decision may switch an app to labeled estimates, or a readable official page may appear.
+- **Update 2026-11-17 (task 11.2b, D-042):** D-042 switched the app fees to labeled estimates, and the three shortlisted survey pages were read (their hosts were added for this task, ISS-001 update 2026-11-16).
+  - **Filled (1):** `dd.svcMin` = 3, est, from KIRO 7's test orders ("DoorDash charges a flat 15% or $3 minimum").
+  - **Still `null` (14):** `dd.delFee`; all five Uber Eats and all five Grubhub fee keys; and the shared `regFee`, `smallMin` and `smallFee`.
+    - WSMV (Nashville) gives only four app totals for one order, with no fee lines.
+    - `uber.com/us/en/u/uber-one/` answers 406 to curl's default agent (not worked around, D-027).
+    - `www.grubhub.com/fees` is a JavaScript shell.
+    - **regFee:** KIRO 7's Seattle $4.99 is from a market DoorDash's fee page excludes from its general list ("all U.S. markets except New York City, Seattle, and Puerto Rico"), so it wasn't applied nationally.
+  - **The effect:** app delivery still needs `delFee` plus the three shared fees, so it isn't compared by default.
+  - **Next step:** the user's checkout screens (D-042 source 2: at least 2 per app, from different places, each with its city or ZIP). Whether a checkout outside NYC, Seattle and Puerto Rico whose recorded fee lines (D-042 records every fee line) show no regulatory fee counts as a $0 observation for `regFee` is not decided yet; it needs a D-042 amendment before any checkout is used that way.
 
 ### ISS-035 — UI paths that real data can't reach have no e2e (review of 5.3)
 - **Opened:** 2026-11-14 by orchestrator · **Phase:** 5 · **Status:** open
@@ -223,6 +233,18 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **What:** the member is 161,647 bytes and ends after a feature's `},` with nothing after it (`json.loads`: "Expecting value: line 182 column 1"); it read through `zipfile` with no CRC error, so ATP published it that way, like ISS-039's Taco Bell file. The 2026-10-31 run's copy (86,938 bytes) parses.
 - **Why it matters:** of the three candidate runs on 2026-11-16 (2026-11-07, 2026-10-31, 2026-10-24), two are unbuildable (ISS-039 and this), so the weekly build has exactly one good run in its window (2026-10-31, the committed one). The D-039 fallback handles it; if the next two runs are also damaged, the build fails and Pages keeps the last good deploy. On the **first** deploy there is no last good deploy, so a failing first build means no site until a run passes.
 - **Next step:** none while 2026-10-31 is in the window. Watch the weekly log's "skipped" lines. If damaged spider files keep appearing, consider a per-brand fallback to an older run (the ISS-007 / ISS-039 idea) by decision.
+
+### ISS-044 — A very short trip reads "about 0 min" (Phase 11 nit)
+- **Opened:** 2026-11-17 by orchestrator · **Phase:** 11 · **Status:** open
+- **What:** `tripLine` (src/js/render.js, UI contract §5.4/§5.5) prints `" · about " + S.minutes + " min"`, and state.js sets `minutes = Math.round(miles / speed * 60)`. At the default 27 mph a round trip under about 0.22 mi rounds to 0, and the line reads "0.2 mi round trip · about 0 min". The engine is right (a 0-minute trip costs no time); only the wording is odd.
+- **Why it matters:** cosmetic; it reads like a bug on the first screen a nearby user sees.
+- **Next step:** a UI-contract amendment first: for `minutes < 1`, say "under 1 min" (or leave the time out). Then a builder change with an e2e on a store a few hundred metres away.
+
+### ISS-045 — A "Change restaurant" click is dropped while a new address commits (accepted, UI contract §2)
+- **Opened:** 2026-11-17 by orchestrator (reviewer note on 11.6) · **Phase:** 11 · **Status:** open (accepted behavior)
+- **What:** block patching replaces a control whose own HTML changes in the commit. If the user clicks "Change restaurant ({n} nearby)" in the same moment an address commit changes `n`, the button is replaced and the click is lost. UI contract §2 calls this intended: the user sees the new answer before acting on it.
+- **Why it matters:** rare (it needs a click during the commit of an address typed just before), and the second click works.
+- **Next step:** none unless a user reports it. If it ever matters, keep the button's HTML independent of `n` (move the count into a sibling), the drawer toggle's pattern (§5.11).
 
 ## Closed
 

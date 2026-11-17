@@ -534,3 +534,14 @@ The page is re-laid out so a first answer takes about 3 interactions. [`docs/ui-
 - frontend: no change (no builder work in Phase 10; the served smoke was clean)
 - backend: no change (no backend work in Phase 10)
 - not a rule: the owner's Pages and default-branch settings checked live before the merge (orchestrator-only, progress.md Phase 10, 10.4); the stop hook asking to commit during worker runs (orchestrator-only); the upstream cut-off files are covered by the data-research zip-CRC bullet above
+
+## Skill updates — Phase 11 (2026-11-17)
+- test-runner: ~ the VM-realm rule now covers `page.evaluate` and says JSON round-trip (ISS-008 recurred in quick.e2e search test, 190fa61)
+- test-runner: ~ the type-then-click identity check excludes a control whose own HTML changes; re-query by id (fa824b2)
+- test-runner: ~ merged the two parallel-worker rules; a whole-suite migration splits by file after a turn-limit hit (11.5, 3f97f5b…2b327e9)
+- test-runner: ~ "unchanged" rule no longer cites the Phase 7 byte check, retired by D-043 (11.5d)
+- frontend: + keep changing text (counts, prices) out of a control's own HTML (ISS-045, 6cdcdc4; progress.md 11.1 review)
+- frontend: + layout budget needs CI font margin, or the tallest block folds (1247 vs 1319 px, 2de8983, 57c9a44)
+- frontend: ~ "previous phase's markup" reworded to the Worker-off page of the same build (D-043 retired the byte check)
+- code-review: + first-visit strings and fold rules checked against no-place/no-car and a pick past row 15 (fa824b2, 9d7dbc9)
+- not a rule: state fixtures' missing `fresh` step (only seen and fixed inside the 11.3 loop, no record in the log); docs-build BUILD.md drift (one confirmed case, 11.1; skill doesn't cover docs edits); a 2-minute time budget is orchestrator scope

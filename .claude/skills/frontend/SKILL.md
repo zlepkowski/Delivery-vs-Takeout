@@ -114,7 +114,9 @@ The return shape is in §4.3. `lines` ends with `["TOTAL", net]`. The `override`
 ## Learned rules
 
 <!-- The reflector adds rules here. Each one cites its evidence. -->
-- **A new block with nothing to show adds no markup.** When the feature is off or has no rows, the DOM must equal the previous phase's: an always-written empty wrapper in `#near` broke "byte-identical with the Worker off" (blocker, 4ac3bb9; 2320149).
+- **A new block with nothing to show adds no markup.** When the feature is off or has no rows, `#app` must equal the Worker-off page of the same build (D-043 retired the Phase 7 byte check): an always-written empty wrapper in `#near` broke it (blocker, 4ac3bb9; 2320149).
+- **Keep a control's own HTML free of changing text (a count, a price) and put that text in a sibling.** A commit replaces a control whose HTML changed, so a click landing in that moment is lost (ISS-045, accepted; the drawer summary moved out for this, progress.md 11.1 review).
+- **A layout budget gets margin for CI's Linux fonts, or the tallest optional block folds.** The first visit was 1247 px locally and 1319 px on CI, over a 1266 px budget (2de8983, 57c9a44; progress.md 11.7).
 - **Never put a neutral number in a code fallback.** A missing table value makes the brand unpriceable (`null`). `restFor` gave `markup {}` (0%) for a missing category, so the apps looked cheaper (ba25e38, c4e21c4).
 - **A malformed optional input has no effect; it never throws.** A `directSvc` with no `modes` took down `allResults`, and a deal with no `scope` silently never applied. Guard each optional field (793577b, c4e21c4).
 - **Return copies, never references, and key every memo cache by the table it came from.** `restFor` shared `directSvc.modes` with `D` until it deep-copied (c4e21c4). A global spacing cache answered from another table, caught only by a file-order test (97ce6fe, c8e1e5c).
