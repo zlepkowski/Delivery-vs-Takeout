@@ -341,6 +341,15 @@
   "save": [
    "S",
    "storage"
+  ],
+  "defaultOf": [
+   "D",
+   "*"
+  ],
+  "sourceOf": [
+   "S",
+   "D",
+   "*"
   ]
  },
  "periods": [
@@ -1244,9 +1253,10 @@
    "work": "Sedan was 30 mpg; Other isn't listed, so mpg is cleared and the page asks for it."
   },
   {
-   "id": "setCar: an EV to an unlisted car keeps fuel ev and clears miPerKwh",
+   "id": "setCar: an EV to an unlisted car falls back to the typical car (D-042)",
    "refs": [
-    "§6"
+    "§6",
+    "D-042"
    ],
    "data": "S1",
    "steps": [
@@ -1276,11 +1286,11 @@
     }
    ],
    "expect": {
-    "fuel": "ev",
+    "fuel": "regular",
     "miPerKwh": null,
     "mpg": null
    },
-   "work": "Volt was 3.5 mi/kWh; it's cleared, the fuel stays ev."
+   "work": "Volt was 3.5 mi/kWh; it's cleared. D-042: the fallback is the typical car, fuel regular (it was: fuel stays ev). S1 has no DEFAULTS.trip.mpg, so its mpg is null."
   },
   {
    "id": "setCar: the same unlisted pair again keeps the user's own mpg",
@@ -1694,10 +1704,11 @@
    }
   },
   {
-   "id": "setCar: an electric gap year keeps ev and clears miPerKwh",
+   "id": "setCar: an electric gap year falls back to the typical car (D-042)",
    "refs": [
     "§6",
-    "D-037"
+    "D-037",
+    "D-042"
    ],
    "data": "S1",
    "steps": [
@@ -1730,11 +1741,11 @@
    ],
    "expect": {
     "year": 2023,
-    "fuel": "ev",
+    "fuel": "regular",
     "miPerKwh": null,
     "mpg": null
    },
-   "work": "2023 is between the runs; 3.0 is cleared, fuel stays ev.",
+   "work": "2023 is between the runs; 3.0 is cleared. D-042: fuel falls back to regular (it was: stays ev); S1 has no typical mpg, so null.",
    "patch": {
     "CAR_YEARS": [
      "Acme|Classic:18@2000-2004,Sedan:30@2025-2026 26@2019-2024 22@2003,Volt:35e@2025-2026 30e@2020-2022"
@@ -5768,6 +5779,1911 @@
    "work": "forEngine only touches apps whose on is true: a switched-off app stays off and gets no noDelivery."
   },
   {
+   "id": "fresh: mpg starts at the typical car (D-042)",
+   "refs": [
+    "§2",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    }
+   ],
+   "expect": {
+    "mpg": 24.5,
+    "fuel": "regular",
+    "miPerKwh": null,
+    "make": "",
+    "$missing": [
+     "rest",
+     "tax",
+     "gas",
+     "miles",
+     "minutes"
+    ]
+   },
+   "work": "T.mpg = 24.5 is finite, so fresh copies it; mpg is no longer missing.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "fresh: a typical mpg that isn't a finite number is null",
+   "refs": [
+    "§2",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    }
+   ],
+   "expect": {
+    "mpg": null,
+    "$missing": [
+     "rest",
+     "tax",
+     "mpg",
+     "gas",
+     "miles",
+     "minutes"
+    ]
+   },
+   "work": "T.mpg is the string \"24.5\": not a finite number -> null, and missing asks for it.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": "24.5"
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    }
+   }
+  },
+  {
+   "id": "the typical car prices a first visit with no car picked (D-042)",
+   "refs": [
+    "§2",
+    "§7",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10001"
+     ]
+    },
+    {
+     "call": "setBrand",
+     "args": [
+      "pz"
+     ]
+    },
+    {
+     "call": "setQty",
+     "args": [
+      0,
+      2
+     ]
+    }
+   ],
+   "expect": {
+    "make": "",
+    "mpg": 24.5,
+    "$missing": [],
+    "$calc.direct-p.net": 34.1,
+    "$calc.dd-p.net": 53.7,
+    "$calc.dd-d.net": 69.65
+   },
+   "work": "As 'ready' above, but no setCar: the typical 24.5 mpg. Gas round2(5.2 / 24.5 x 4.10) = 0.87, wear 0.57, drive 1.44. direct-p: 30 + 2.66 + drive = 34.10. dd-p: 48 + 4.26 + drive = 53.70. dd-d has no drive: 69.65, as before.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "setCar: an unlisted car falls back to the typical car (D-042)",
+   "refs": [
+    "§6",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sedan"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    }
+   ],
+   "expect": {
+    "make": "Other",
+    "fuel": "regular",
+    "mpg": 24.5,
+    "miPerKwh": null,
+    "gas": 4.1,
+    "$missing": [
+     "rest",
+     "miles",
+     "minutes"
+    ]
+   },
+   "work": "Sedan was 30; Other isn't listed and the car changed, so mpg = T.mpg 24.5, not null: nothing is missing for the car.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "setCar: an EV to an unlisted car falls back to the typical car's fuel and mpg (D-042)",
+   "refs": [
+    "§6",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setAddress",
+     "args": [
+      "10004"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Volt"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    }
+   ],
+   "expect": {
+    "fuel": "regular",
+    "mpg": 24.5,
+    "miPerKwh": null,
+    "gas": 4.1
+   },
+   "work": "Volt: ev, 3.5 mi/kWh, mpg null (applyCar sets the other one null). Other: regular, 24.5, miPerKwh null; NY regular gas 4.1.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "setCar: clearing the car falls back to the typical car (D-042)",
+   "refs": [
+    "§6",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sport"
+     ]
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "",
+      ""
+     ]
+    }
+   ],
+   "expect": {
+    "make": "",
+    "model": "",
+    "fuel": "regular",
+    "mpg": 24.5,
+    "miPerKwh": null
+   },
+   "work": "Sport: premium, 25. An empty make is never found, and the car changed: the typical car.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "setCar: a picked car replaces the typical car",
+   "refs": [
+    "§4.1",
+    "§6",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sport"
+     ]
+    }
+   ],
+   "expect": {
+    "fuel": "premium",
+    "mpg": 25
+   },
+   "work": "Sport:25* is listed: applyCar sets 25 and premium over the typical 24.5.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "setCar: the same unlisted pair again keeps the user's own mpg, typical car or not",
+   "refs": [
+    "§6",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "mpg",
+      33
+     ],
+     "returns": true
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    }
+   ],
+   "expect": {
+    "mpg": 33,
+    "fuel": "regular"
+   },
+   "work": "The first Other falls back to 24.5; the user types 33; the pair didn't change, so 33 stays.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "load: a saved mpg null is ignored; the typical car stays (D-042)",
+   "refs": [
+    "§8",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "make": "Other",
+    "mpg": 24.5,
+    "miPerKwh": null,
+    "fuel": "regular",
+    "miles": null
+   },
+   "work": "v5 saved mpg null for a car with no figure. D-042: ignored like a bad value, so fresh's 24.5 stays. miPerKwh and miles may still be null.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   },
+   "storage": {
+    "kind": "memory",
+    "value": "{\"make\": \"Other\", \"mpg\": null, \"miPerKwh\": null, \"miles\": null}"
+   }
+  },
+  {
+   "id": "load: a saved mpg of the user's own is kept over the typical car",
+   "refs": [
+    "§8",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "load",
+     "args": []
+    }
+   ],
+   "expect": {
+    "make": "Other",
+    "mpg": 31,
+    "fuel": "regular"
+   },
+   "work": "31 is a finite number >= 0: loaded; applyCar leaves an unlisted car's mpg alone.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   },
+   "storage": {
+    "kind": "memory",
+    "value": "{\"make\": \"Other\", \"mpg\": 31}"
+   }
+  },
+  {
+   "id": "defaultOf: each branch of the key map and of DEFAULT_SOURCES",
+   "refs": [
+    "§4.8",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": {
+      "value": 24.5,
+      "est": true,
+      "source": "https://www.eia.gov/fixture-mer"
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.dd.delFee"
+     ],
+     "returns": {
+      "value": 2.99,
+      "est": true,
+      "source": "checkouts: fixture"
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.dd.svc"
+     ],
+     "returns": {
+      "value": 15,
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.ue.delFee"
+     ],
+     "returns": {
+      "value": 1.99,
+      "est": false,
+      "source": null
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.gh.delFee"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "smallFee"
+     ],
+     "returns": {
+      "value": 2.5,
+      "est": false,
+      "source": null
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "regFee"
+     ],
+     "returns": {
+      "value": 0,
+      "est": false,
+      "source": null
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "tipDel"
+     ],
+     "returns": {
+      "value": 15,
+      "est": true,
+      "source": "https://survey.example/tips"
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "tipPick"
+     ],
+     "returns": {
+      "value": 0,
+      "est": false,
+      "source": null
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "speed"
+     ],
+     "returns": {
+      "value": 30,
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "kwh"
+     ],
+     "returns": {
+      "value": 0.17,
+      "est": false,
+      "source": null
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.dd.pickDisc"
+     ],
+     "returns": {
+      "value": 0,
+      "est": false,
+      "source": null
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "hourly"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "manualSubtotal"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "fees.smallFee"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "trip.mpg"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.dd.markup"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.direct.delFee"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.dd"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "__proto__"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      7
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      null
+     ],
+     "returns": null
+    }
+   ],
+   "expect": {},
+   "work": "Key map: mpg -> trip.mpg; plats.p.f -> itself for p in dd/ue/gh and the six fee fields; smallFee/regFee -> fees.*; tipDel/tipPick -> tips.*; speed/kwh -> trip.*. est is e.est === true ('yes' -> false); source is e.source when a string (7 -> null); fees.smallFee's entry isn't an object -> {} -> est false, source null; no entry -> {}. gh.delFee is null in DEFAULTS -> null. hourly and manualSubtotal have no default; fees.smallFee and trip.mpg are DEFAULTS keys, not state paths; markup isn't one of the six fields; direct isn't an app.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "defaultOf: no DEFAULT_SOURCES table, and no DEFAULTS table",
+   "refs": [
+    "§4.8",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.dd.delFee"
+     ],
+     "returns": {
+      "value": 2.99,
+      "est": false,
+      "source": null
+     }
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": null
+    }
+   ],
+   "expect": {},
+   "work": "S1 has DEFAULTS but no DEFAULT_SOURCES -> e = {} for every key; S1 has no trip.mpg -> null."
+  },
+  {
+   "id": "defaultOf: DEFAULTS null",
+   "refs": [
+    "§4.8",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "plats.dd.delFee"
+     ],
+     "returns": null
+    },
+    {
+     "call": "defaultOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": null
+    }
+   ],
+   "expect": {},
+   "work": "Nothing to walk.",
+   "patch": {
+    "DEFAULTS": null
+   }
+  },
+  {
+   "id": "sourceOf: the starting values",
+   "refs": [
+    "§4.8",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": "est"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "plats.dd.delFee"
+     ],
+     "returns": "est"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "plats.dd.svc"
+     ],
+     "returns": "published"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "plats.ue.delFee"
+     ],
+     "returns": "published"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "plats.gh.delFee"
+     ],
+     "returns": null
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "smallFee"
+     ],
+     "returns": "published"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "tipDel"
+     ],
+     "returns": "est"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "speed"
+     ],
+     "returns": "est"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "kwh"
+     ],
+     "returns": "published"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "hourly"
+     ],
+     "returns": "you"
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "miles"
+     ],
+     "returns": null
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "trip.mpg"
+     ],
+     "returns": null
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "plats.zz.delFee"
+     ],
+     "returns": null
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      5
+     ],
+     "returns": null
+    }
+   ],
+   "expect": {},
+   "work": "fresh: mpg 24.5 = its default, est -> est (no car: carLookup(D, '', '', null) is null). dd.delFee 2.99 est; dd.svc 15 not est -> published; ue.delFee est 'yes' -> published; gh.delFee is null -> null. smallFee 2.5 (entry not an object) -> published. tipDel est. speed 30 est. kwh no entry -> published. hourly 0 is finite with no default -> you. miles null -> null. trip.mpg, plats.zz.delFee and 5 aren't state paths with a value -> null.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "sourceOf: the user's own values, and a typed value equal to the estimate",
+   "refs": [
+    "§4.8",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.delFee",
+      3.49
+     ],
+     "returns": true
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "plats.dd.delFee"
+     ],
+     "returns": "you"
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.delFee",
+      2.99
+     ],
+     "returns": true
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "plats.dd.delFee"
+     ],
+     "returns": "est"
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "tipDel",
+      20
+     ],
+     "returns": true
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "tipDel"
+     ],
+     "returns": "you"
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "plats.dd.svc",
+      null
+     ],
+     "returns": true
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "plats.dd.svc"
+     ],
+     "returns": null
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "mpg",
+      33
+     ],
+     "returns": true
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": "you"
+    },
+    {
+     "call": "setPath",
+     "args": [
+      "mpg",
+      24.5
+     ],
+     "returns": true
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": "est"
+    }
+   ],
+   "expect": {},
+   "work": "3.49 differs from 2.99 -> you; typing 2.99 back is the same number -> est. tipDel 20 -> you. A cleared svc is null -> null. No car picked: typed 33 -> you; typed 24.5 = the typical car -> est.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 24.5
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
+   "id": "sourceOf: a picked car's mpg is published, even when it equals the typical car's",
+   "refs": [
+    "§4.8",
+    "D-042"
+   ],
+   "data": "S1",
+   "steps": [
+    {
+     "call": "fresh",
+     "args": []
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Sport"
+     ]
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": "published"
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Acme",
+      "Volt"
+     ]
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": null
+    },
+    {
+     "call": "setCar",
+     "args": [
+      "Other",
+      ""
+     ]
+    },
+    {
+     "call": "sourceOf",
+     "args": [
+      "mpg"
+     ],
+     "returns": "est"
+    }
+   ],
+   "expect": {},
+   "work": "Here T.mpg is 25, equal to Sport's figure. Sport: carLookup finds it -> published, not est (step 2 comes before step 3). Volt: ev, mpg null -> null. Other: falls back to 25, carLookup null, equals the default -> est.",
+   "patch": {
+    "DEFAULTS": {
+     "plats": {
+      "dd": {
+       "delFee": 2.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 12,
+       "pickDisc": 0
+      },
+      "ue": {
+       "delFee": 1.99,
+       "svc": 15,
+       "svcMin": 3,
+       "memberSvc": 5,
+       "memberMin": 15,
+       "pickDisc": 0
+      },
+      "gh": {
+       "delFee": null,
+       "svc": null,
+       "svcMin": null,
+       "memberSvc": null,
+       "memberMin": null,
+       "pickDisc": 0
+      }
+     },
+     "fees": {
+      "smallMin": 10,
+      "smallFee": 2.5,
+      "regFee": 0
+     },
+     "trip": {
+      "wear": 0.11,
+      "kwh": 0.17,
+      "speed": 30,
+      "mpg": 25
+     },
+     "tips": {
+      "tipDel": 15,
+      "tipPick": 0
+     }
+    },
+    "DEFAULT_SOURCES": {
+     "trip.mpg": {
+      "decision": "D-042",
+      "est": true,
+      "read": "2026-11-16",
+      "source": "https://www.eia.gov/fixture-mer"
+     },
+     "plats.dd.delFee": {
+      "est": true,
+      "source": "checkouts: fixture"
+     },
+     "plats.dd.svc": {
+      "est": false,
+      "source": "https://help.doordash.example/fees"
+     },
+     "plats.ue.delFee": {
+      "est": "yes",
+      "source": 7
+     },
+     "fees.smallFee": "not an object",
+     "tips.tipDel": {
+      "est": true,
+      "source": "https://survey.example/tips"
+     },
+     "trip.speed": {
+      "est": true,
+      "source": "https://nhts.example"
+     }
+    }
+   }
+  },
+  {
    "id": "setPath writes only existing paths",
    "refs": [
     "§3"
@@ -6520,7 +8436,7 @@
     "$has.plats.zz": false,
     "$storageWrites": 0
    },
-   "work": "Bad types fall back to fresh: tipDel string, tipPick < 0, speed 0, fuel jet, brand 42, dd.svc < 0, memberOwn 'yes', store lat string, ue promo type bxgy (the type alone falls back; value 5 is a valid number and stays; item 1.5 isn't an integer -> null). gh's bogo type and item 1 are valid (D-036); its missing numbers stay fresh. member and markup are derived, never loaded. cards keeps the strings, then syncCredits prunes c_zz and the duplicate. cart keeps only canonical keys with integer qty >= 0. The saved pos is a ZIP position (not GPS), so it's ignored, and derive re-derives pos from the address. manualCredits keeps the first valid manual.1. mpg and miles may be null. Unknown fields and apps are dropped. load never writes to storage.",
+   "work": "Bad types fall back to fresh: tipDel string, tipPick < 0, speed 0, fuel jet, brand 42, dd.svc < 0, memberOwn 'yes', store lat string, ue promo type bxgy (the type alone falls back; value 5 is a valid number and stays; item 1.5 isn't an integer -> null). gh's bogo type and item 1 are valid (D-036); its missing numbers stay fresh. member and markup are derived, never loaded. cards keeps the strings, then syncCredits prunes c_zz and the duplicate. cart keeps only canonical keys with integer qty >= 0. The saved pos is a ZIP position (not GPS), so it's ignored, and derive re-derives pos from the address. manualCredits keeps the first valid manual.1. A saved mpg null is ignored (D-042), so mpg keeps fresh's, which is null in S1 (no DEFAULTS.trip.mpg); miles may be null. Unknown fields and apps are dropped. load never writes to storage.",
    "storage": {
     "kind": "memory",
     "value": "{\"tipDel\": \"abc\", \"tipPick\": -1, \"cards\": [\"c_gold\", 5, \"c_zz\", \"c_gold\"], \"speed\": 0, \"fuel\": \"jet\", \"brand\": 42, \"plats\": {\"dd\": {\"svc\": -3, \"delFee\": 4.49, \"member\": true, \"markup\": 99, \"memberOwn\": \"yes\"}, \"zz\": {\"on\": true}}, \"cart\": {\"0\": 2, \"x\": 1, \"01\": 3, \"1\": 1.5, \"2\": -1}, \"milesBy\": {\"pz\": 7, \"bg\": \"far\"}, \"creditOptIn\": {\"c_gold.resy\": true, \"c_gold.dining\": \"yes\"}, \"usedIn\": {\"c_gold.dining\": \"2026-11\", \"x\": 5}, \"pos\": {\"lat\": 40, \"lon\": -74, \"src\": \"zip\"}, \"store\": {\"id\": \"pz@40030,-74000\", \"lat\": \"40.03\", \"lon\": -74}, \"promos\": {\"ue\": {\"type\": \"bxgy\", \"value\": 5, \"cap\": 0, \"min\": 0, \"item\": 1.5}, \"dd\": {\"type\": \"dollar\", \"value\": 5, \"cap\": 0, \"min\": 15}, \"gh\": {\"type\": \"bogo\", \"item\": 1}}, \"manualCredits\": [{\"key\": \"manual.1\", \"name\": \"Gift\", \"amount\": 20, \"plats\": [\"direct\"]}, {\"key\": \"manual.1\", \"name\": \"Dup\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"bad\", \"name\": \"Bad key\", \"amount\": 5, \"plats\": [\"dd\"]}, {\"key\": \"manual.2\", \"name\": \"No amount\", \"plats\": [\"dd\"]}], \"mpg\": null, \"miles\": null, \"address\": \"10001\", \"unknownField\": 1}"

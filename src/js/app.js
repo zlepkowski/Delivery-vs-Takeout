@@ -9,7 +9,9 @@
   var POD = root.POD;
 
   // Page-only flags (not saved): see ui-contract §3 and §6.
-  var view = { moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false, vin: "", vinMsg: "" };
+  // drawer: Personalize is open; open[ch]: route ch's receipt is open; q: the search box's text (D-043).
+  var view = { moreStores: false, geoError: false, loading: false, canLocate: false, mcError: false, vin: "", vinMsg: "",
+    drawer: false, open: {}, q: "", fine: false };
   var requested = {};   // tile cells asked for in this page load
   var pending = 0;      // tile scripts in flight
   var storage = null;
@@ -192,11 +194,11 @@
       return;
     }
     var action = el.getAttribute("data-action");
-    if (!action) { return; }
+    if (!action || action === "search") { return; }     // the search box commits nothing (D-043)
     var now = new Date();
     view.mcError = false;
     switch (action) {
-      case "address": POD.state.setAddress(S, D, el.value, opts); break;
+      case "address": resetQuery(); POD.state.setAddress(S, D, el.value, opts); break;
       case "brand": POD.state.setBrand(S, D, el.value === "" ? null : el.value, opts); break;
       case "make": vinSeq++; POD.state.setCar(S, D, el.value, "", null); view.vinMsg = ""; break;
       case "model": vinSeq++; POD.state.setCar(S, D, S.make, el.value, S.year); view.vinMsg = ""; break;
@@ -214,8 +216,23 @@
     afterChange(derive());
   }
 
-  function onInput() {
-    // Nothing commits while typing; values commit on change (ui-contract §3).
+  /** D-043: the search box's text is page-only (view.q): render, never save. Other inputs commit on change. */
+  function onInput(e) {
+    var el = e.target;
+    if (!el || !el.getAttribute || el.getAttribute("data-action") !== "search") { return; }
+    view.q = String(el.value);
+    drawOnly();
+  }
+
+  /**
+   * A new place starts with an empty search box and an unfiltered list (ui-contract §3), and the near list
+   * folds again (D-043: view.moreStores is false). Called by the place changes: address, locate, example.
+   */
+  function resetQuery() {
+    view.q = "";
+    view.moreStores = false;
+    var box = document.getElementById("search");
+    if (box) { box.value = ""; }
   }
 
   // ---- geolocation (§6) -------------------------------------------------------------------------
@@ -237,6 +254,7 @@
     }
     g.getCurrentPosition(function (p) {
       view.geoError = false;
+      resetQuery();
       afterChange(POD.state.setPosition(POD.S, POD.data, p.coords.latitude, p.coords.longitude, POD.opts));
     }, function () {
       view.geoError = true;
@@ -250,6 +268,7 @@
     var S = POD.S, D = POD.data, opts = POD.opts;
     vinSeq++;          // the latest action wins (ui-contract §6b): a pending VIN answer can't land after this
     view.vinMsg = "";
+    resetQuery();
     POD.state.setAddress(S, D, "10118", opts);
     POD.state.setCar(S, D, "Toyota", "Camry");
     POD.state.setBrand(S, D, "dominos", opts);
@@ -287,11 +306,11 @@
     POD.state.setCar(POD.S, POD.data, m.make, m.model, m.year);
     var car = dec.year + " " + dec.make + " " + dec.model;
     if (m.make === "Other") {
-      view.vinMsg = "NHTSA says " + car + ". That make isn't in the EPA list: enter its fuel and mpg below.";
+      view.vinMsg = "NHTSA says " + car + ". That make isn't in the EPA list, so we use a typical car (est.) until you enter its fuel and mpg below.";
     } else if (m.model === "") {
       view.vinMsg = "NHTSA says " + car + ". Pick the model below: EPA's list names it differently.";
     } else if (POD.state.carLookup(POD.data, m.make, m.model, m.year) === null) {
-      view.vinMsg = "NHTSA says " + car + ". EPA's list has no " + dec.year + " figure for it: enter its mpg below.";
+      view.vinMsg = "NHTSA says " + car + ". EPA's list has no " + dec.year + " figure for it, so we use a typical car (est.) until you enter its mpg below.";
     } else {
       view.vinMsg = "NHTSA says " + car + ".";
     }
@@ -342,6 +361,15 @@
     var action = el.getAttribute("data-action");
     if (action === "locate") { view.mcError = false; locate(); return; }
     if (action === "vin") { vinLookup(); return; }
+    // D-043: page-only view flags. S is unchanged, so nothing is saved; render only.
+    if (action === "drawer") { view.drawer = !view.drawer; drawOnly(); return; }
+    if (action === "fine") { view.fine = !view.fine; drawOnly(); return; }   // D-043 §5.10: page-only, nothing saved
+    if (action === "receipt") {
+      var ch = el.getAttribute("data-channel");
+      if (typeof ch === "string" && ch !== "") { view.open[ch] = view.open[ch] !== true; }
+      drawOnly();
+      return;
+    }
 
     var S = POD.S, D = POD.data, opts = POD.opts;
     var now = new Date();
@@ -350,15 +378,20 @@
     view.mcError = false;
     switch (action) {
       case "example": runExample(); break;
+      case "chip":
+        POD.state.setPath(S, "manualSubtotal", parseFloat(el.getAttribute("data-amount")));
+        break;
       case "pick-store":
         store = POD.ui.storeAt(parseInt(el.getAttribute("data-store"), 10));
         if (!store) { return; }
         POD.state.pickStore(S, D, store, opts);
+        view.moreStores = false;                       // D-043: a pick folds the list again
         break;
       case "pick-place":
         row = POD.ui.placeAt(parseInt(el.getAttribute("data-place"), 10));
         if (!row) { return; }
         POD.state.pickStore(S, D, row, opts);
+        view.moreStores = false;                       // D-043: a pick folds the list again
         break;
       case "qty":
         i = parseInt(el.getAttribute("data-index"), 10);

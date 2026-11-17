@@ -3,9 +3,9 @@
 
 Inputs (hand-entered, with evidence; the orchestrator owns the decisions):
   tools/data/defaults-platforms.json   dd./ue./gh. fee keys, smallMin, smallFee, regFee
-  tools/data/defaults-trip.json        wear, kwh, speed, tipDel, tipPick
+  tools/data/defaults-trip.json        wear, kwh, speed, mpg, tipDel, tipPick
 
-Exactly 26 keys across the two files, each given once. Every entry needs
+Exactly 27 keys across the two files, each given once. Every entry needs
 value (number or null), read (YYYY-MM-DD), est (true or false), and a https://
 source or a D-nnn decision when the value is a number. est: true and null values
 need a reason. Numbers are >= 0. Any failure names the key and the rule and exits 1.
@@ -35,10 +35,10 @@ OUT_DEFAULT = os.path.join(ROOT, "src", "data", "defaults.js")
 APPS = ("dd", "ue", "gh")
 PLAT_FIELDS = ("delFee", "svc", "svcMin", "memberSvc", "memberMin", "pickDisc")
 FEE_FIELDS = ("smallMin", "smallFee", "regFee")
-TRIP_FIELDS = ("wear", "kwh", "speed")
+TRIP_FIELDS = ("wear", "kwh", "speed", "mpg")
 TIP_FIELDS = ("tipDel", "tipPick")
 
-# input key -> output path ("group.field"). 18 + 3 + 3 + 2 = 26.
+# input key -> output path ("group.field"). 18 + 3 + 4 + 2 = 27.
 TABLE = {}
 for _a in APPS:
     for _f in PLAT_FIELDS:
@@ -49,7 +49,7 @@ for _f in TRIP_FIELDS:
     TABLE[_f] = "trip." + _f
 for _f in TIP_FIELDS:
     TABLE[_f] = "tips." + _f
-assert len(TABLE) == 26
+assert len(TABLE) == 27
 
 DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 URL_RE = re.compile(r"https://\S+\Z")
@@ -145,7 +145,7 @@ def build(platforms_path, trip_path):
 
     for key in sorted(merged):
         if key not in TABLE:
-            raise Bad("%s (%s): unknown key, not one of the 26 expected" % (key, merged[key][1]))
+            raise Bad("%s (%s): unknown key, not one of the 27 expected" % (key, merged[key][1]))
     for key in sorted(TABLE):
         if key not in merged:
             fname = "platforms" if key in FEE_FIELDS or key.split(".")[0] in APPS else "trip"

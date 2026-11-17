@@ -26,6 +26,15 @@
       "quote": "Table 7-4 Commute Patterns by Mode of Transportation, 2022, Privately owned vehicle: Average Commute Trip Length (Miles) 13.56; Average Commute Travel Time (Minutes) 26.94; Average Commute Speed (Miles per Hour) 26.59",
       "reason": "The report's own figure: Table 7-4, privately owned vehicle, 2022, Average Commute Speed 26.59 mph (computed by FHWA per trip, using trips with both mileage and time), rounded to 27. Not 13.56 / 26.94 x 60 = 30.2: the ratio of mean length to mean time isn't the mean speed. est: a commute speed stands in for a local errand trip; the report gives no per-trip private-vehicle speed for other purposes (Table 7-5 by metro size: 23.2 mph at 3M+ to 31.4 rural). Orchestrator correction 2026-11-13: the researcher had derived 30."
     },
+    "mpg": {
+      "value": 23.0,
+      "est": true,
+      "decision": "D-042",
+      "source": "https://www.eia.gov/outlooks/aeo/excel/aeotab7.xlsx",
+      "read": "2026-11-16",
+      "quote": "EIA Annual Energy Outlook 2026 (AEO2026), Counterfactual Baseline run cb2026.d021826b, Table 7 'Transportation Sector Key Indicators and Delivered Energy Consumption', section 'Energy Efficiency Indicators (miles per gallon)', row 'Light-Duty Stock 6/': 2025 = 23.04509353637695 (first year column of the table, 2025 through 2050); footnote '6/ Combined on-road estimate for all cars and light trucks.'",
+      "reason": "Earliest year in the table: 2025, 23.045 mpg, rounded DOWN to 23.0 (D-042 direction rule). The table does not label 2025 as history or as projection; its source line reads 'Projections: EIA, AEO2026 NEMS run cb2026.d021826b', and it has no history columns, so est: true. The row is the combined on-road estimate for all cars and light trucks, the on-road stock average that D-042 asks for. Page: https://www.eia.gov/outlooks/aeo/tables_ref.php (AEO2026, released 2026-04-08), read 2026-11-16. Why not EIA MER Table 1.8 (read 2026-11-16, Oct 2026 release): it publishes per-vehicle class figures only (2024: short-wheelbase 25.6 mpg, long-wheelbase 18.5 mpg) and no vehicle counts or totals, so no fleet average can be computed from it, and a class figure is not a typical car. Why not EPA new-car ratings (fueleconomy.gov, or AEO's new-vehicle rows): they describe new cars, which overstate the mpg the car on the road gets (D-042, D-037)."
+    },
     "tipDel": {
       "value": 15,
       "est": false,

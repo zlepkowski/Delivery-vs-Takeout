@@ -54,6 +54,7 @@ test.after(async () => {
  */
 async function open(answer = null, viewport) {
   const o = await H.openPage(browser, site.url, viewport ? { viewport } : {});
+  await H.openDrawer(o.page);                                           // D-043: the car and VIN box are in the drawer
   const requests = [];
   await o.ctx.route(/^https?:\/\//, (route) => route.abort());         // nothing else leaves the machine
   await o.ctx.route(BASE + '**', async (route) => {                     // registered last, so it runs first
@@ -72,6 +73,8 @@ async function lookUp(page, typed) {
   await page.fill('#vin', typed);
   await page.click('[data-action="vin"]');
 }
+
+const TYPICAL_MPG = String(H.app().data.DEFAULTS.trip.mpg);   // D-042: the typical car, read from the data
 
 const savedState = async (page) => JSON.parse(await H.saved(page));
 const value = (page, sel) => page.locator(sel).inputValue();
@@ -108,6 +111,7 @@ test('D-037 a reload keeps the year and its figure; the VIN box and message are 
   assert.equal(await H.text(page, '[data-testid="car-summary"]'), '32 mpg · regular');
   await page.reload();
   await page.waitForSelector('#results');
+  await H.openDrawer(page);                                             // D-043: a reload closes the drawer
   assert.equal(await value(page, '#year'), '2018');
   assert.equal(await H.text(page, '[data-testid="car-summary"]'), '32 mpg · regular');
   assert.equal(await H.text(page, '[data-testid="car-epa"]'), 'EPA figure for the 2018 model.');
@@ -165,12 +169,29 @@ test('D-038 a make EPA doesn\'t list becomes Other, with the manual inputs', asy
   });
   await lookUp(page, '11111111111111111');
   await H.waitText(page, '[data-testid="vin-status"]', 'ACME TRUCKS');
+  // D-042: an unlisted make falls back to the typical car (est.), not a blank mpg (UI contract §6b).
   assert.equal(await H.text(page, '[data-testid="vin-status"]'),
-    "NHTSA says 2019 ACME TRUCKS Hauler. That make isn't in the EPA list: enter its fuel and mpg below.");
+    "NHTSA says 2019 ACME TRUCKS Hauler. That make isn't in the EPA list, so we use a typical car (est.) until you enter its fuel and mpg below.");
   assert.equal(await value(page, '#make'), 'Other');
   assert.equal(await page.locator('#fuel').count(), 1);
-  assert.equal(await value(page, '#mpg'), '');
+  assert.equal(await value(page, '#mpg'), TYPICAL_MPG, 'D-042: the typical car\'s mpg, from the data');
+  assert.equal(await H.text(page, '#fuel option:checked'), 'Regular', 'D-042: the typical car is regular fuel');
+  assert.equal(await H.text(page, '[data-testid="car-summary"]'), 'Typical car · ' + TYPICAL_MPG + ' mpg · est.');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('D-042 a cleared mpg reads "No car yet." (the only way back to it); the typical car is the fallback', async () => {
+  const { ctx, page, errors } = await open();
+  await page.selectOption('#make', 'Other');
+  await H.waitText(page, '[data-testid="car-summary"]', 'Typical car');
+  assert.equal(await H.text(page, '[data-testid="car-summary"]'), 'Typical car · ' + TYPICAL_MPG + ' mpg · est.');
+  await H.commit(page, '#mpg', TYPICAL_MPG);                                 // equal to the estimate: still est.
+  assert.equal(await H.text(page, '[data-testid="car-summary"]'), 'Typical car · ' + TYPICAL_MPG + ' mpg · est.');
+  await H.commit(page, '#mpg', '');
+  await H.waitText(page, '[data-testid="car-summary"]', 'No car yet.');
   assert.equal(await H.text(page, '[data-testid="car-summary"]'), 'No car yet.');
+  assert.equal(await value(page, '#mpg'), '', 'a cleared mpg stays blank and is asked for (D-033 path)');
   assert.deepEqual(errors, []);
   await ctx.close();
 });
@@ -179,15 +200,18 @@ test('D-037 a year EPA\'s list doesn\'t have: the year option says so and the pa
   const { ctx, page, errors } = await open();
   await lookUp(page, VINS.accord1999);
   await H.waitText(page, '[data-testid="vin-status"]', 'NHTSA says 1999 HONDA Accord.');
+  // D-042: the year with no figure falls back to the typical car until the user enters its mpg (UI contract §6b).
   assert.equal(await H.text(page, '[data-testid="vin-status"]'),
-    "NHTSA says 1999 HONDA Accord. EPA's list has no 1999 figure for it: enter its mpg below.");
+    "NHTSA says 1999 HONDA Accord. EPA's list has no 1999 figure for it, so we use a typical car (est.) until you enter its mpg below.");
   assert.equal(await value(page, '#year'), '1999');
   assert.equal(await H.text(page, '#year option:checked'), '1999 (no EPA figure)');
   assert.equal(await page.locator('[data-testid="car-epa"]').count(), 0);
-  assert.equal(await value(page, '#mpg'), '');
-  await H.commit(page, '#mpg', '23');
-  await H.waitText(page, '[data-testid="car-summary"]', '23 mpg');
-  assert.equal(await H.text(page, '[data-testid="car-summary"]'), '23 mpg · regular');
+  assert.equal(await value(page, '#mpg'), TYPICAL_MPG, 'D-042: the typical car\'s mpg, not a blank');
+  // D-042: 30 is the user's own figure, not the typical car's 23, so the summary drops "est.".
+  // (Typing 23 itself would keep "est.": a value that still equals its estimate is an estimate, UI contract §5.7.)
+  await H.commit(page, '#mpg', '30');
+  await H.waitText(page, '[data-testid="car-summary"]', '30 mpg');
+  assert.equal(await H.text(page, '[data-testid="car-summary"]'), '30 mpg · regular');
   assert.deepEqual(errors, []);
   await ctx.close();
 });

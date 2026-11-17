@@ -1,5 +1,5 @@
-// worker.e2e.js: D-040 on the page (UI contract §1, §3, §5.1-§5.4, §5.10; api contract §6, §8).
-// Written by the orchestrator before the builder (D-035 pattern).
+// worker.e2e.js: D-040 on the page (UI contract §1, §3, §5.1-§5.4, §5.10, §5.11; api contract §6, §8).
+// Written by the orchestrator before the builder (D-035 pattern). Migrated to the D-043 layout (task 11.5d).
 //
 // Two copies of the site: "off" is the committed one (apiBase ""), "on" has src/js/config.js set to
 // https://api.test, the way a deploy sets it. No test reaches the network: every http(s) request is
@@ -16,8 +16,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const os = require('node:os');
-const { execFileSync } = require('node:child_process');
 const { chromium } = require('playwright');
 const H = require('./helpers');
 const { APP_ROOT } = require('../helpers/load');
@@ -60,32 +58,15 @@ function onlyBrowserErrors(errors, text, n, where) {
 let browser;
 let off;
 let on;
-let base;
 
-// The Phase 8 done-when, "the site is identical with the Worker off", is checked against the real
-// thing: the page as Phase 7 left it (commit 556bc34, the Phase 7 tip), built from git with the same
-// fixture tiles. (CI checks out the full history for this: .github/workflows/test.yml fetch-depth 0.)
-// A later phase that changes the page on purpose re-baselines this by decision. D-041 (Phase 9) did:
-// the comparison removes exactly the hand-off blocks and the fine-print links line from the new
-// page first (after checking every result row has its hand-off), and everything else must still be
-// Phase 7's byte for byte (links contract §4).
-const BASE_REV = '556bc34';
-function buildBaseline() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pod-phase7-'));
-  const tar = execFileSync('git', ['archive', BASE_REV, 'index.html', 'src'], { cwd: APP_ROOT, maxBuffer: 1 << 30 });
-  execFileSync('tar', ['-x', '-C', dir], { input: tar, maxBuffer: 1 << 30 });
-  const tiles = path.join(APP_ROOT, 'tests', 'fixtures', 'stores');
-  fs.mkdirSync(path.join(dir, 'src', 'data', 'stores'), { recursive: true });
-  for (const f of fs.readdirSync(tiles)) if (f.endsWith('.js')) fs.copyFileSync(path.join(tiles, f), path.join(dir, 'src', 'data', 'stores', f));
-  return { dir, url: require('node:url').pathToFileURL(path.join(dir, 'index.html')).href, remove: () => fs.rmSync(dir, { recursive: true, force: true }) };
-}
+// The Phase 7 byte comparison (BASE_REV 556bc34) is retired by D-043 (task 11.5d): the re-layout means no
+// earlier page is byte-equal. What stays, against the same build: with the Worker off the page makes no
+// request, and with the Worker failing (each of the 4 ways) #app is the Worker-off page's, byte for byte.
 
 test.before(async () => {
   browser = await chromium.launch();
   off = H.buildSite();
   on = H.buildSite();
-  base = buildBaseline();
-  assert.ok(!fs.existsSync(path.join(base.dir, 'src', 'js', 'api.js')), 'the baseline predates D-040');
   fs.writeFileSync(path.join(on.dir, 'src', 'js', 'config.js'),
     '(function (root) { "use strict"; root.POD.config = { apiBase: "' + API + '" }; })(typeof window !== "undefined" ? window : this);\n');
   fs.mkdirSync(H.SHOTS, { recursive: true });
@@ -94,7 +75,6 @@ test.after(async () => {
   if (browser) await browser.close();
   if (off) off.remove();
   if (on) on.remove();
-  if (base) base.remove();
 });
 
 /** The Worker's answer to one seam request, as the stub serves it. */
@@ -177,6 +157,7 @@ async function chooseZip(page, zip) {
 async function order(page, zip) {
   await chooseZip(page, zip);
   await page.selectOption('#brand', 'dominos');
+  await H.openDrawer(page);                    // the trip and the car live in Personalize (D-043, UI contract §5.11)
   await H.waitText(page, '[data-testid="trip"]', 'mi round trip');
   await page.selectOption('#make', 'Toyota');
   await page.selectOption('#model', 'Camry');
@@ -185,19 +166,12 @@ async function order(page, zip) {
 }
 const settle = (page, ms = 300) => page.waitForTimeout(ms);
 const appHtml = (page) => page.$eval('#app', (e) => e.innerHTML);
-// #app without the two Phase 9 additions (D-041): a no-op on the Phase 7 page, which has neither.
-const PHASE9 = '[data-testid="handoff"], [data-testid="fine-links"]';
-const appHtmlP7 = (page) => page.$eval('#app', (e, sel) => {
-  const c = e.cloneNode(true);
-  c.querySelectorAll(sel).forEach((x) => x.remove());
-  return c.innerHTML;
-}, PHASE9);
 /** The new page has one hand-off per result row and one links line, so removing them hides nothing missing. */
 async function phase9Shape(page, where) {
   const s = await page.evaluate(() => ({
     rows: document.querySelectorAll('[data-testid="result-row"]').length,
     each: Array.from(document.querySelectorAll('[data-testid="result-row"]')).map((r) =>
-      r.querySelectorAll(':scope > [data-testid="handoff"]').length + ':' + r.querySelectorAll('[data-testid="handoff-link"]').length),
+      r.querySelectorAll('[data-testid="handoff"]').length + ':' + r.querySelectorAll('[data-testid="handoff-link"]').length),
     blocks: document.querySelectorAll('[data-testid="handoff"]').length,
     fine: document.querySelectorAll('[data-testid="fine-links"]').length,
   }));
@@ -206,10 +180,6 @@ async function phase9Shape(page, where) {
   assert.ok(s.each.every((x) => /^1:[1-9]$/.test(x)), where + ': each row has its block with at least one link: ' + s.each.join(' '));
   assert.equal(s.fine, 1, where + ': one links line in the fine print');
 }
-async function noPhase9(page, where) {
-  assert.equal(await page.locator(PHASE9).count(), 0, where + ': the Phase 7 page has no Phase 9 elements');
-}
-
 // ---- off -------------------------------------------------------------------------------------
 
 test('Worker off: no request leaves the page, no opts.api, and none of the Worker\'s text shows', async () => {
@@ -230,7 +200,7 @@ test('Worker off: no request leaves the page, no opts.api, and none of the Worke
   await o.ctx.close();
 });
 
-test('Phase 8 done-when, re-baselined by D-041: with the Worker off, #app is the Phase 7 page plus only the hand-offs (3 flows)', async () => {
+test('D-041 with the Worker off, the 3 flows make no request, show one hand-off per row and no Worker element', async () => {
   const flows = {
     'Big Timber, Domino\'s, a Camry, one pizza': (page) => order(page, '59011'),
     'the first-visit example': async (page) => { await page.click('[data-action="example"]'); await page.waitForSelector('[data-testid="result-row"]'); },
@@ -241,17 +211,14 @@ test('Phase 8 done-when, re-baselined by D-041: with the Worker off, #app is the
     },
   };
   for (const [name, run] of Object.entries(flows)) {
-    const a = await open(base);
     const b = await open(off);
-    await run(a.page);
     await run(b.page);
     await settle(b.page);
     await phase9Shape(b.page, name);
-    await noPhase9(a.page, name);
-    assert.equal(await appHtmlP7(b.page), await appHtml(a.page), name + ': #app is exactly Phase 7\'s, the hand-offs aside');
+    assert.equal(await b.page.locator('[data-testid="indie-list"], [data-testid="fine-osm"]').count(), 0, name + ': no independents list, no OpenStreetMap line');
     assert.deepEqual(b.requests, [], name + ': no request');
-    assert.deepEqual(b.errors, []);
-    await a.ctx.close();
+    assert.deepEqual(b.errors, [], name + ': no console error');
+    assert.deepEqual(b.warns, [], name + ': no warning');
     await b.ctx.close();
   }
 });
@@ -288,8 +255,11 @@ test('Worker on: independents near Big Timber widen 2 → 5 mi, drop the untagge
   await o.page.waitForSelector('[data-testid="indie-list"]');
   const radii = o.api.filter((r) => r.url.startsWith(API + '/nearby')).map((r) => new URL(r.url).searchParams.get('radius'));
   assert.deepEqual(radii, ['2', '5'], '2 mi had none, 5 mi had 12 (>= 10): no 10 mi request');
-  const rows = await o.page.$$eval('[data-testid="indie-list"] [data-action="pick-place"]',
-    (bs) => bs.map((b) => [b.getAttribute('data-brand'), b.getAttribute('data-place'), b.textContent.replace(/\s+/g, ' ').trim()]));
+  const rows = await o.page.$$eval('[data-testid="indie-list"] [data-action="pick-place"]', (bs) => bs.map((b) => {
+    const c = b.cloneNode(true);
+    c.querySelectorAll('.mono').forEach((m) => m.remove());
+    return [b.getAttribute('data-brand'), b.getAttribute('data-place'), c.textContent.replace(/\s+/g, ' ').trim()];
+  }));
   assert.equal(rows.length, 10, 'NEARBY_SHOW');
   assert.ok(!rows.some(([b]) => b === 'osm:n1011'), '"Subway" without brand tags is dropped (it matches a BRANDS name)');
   assert.equal(rows.length, 10);
@@ -309,6 +279,7 @@ test('Worker on: independents near Big Timber widen 2 → 5 mi, drop the untagge
   assert.equal(await o.page.$eval('#brand', (s) => s.value), 'osm:n1001');
   assert.equal(await o.page.$eval('#brand option[value="osm:n1001"]', (e) => e.textContent), 'Fixture Diner (estimate)');
   assert.equal(await o.page.getAttribute('[data-action="pick-place"][data-brand="osm:n1001"]', 'aria-pressed'), 'true');
+  await H.openDrawer(o.page);
   await H.waitText(o.page, '[data-testid="trip-src"]', 'To the Fixture Diner you picked, ');
   await settle(o.page);
   // The stub has no road route for this pair (404): the straight line stays, with one warning.
@@ -358,6 +329,7 @@ test('Worker on: a street address is geocoded; its typed ZIP keeps the tax; the 
   assert.equal(new URL(geos[0].url).searchParams.get('q'), '350 5th Ave, New York, NY 10118');
   assert.equal(await o.page.evaluate(() => JSON.stringify(window.POD.S.pos)), JSON.stringify({ lat: 40.7484421, lon: -73.9856589, src: 'addr' }));
   await o.page.selectOption('#brand', 'dominos');
+  await H.openDrawer(o.page);
   await H.waitText(o.page, '[data-testid="trip"]', '1.4 mi round trip');
   assert.equal(await H.text(o.page, '[data-testid="trip-src"]'), "To the nearest Domino's, 0.7 mi each way by road.",
     'round1(2 × 0.7) = 1.4; mi1(1.4 / 2) = 0.7 (the 10118-centroid store would give 1.1 by straight line)');
@@ -377,14 +349,13 @@ test('Worker on: a bare ZIP is never sent to /geocode', async () => {
   await o.ctx.close();
 });
 
-// ---- on, failing: the page is the Worker-off page ---------------------------------------------
+// ---- on, failing: #app is the Worker-off page of the same build -------------------------------
 
 for (const mode of ['500', 'garbage', 'abort']) {
-  test('Worker failing (' + mode + '): the page is exactly the Worker-off page, and the Phase 7 page but for the hand-offs, with one warning', async () => {
-    const a = await open(base);
+  test('Worker failing (' + mode + '): #app is the Worker-off page of the same build, byte for byte, with one warning', async () => {
     const b = await open(on, { mode });
     const c = await open(off);
-    for (const o of [a, b, c]) {
+    for (const o of [b, c]) {
       await order(o.page, '10118');
       await H.commit(o.page, '#address', '350 5th Ave, New York, NY 10118');
       await H.waitText(o.page, '[data-testid="loc-status"]', 'ZIP 10118');
@@ -393,31 +364,29 @@ for (const mode of ['500', 'garbage', 'abort']) {
     assert.ok(b.api.length >= 3, 'the seam did ask (drive, nearby, geocode)');
     await phase9Shape(b.page, mode);
     assert.equal(await appHtml(b.page), await appHtml(c.page), '#app, hand-offs included, is the Worker-off page\'s (D-041: the Worker adds nothing)');
-    assert.equal(await appHtmlP7(b.page), await appHtml(a.page), '#app is identical to Phase 7\'s, the hand-offs aside');
-    assert.deepEqual(await H.shownResults(b.page), await H.shownResults(a.page));
+    assert.deepEqual(await H.shownResults(b.page), await H.shownResults(c.page));
     assert.equal(b.warns.filter((w) => w === WARN).length, 1, 'exactly one console.warn per page load');
     if (mode === 'garbage') assert.deepEqual(b.errors, [], 'a 200 with a bad body logs nothing');
     else onlyBrowserErrors(b.errors, BROWSER_ERR[mode === '500' ? 500 : 'abort'], b.api.length, mode);   // the page itself never console.errors
     assert.deepEqual(c.errors, []);
-    await a.ctx.close();
     await b.ctx.close();
     await c.ctx.close();
   });
 }
 
-test('Worker hanging: nothing waits for it, and the 4 s timeout falls back with one warning', async () => {
-  const a = await open(base);
+test('Worker hanging: nothing waits for it, #app is the Worker-off page\'s, and the 4 s timeout falls back with one warning', async () => {
   const b = await open(on, { mode: 'hang' });
-  await order(a.page, '10118');
+  const c = await open(off);
   await order(b.page, '10118');
+  await order(c.page, '10118');
   await phase9Shape(b.page, 'hang');
-  assert.equal(await appHtmlP7(b.page), await appHtml(a.page), 'rendered before any answer');
+  assert.equal(await appHtml(b.page), await appHtml(c.page), 'rendered before any answer');
   await b.page.waitForTimeout(4600);
-  assert.equal(await appHtmlP7(b.page), await appHtml(a.page), 'still identical after the /drive timeout');
+  assert.equal(await appHtml(b.page), await appHtml(c.page), 'still identical after the /drive timeout');
   assert.equal(b.warns.filter((w) => w === WARN).length, 1);
   assert.deepEqual(b.errors, []);
-  await a.ctx.close();
   await b.ctx.close();
+  await c.ctx.close();
 });
 
 test('Worker on: the independents arriving while a chain row is pressed don\'t lose the click', async () => {
@@ -437,6 +406,7 @@ test('Worker on: the independents arriving while a chain row is pressed don\'t l
   }
   await o.page.waitForSelector('[data-testid="indie-list"]');
   await o.page.mouse.up();
+  await H.openDrawer(o.page);
   await H.waitText(o.page, '[data-testid="trip-src"]', "To the Domino's you picked, ");
   assert.equal(await o.page.getAttribute(row, 'aria-pressed'), 'true', 'the click on the pressed row landed');
   assert.deepEqual(o.errors, []);
@@ -447,10 +417,13 @@ test('Worker on: the independents arriving while a chain row is pressed don\'t l
 
 test('Worker on, phone width: the independents list fits (no horizontal scroll)', async () => {
   const o = await open(on, { viewport: { width: 390, height: 844 } });
-  await order(o.page, '59011');
+  await chooseZip(o.page, '59011');
+  // Before a pick the independents list is unfolded (UI contract §5.2); a chain pick folds it away.
   await o.page.waitForSelector('[data-testid="indie-list"]');
+  assert.ok(await H.noHorizontalScroll(o.page) <= 0, 'no horizontal scroll at 390 px, with the independents list');
+  await order(o.page, '59011');
   await H.waitText(o.page, '[data-testid="trip"]', '67.8 mi round trip');
-  assert.ok(await H.noHorizontalScroll(o.page) <= 0, 'no horizontal scroll at 390 px');
+  assert.ok(await H.noHorizontalScroll(o.page) <= 0, 'no horizontal scroll at 390 px, with the drawer open and an answer');
   await o.page.screenshot({ path: path.join(H.SHOTS, 'worker-phone.png'), fullPage: true });
   assert.deepEqual(o.errors, []);
   await o.ctx.close();

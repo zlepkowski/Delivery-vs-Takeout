@@ -291,6 +291,72 @@ BUILD.md §11's `/vehicle?vin` without a server (D-004). [`docs/vin-contract.md`
 - **The Phase 7 baseline e2e is re-baselined, not loosened:** the comparison with the Phase 7 page removes exactly the hand-off blocks and the new fine-print line from the new page (after checking that every result row has its hand-off), so everything else stays Phase 7's byte for byte, and with the Worker failing the whole `#app`, hand-offs included, must equal the Worker-off page's.
 *Why:* BUILD.md §11 wants the output to be a button. The pattern of D-029 to D-040 still applies, with one more rule from the data side: a URL is data, and like any number it's recorded with how it was seen, or left out.
 
+**D-042 — Labeled estimates instead of blank fields (supersedes D-032 for app fees and the car)** · 2026-11-16 · *accepted (user decision)*
+The user chose a fast first answer over blank fields (2026-11-16, reviewing v5: "way too many inputs"). Under D-032, every first visit stalled. Nothing was priced until the user picked a car (`fresh()` has `mpg: null`), and no app's delivery was compared until the user typed its fees. Measured on the deployed site at 390 px: 85 controls on the first screen, 128 after the example.
+- **What gets an estimate:**
+  - The 15 app-fee defaults D-032 left `null`: each app's `delFee` and `svcMin`; Uber Eats' and Grubhub's `svc`, `memberSvc` and `memberMin`; and the shared `regFee`, `smallMin` and `smallFee`.
+  - A new `trip.mpg`, the typical car's fuel economy, which `fresh()` copies (state contract §2).
+  - Published values stay as they are: DoorDash's 15%, 5% and $12, and the pickup discounts of 0.
+- **Sources, in this order:**
+  1. The app's own page.
+  2. The user's own checkout screens. Each is recorded with the app, the date, a ZIP or city, the restaurant's category, the subtotal and every fee line. The value is the median of at least 2 checkouts in different places (D-027's rule for menu prices).
+  3. A published survey or analysis, opened and read.
+  - A search snippet is never a source.
+  - Each value goes into `tools/data/defaults-*.json` with `est: true`, its source and its date, and the generator carries them into `DEFAULT_SOURCES`.
+- **Direction:** use the median. Where a choice remains (an even count, or two sources that disagree), take the value that makes the app cheaper, so an estimate never tips the answer toward picking it up yourself.
+- **The typical car:** the on-road light-duty fleet's average fuel economy, from EIA, not new cars' EPA figures. Overstating mpg makes pickup look cheaper (the D-037 lesson). *(Task 11.2a: EIA AEO2026 Table 7, "Light-Duty Stock", "combined on-road estimate for all cars and light trucks", 2025: 23.045, so 23.0 mpg. MER Table 1.8 has only per-vehicle class figures and no counts, so no fleet average can be computed from it.)*
+  - A car the user picks always replaces it (EPA, D-023, D-037).
+  - An unlisted car, or a cleared car, falls back to the typical car (`fuel: "regular"`, this `mpg`, no `miPerKwh`) instead of `null`. So does a saved `mpg: null` on load (state contract §6, §8).
+- **Labels:**
+  - A value that still equals its estimate is shown with "est." (`POD.state.sourceOf`, state contract §4.8). So is an app route whose menu markup is an estimate (`rest.markupEst`: every category default, ISS-012, and so every profile today).
+  - The answer card says it's based on estimates when a route it compares used one (exact strings: UI contract §5.5).
+  - The fine print says where estimates come from.
+  - The user corrects any of them in Personalize. The correction is theirs, saved as before.
+- **Unchanged:** `missing`, `appMissing`, `forEngine`, the engine and its oracle. With every default filled, `forEngine` has nothing to switch off. A value the user clears is still `null` and still asked for (D-033's path stays).
+- **Tests changed by this decision, not loosened:**
+  - `data-defaults.test.js`: "the defaults have nulls (D-032)" becomes "no default is null (D-042)", and its 26 keys become 27.
+  - `tools/build-defaults.py`: its 26 keys become 27.
+  - The checklist e2e "switching to Other asks for the new car's mpg" becomes "… falls back to the typical car (est.)". The old car's mpg is still never kept.
+*Why:* a blank field that the page won't price without is the main reason a first visit takes minutes. A cited estimate, labeled as one, is honest and correctable. ISS-034 anticipated the switch ("a later decision may switch an app to labeled estimates").
+
+**D-043 — The quick flow and the clean-fintech look** · 2026-11-16 · *accepted (search + tap and the look: user decisions; the rest: orchestrator)*
+The page is re-laid out so a first answer takes about 3 interactions. [`docs/ui-contract.md`](ui-contract.md) is amended in place (§1–§3, §5, and a new §10). Where it differs from D-035, this wins.
+- **Three steps on one screen:**
+  - **Where:** `loc` (the address box and "Use my location").
+  - **What:** `near`, with a search box over every nearby brand, and `order`, with the menu or quick totals.
+  - **The answer:** `results` and `insights` in `#side`.
+  - Everything else (`trip`, `car`, `wallet`, `settings`) moves into a **Personalize** drawer, closed by default and rendered only when open.
+- **Search + tap** (user decision):
+  - A search box filters the nearby brands by name. The query is page state, never saved.
+  - An unprofiled restaurant gets quick totals ($15, $25, $40), buttons that set `manualSubtotal`, beside the menu-total box. They're the user's own choice, not data.
+- **The answer card:**
+  - A plain-language title for the cheapest route, its price, and what it saves against the best route of the other kind (pickup vs delivery).
+  - The route's hand-off as the primary button (D-041).
+  - A line saying the answer is based on estimates when one was used (D-042; exact strings in the UI contract).
+  - Comparison bars for every route; a receipt opens on tap.
+  - On a phone, a sticky bar at the bottom repeats the answer while the user adds items.
+- **Budgets the e2e enforces** (a first visit at 390×844):
+  - at most 8 visible controls;
+  - at most 1.5 screen heights;
+  - at most 3 interactions from a first visit to a priced answer with its button;
+  - no horizontal scroll at 390 or 1280 px.
+- **Look (user decision): clean fintech.**
+  - CSS custom properties for color, type, radius and elevation, in light and dark (`prefers-color-scheme`), and the system font stack.
+  - One accent for the primary action, green for savings, muted grey for estimates.
+  - Monogram tiles for restaurants (no logos).
+  - Transitions off under `prefers-reduced-motion`.
+  - Still ES5, no framework, no runtime dependencies (D-007).
+- **Open and closed are page state.**
+  - The drawer and each receipt open and close by `view` flags the page renders. `<details>` is gone: block patching compares HTML, and an open `<details>` differs from its fresh copy, so every render closed it.
+  - The drawer wrapper is a patched block, and sections keep a constant number of children.
+  - The search box's HTML never depends on what's typed, so typing and clicks are never lost (D-035's rule).
+- **Re-baselining, by this decision:**
+  - The existing e2e move to the new hooks; a helper opens the drawer first.
+  - `worker.e2e.js`'s byte comparison with the Phase 7 page (`BASE_REV` `556bc34`, D-040, D-041) is **retired**. After a re-layout no ancestor is byte-equal, and re-baselining against a moving target invites loosening.
+  - Its two real rules stay, against the same build: with the Worker off the page makes no Worker request, and with the Worker failing (each of the 4 ways) `#app` equals the Worker-off page byte for byte.
+  - `test.yml` no longer needs `fetch-depth: 0`.
+*Why:* the user's verdict on v5 was too many inputs and a dull page. The answer should take about 2 minutes and say how to order.
+
 ---
 
 ## Skill updates
