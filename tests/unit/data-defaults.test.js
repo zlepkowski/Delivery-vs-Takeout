@@ -162,11 +162,39 @@ test('D-032 §2 defaults: every null value has a non-empty reason in its evidenc
 test('D-032 §2 defaults: the header Nulls line lists exactly the null paths', () => {
   const line = HEADER_LINES.find((l) => l.startsWith(' * Nulls:'));
   assert.ok(line, 'header has a Nulls: line');
-  const body = line.slice(' * Nulls:'.length).trim().replace(/ \(not published by the app, D-032\)$/, '');
+  const body = line.slice(' * Nulls:'.length).trim().replace(/ \(not yet sourced, D-042\)$/, '');
   const listed = body === 'none' ? [] : body.split(', ');
   const nulls = LEAVES.filter((p) => getAt(DATA.DEFAULTS, p) === null);
   assert.deepEqual(listed.slice().sort(), nulls.slice().sort());
-  assert.ok(nulls.length > 0, 'the defaults have nulls (D-032)');
+});
+
+test('D-042 defaults: exactly these 14 paths are still null (not yet sourced), no others', () => {
+  const nulls = LEAVES.filter((p) => getAt(DATA.DEFAULTS, p) === null).sort();
+  assert.deepEqual(nulls, [
+    'fees.regFee', 'fees.smallFee', 'fees.smallMin',
+    'plats.dd.delFee',
+    'plats.gh.delFee', 'plats.gh.memberMin', 'plats.gh.memberSvc', 'plats.gh.svc', 'plats.gh.svcMin',
+    'plats.ue.delFee', 'plats.ue.memberMin', 'plats.ue.memberSvc', 'plats.ue.svc', 'plats.ue.svcMin'
+  ]);
+  for (const p of nulls) assert.strictEqual(DATA.DEFAULT_SOURCES[p].est, false, p + ': a null is not an estimate');
+});
+
+test('D-042 defaults: plats.dd.svcMin is pinned literally (value, source, read, est, decision) in DEFAULTS and DEFAULT_SOURCES', () => {
+  const url = 'https://www.kiro7.com/news/local/navigating-delivery-fee-frenzy-which-apps-save-you-most/BDH2PITGPRAFLMLDSCXTBJ2FII/';
+  assert.strictEqual(DATA.DEFAULTS.plats.dd.svcMin, 3);
+  const src = DATA.DEFAULT_SOURCES['plats.dd.svcMin'];
+  assert.strictEqual(src.source, url);
+  assert.strictEqual(src.read, '2026-11-17');
+  assert.strictEqual(src.est, true);
+  assert.strictEqual(src.decision, 'D-042');
+  const ev = EVID.plats['dd.svcMin'];
+  assert.strictEqual(ev.value, 3);
+  assert.strictEqual(ev.source, url);
+  assert.strictEqual(ev.read, '2026-11-17');
+  assert.strictEqual(ev.est, true);
+  assert.strictEqual(ev.decision, 'D-042');
+  assert.match(ev.quote, /DoorDash charges a flat 15% or \$3 minimum/);
+  assert.match(ev.reason, /Median of \{3\} = 3/);
 });
 
 test('D-032 §2 defaults: every est path appears on the header Est lines, and no other path does', () => {

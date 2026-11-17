@@ -182,6 +182,15 @@ Open blockers, bugs and unresolved questions. Workers add entries; the orchestra
 - **Why it matters:** DONE WHEN check 1 fails (`missing` lists the keys above). The app would start without defaults for these, or with wrong ones if a snippet figure were used.
 - **Next step:** the orchestrator decides. Options: open Uber's "What fees may apply to my order" help article and Grubhub's fee pages from an allowed network, or set these values from a checkout screen the user captures. `ue.pickDisc` is also unsourced.
 - **Update 2026-11-13 (orchestrator, D-032):** the user chose **official numbers only**. Every value above stays `null` in `src/data/defaults.js`: the page asks the user for it, and an app with an empty fee is left out of the comparison until it is filled. The Uber grocery-guide values were withdrawn (not restaurant figures). Pickup discounts are 0 by product rule. Stays open: a later decision may switch an app to labeled estimates, or a readable official page may appear.
+- **Update 2026-11-17 (task 11.2b, D-042):** D-042 switched the app fees to labeled estimates, and the three shortlisted survey pages were read (their hosts were added for this task, ISS-001 update 2026-11-16).
+  - **Filled (1):** `dd.svcMin` = 3, est, from KIRO 7's test orders ("DoorDash charges a flat 15% or $3 minimum").
+  - **Still `null` (14):** `dd.delFee`; all five Uber Eats and all five Grubhub fee keys; and the shared `regFee`, `smallMin` and `smallFee`.
+    - WSMV (Nashville) gives only four app totals for one order, with no fee lines.
+    - `uber.com/us/en/u/uber-one/` answers 406 to curl's default agent (not worked around, D-027).
+    - `www.grubhub.com/fees` is a JavaScript shell.
+    - **regFee:** KIRO 7's Seattle $4.99 is from a market DoorDash's fee page excludes from its general list ("all U.S. markets except New York City, Seattle, and Puerto Rico"), so it wasn't applied nationally.
+  - **The effect:** app delivery still needs `delFee` plus the three shared fees, so it isn't compared by default.
+  - **Next step:** the user's checkout screens (D-042 source 2: at least 2 per app, from different places, each with its city or ZIP). Whether a checkout outside NYC, Seattle and Puerto Rico whose recorded fee lines (D-042 records every fee line) show no regulatory fee counts as a $0 observation for `regFee` is not decided yet; it needs a D-042 amendment before any checkout is used that way.
 
 ### ISS-035 — UI paths that real data can't reach have no e2e (review of 5.3)
 - **Opened:** 2026-11-14 by orchestrator · **Phase:** 5 · **Status:** open

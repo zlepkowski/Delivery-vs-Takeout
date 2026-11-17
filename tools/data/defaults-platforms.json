@@ -1,14 +1,14 @@
 {
-  "about": "Default app fees for the state layer (D-032: official numbers only). A value the app doesn't publish is null: the page asks the user for it, and leaves that app out of the comparison until then.",
-  "asOf": "2026-11-13",
+  "about": "Default app fees for the state layer (D-032: official numbers only; D-042: an estimate is labeled est: true with its observations and direction). A value still null is not yet sourced: the page asks the user for it, and leaves that app out of the comparison until then.",
+  "asOf": "2026-11-17",
   "values": {
     "dd.delFee": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "DoorDash's page says the delivery fee varies by merchant and gives no amount. Empty by D-032: the user enters it from their checkout."
+      "reason": "Not yet sourced (D-042). help.doordash.com/en-us/consumers/article/what-fees-do-i-pay (read 2026-11-17, HTTP 200): \"Delivery Fee: A fixed fee per order that varies by merchant\", no amount. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "dd.memberMin": {
       "est": false,
@@ -44,36 +44,37 @@
       "value": 15
     },
     "dd.svcMin": {
-      "value": null,
-      "est": false,
-      "source": null,
-      "read": "2026-11-13",
-      "quote": "",
-      "reason": "DoorDash's page says 'A flat, minimum service fee may apply' with no amount. Empty by D-032."
+      "value": 3,
+      "est": true,
+      "source": "https://www.kiro7.com/news/local/navigating-delivery-fee-frenzy-which-apps-save-you-most/BDH2PITGPRAFLMLDSCXTBJ2FII/",
+      "read": "2026-11-17",
+      "quote": "DoorDash charges a flat 15% or $3 minimum, so that will work in your favor for orders in the $20 to $100 range.",
+      "reason": "Observations: 1. KIRO 7 (Feb 6, 2025) states the DoorDash service fee once: \"a flat 15% or $3 minimum\". Median of {3} = 3. No direction choice arises with one observation. The DoorDash fee page (read 2026-11-17) says \"a minimum fee may apply\" with no amount, so the $3 is secondhand and est: true. Its 15% is DoorDash's own figure (dd.svc), kept as published.",
+      "decision": "D-042"
     },
     "gh.delFee": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+      "reason": "Not yet sourced (D-042). www.grubhub.com/fees (read 2026-11-17, HTTP 200) is a JavaScript shell with no fee text; www.grubhub.com/plus (HTTP 200) shows no fee amount; about.grubhub.com was refused by the egress proxy. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "gh.memberMin": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+      "reason": "Not yet sourced (D-042). www.grubhub.com/fees (read 2026-11-17, HTTP 200) is a JavaScript shell with no fee text; www.grubhub.com/plus (HTTP 200) shows no fee amount; about.grubhub.com was refused by the egress proxy. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "gh.memberSvc": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+      "reason": "Not yet sourced (D-042). www.grubhub.com/fees (read 2026-11-17, HTTP 200) is a JavaScript shell with no fee text; www.grubhub.com/plus (HTTP 200) shows no fee amount; about.grubhub.com was refused by the egress proxy. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "gh.pickDisc": {
       "value": 0,
@@ -88,65 +89,65 @@
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+      "reason": "Not yet sourced (D-042). www.grubhub.com/fees (read 2026-11-17, HTTP 200) is a JavaScript shell with no fee text; www.grubhub.com/plus (HTTP 200) shows no fee amount; about.grubhub.com was refused by the egress proxy. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "gh.svcMin": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "No Grubhub page readable from this environment states fee amounts (grubhub.com/plus is a JavaScript shell; the terms of use have no amounts). Empty by D-032."
+      "reason": "Not yet sourced (D-042). www.grubhub.com/fees (read 2026-11-17, HTTP 200) is a JavaScript shell with no fee text; www.grubhub.com/plus (HTTP 200) shows no fee amount; about.grubhub.com was refused by the egress proxy. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "regFee": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "DoorDash's terms confirm regulatory fees exist in some places but give no amounts or city list on a readable page. Empty by D-032."
+      "reason": "Not yet sourced (D-042). The only amount is one city: KIRO 7 (Feb 6, 2025) quotes DoorDash's \"regulatory response fee of $4.99 on marketplace orders\" in Seattle. DoorDash's own fee page (https://help.doordash.com/en-us/consumers/article/what-fees-do-i-pay, read 2026-11-17) says it \"may charge this fee when a local or state regulation leads to increased operating costs\", that these fees \"vary based on region\", and that its fee list \"currently applies to all U.S. markets except New York City, Seattle, and Puerto Rico\". So the Seattle figure comes from a market outside DoorDash's general fee list, and isn't an observation of the typical place. Null until observations from places in the general list exist (the user's checkouts, ISS-034)."
     },
     "smallFee": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "As smallMin: no published amount. Empty by D-032."
+      "reason": "Not yet sourced (D-042). DoorDash's fee page (read 2026-11-17) names \"small order charges\" in its description with no threshold or amount; KIRO 7 and WSMV mention small-order fees with no amount."
     },
     "smallMin": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "DoorDash's page says a small-order fee may apply 'if your subtotal is below a certain amount' with no amount or threshold. Empty by D-032."
+      "reason": "Not yet sourced (D-042). DoorDash's fee page (read 2026-11-17) names \"small order charges\" in its description with no threshold or amount; KIRO 7 and WSMV mention small-order fees with no amount."
     },
     "ue.delFee": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+      "reason": "Not yet sourced (D-042). www.uber.com/us/en/u/uber-one/ and www.uber.com/us/en/ubereats/ return 406 to the default user agent (read 2026-11-17; BLOCKED, ISS-034; D-027: not worked around); help.uber.com fee article returns 404. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "ue.memberMin": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+      "reason": "Not yet sourced (D-042). www.uber.com/us/en/u/uber-one/ and www.uber.com/us/en/ubereats/ return 406 to the default user agent (read 2026-11-17; BLOCKED, ISS-034; D-027: not worked around); help.uber.com fee article returns 404. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "ue.memberSvc": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+      "reason": "Not yet sourced (D-042). www.uber.com/us/en/u/uber-one/ and www.uber.com/us/en/ubereats/ return 406 to the default user agent (read 2026-11-17; BLOCKED, ISS-034; D-027: not worked around); help.uber.com fee article returns 404. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "ue.pickDisc": {
       "value": 0,
@@ -161,17 +162,17 @@
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+      "reason": "Not yet sourced (D-042). www.uber.com/us/en/u/uber-one/ and www.uber.com/us/en/ubereats/ return 406 to the default user agent (read 2026-11-17; BLOCKED, ISS-034; D-027: not worked around); help.uber.com fee article returns 404. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     },
     "ue.svcMin": {
       "value": null,
       "est": false,
       "source": null,
-      "read": "2026-11-13",
+      "read": "2026-11-17",
       "quote": "",
-      "reason": "The only Uber page readable from this environment was its grocery delivery guide (https://www.uber.com/us/en/blog/grocery-delivery-cost/), which doesn't cover restaurant orders; www.uber.com/us/en/ubereats/ refused the default user agent (406) and help.uber.com article URLs returned 404. Empty by D-032 (official numbers only)."
+      "reason": "Not yet sourced (D-042). www.uber.com/us/en/u/uber-one/ and www.uber.com/us/en/ubereats/ return 406 to the default user agent (read 2026-11-17; BLOCKED, ISS-034; D-027: not worked around); help.uber.com fee article returns 404. WSMV (May 21, 2025, https://www.wsmv.com/2025/05/21/nashville-clarksville-we-tested-food-delivery-apps-heres-where-youll-pay-more/) gives four app totals for one McDonald's order and says only that DoorDash's \"Delivery fees vary by restaurant and distance\"; KIRO 7 (Feb 6, 2025) gives no delivery, small-order or Uber/Grubhub fee amount."
     }
   }
 }
